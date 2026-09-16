@@ -1,0 +1,9 @@
+onnxruntime>=1.20.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
+tokenizers>=0.19.0
+onnx>=1.17.0            # 16_trim_vocab.py rewrites the embedding table
+huggingface-hub>=0.22.0
+# Vertex AI, for 11_translate_mt.py --engine vertex (imported lazily)
+google-genai>=1.0.0
+pypdf>=4.0.0            # lib/writings_pdf.py reads the born-digital essay PDFs

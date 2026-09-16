@@ -1,0 +1,14 @@
+# everything a run produces or downloads; the repository is the code only
+data/
+artifacts/
+vendor/
+dist/
+*.sqlite
+*.sqlite-journal
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+Thumbs.db
