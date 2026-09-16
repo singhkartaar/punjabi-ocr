@@ -1,0 +1,31 @@
+# OCR ingestion (20_ocr_pages.py .. 24_ocr_eval.py). Kept apart from
+# requirements.txt so the base pipeline stays torch-free.
+#
+#   uv pip install --python .venv\Scripts\python.exe torch torchvision --index-url https://download.pytorch.org/whl/cu128
+#   uv pip install --python .venv\Scripts\python.exe -r requirements-ocr.txt
+#
+pymupdf>=1.24.0          # rasterising; renders CCITT G4, JBIG2 and JPEG-tiled pages alike
+pytesseract>=0.3.10      # needs the Tesseract binary: winget install UB-Mannheim.TesseractOCR
+gurmukhifix              # sihari / nukta reordering of Tesseract's Gurmukhi output
+opencv-python-headless   # deskew, border crop, bleed suppression, stroke width
+Pillow
+numpy>=1.26.0
+regex                    # \X grapheme clusters; the stdlib re has none
+rapidfuzz>=3.0           # grapheme-sequence edit distance and alignment
+symspellpy               # candidate generation over the lexicon (22_ocr_merge.py)
+dinglehopper             # grapheme-aware CER/WER, for the evaluation only
+google-cloud-vision      # DOCUMENT_TEXT_DETECTION; imported lazily, only by the vision engine
+surya-ocr                # Surya 2
+transformers>=4.45.0     # IndicOCR and dots.ocr through transformers (vLLM is Linux-only)
+accelerate
+huggingface-hub>=0.22.0
+# translation (26_translate_writings.py, 28_translate_bench.py): sarvam-translate
+# needs only torch + transformers; IndicTrans2 needs its processor, whose PyPI
+# package (IndicTransToolkit) is a Cython source build -- lib/indictrans_processor.py
+# is the same code in plain Python, and these are its dependencies
+sacremoses
+indic-nlp-library-itt
+tqdm
+sacrebleu                # chrF / BLEU for the translation benchmark only
+# IndicOCR: weights + package from the bodhan-ai/indic-ocr repository (see lib/ocr_engines.py)
+# dots.ocr:  pip install git+https://github.com/rednote-hilab/dots.ocr  (pin a commit)

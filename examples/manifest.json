@@ -1,0 +1,26 @@
+{
+  "author": "Bhai Vir Singh",
+  "language": "pa",
+  "reader": "ocr",
+  "licence": "public-domain",
+  "original": true,
+  "quote_policy": "verbatim",
+  "works": [
+    {
+      "file": "santhya-vol-1.pdf",
+      "work": "santhya",
+      "part": 1,
+      "title": "Santhya Sri Guru Granth Sahib Ji, Vol. 1",
+      "book": "santhya-vol-1"
+    },
+    {
+      "file": "ten-masters.pdf",
+      "work": "ten-masters",
+      "title": "The Book of the Ten Masters",
+      "author": "Prof. Puran Singh",
+      "language": "en",
+      "book": "ten-masters",
+      "bleed": true
+    }
+  ]
+}

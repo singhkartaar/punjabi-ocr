@@ -1,0 +1,35 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+# The unit tests need no scan, no engine binary, no model and no GPU: every
+# fixture is synthetic. Tests that read a rendered book or a scripture
+# database skip themselves when those are absent, which they are here.
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: install
+        working-directory: pipeline/python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pymupdf pytesseract gurmukhifix opencv-python-headless Pillow regex rapidfuzz symspellpy dinglehopper sacrebleu sacremoses indic-nlp-library-itt tqdm
+      - name: test
+        working-directory: pipeline/python
+        run: python -m unittest test_ocr test_writings
+      # the driver plans a run from the example manifest without touching a
+      # PDF, an engine or a model: the whole sequence, printed, is the smoke test
+      - name: dry run
+        working-directory: pipeline/python
+        run: |
+          mkdir -p /tmp/books
+          cp ../../examples/manifest.json /tmp/books/manifest.json
+          touch /tmp/books/santhya-vol-1.pdf /tmp/books/ten-masters.pdf
+          python 27_ingest_book.py --src /tmp/books --dry-run
+          python 27_ingest_book.py --src /tmp/books --book ten-masters --dry-run --no-translate
