@@ -45,6 +45,12 @@ import re
 PG = re.compile(r"\[\s*(?:Pg|Page|Ang|P)\.?\s*([0-9]{1,4})\s*(?:-\s*[0-9]{1,4}\s*)?\]", re.I)
 PAREN = re.compile(r"\(\s*([0-9]{2,4})\s*(?:-\s*[0-9]{2,4}\s*)?\)\s*[^0-9]{0,24}$")
 TRAILING = re.compile(r"(?:^|[^0-9])([0-9]{2,4})\s*(?:-\s*[0-9]{2,4})?\s*[^0-9]{0,24}$")
+# The ang as In Search of the True Guru writes it: "(SGGS p. 920)", "(Anand
+# Sahib: SGGS p. 920)", "(Guru Nanak Dev Ji SGGS p. 1412)", once "( SGGSp. 27)".
+# The whole bracket is the citation, so the whole bracket leaves the quote.
+SGGS = re.compile(r"\(\s*[^()]{0,60}?SGGS\s*,?\s*(?:pp?|pg|page|ang)?\.?\s*([0-9]{1,4})"
+                  r"(?:\s*-\s*[0-9]{1,4})?\s*\)"
+                  r"|\bSGGS\s*,?\s*(?:pp?|pg|page|ang)?\.?\s*([0-9]{1,4})", re.I)
 # the stanza counters the English translations carry, and the rahao marker
 COUNTER = re.compile(r"\|\|\s*[0-9]*\s*\|\||\|\|\s*Pause\s*\|\||\bPause\b\s*\|\||\.\s*Pause\s*\.", re.I)
 MIN_ANG, MAX_ANG = 2, 1430
@@ -79,6 +85,9 @@ def find_ang(text: str):
 
     @returns (ang | None, text without the citation)
     """
+    m = SGGS.search(text)
+    if m and MIN_ANG <= int(m.group(1) or m.group(2)) <= MAX_ANG:
+        return int(m.group(1) or m.group(2)), (text[:m.start()] + " " + text[m.end():]).strip()
     m = PG.search(text)
     if m and MIN_ANG <= int(m.group(1)) <= MAX_ANG:
         return int(m.group(1)), PG.sub(" ", text).strip()
@@ -109,31 +118,71 @@ def looks_quoted(text: str) -> bool:
     number must be above the highest page number in this corpus, or be written
     as an explicit citation, or the line must carry the stanza counters.
     """
-    if PG.search(text) or COUNTER.search(text):
+    if PG.search(text) or SGGS.search(text) or COUNTER.search(text):
         return True
     ang, _ = find_ang(text)
     return ang is not None and ang > 61
+
+
+OPENS = '"“'
+QUOTE_MARKS = '"“”'
+
+
+def opened_by(prev: dict | None, rec: dict) -> bool:
+    """
+    True where `rec` is the rest of a quotation `prev` opened and a page broke.
+
+    A verse quoted at the foot of a page arrives as two paragraphs: the first
+    opens with a quotation mark it never closes, the second starts mid-sentence
+    ("shall have only the straw of coarse grain to eat...") and carries the
+    ang. Scored alone, the second half is the quotation; the first half is
+    prose that is really Gurbani. Both conditions are demanded -- an unclosed
+    opening quote, and a continuation -- so that a page of dialogue does not
+    qualify.
+    """
+    if not prev or (prev["work"], prev["part"]) != (rec["work"], rec["part"]):
+        return False
+    p, r = prev["text"].strip(), rec["text"].strip()
+    if not p or not r or p[0] not in OPENS or sum(p.count(c) for c in QUOTE_MARKS) != 1:
+        return False
+    return r[0].islower() or not re.search(r"[.!?;:”\"]$", p)
+
+
+def wholly(text: str) -> bool:
+    """True where a paragraph is nothing but the quotation and its citation."""
+    _, body = find_ang(text)
+    body = body.strip()
+    return bool(body) and body[0] in OPENS and bool(re.search(r"[\"”]\s*[.)]?\s*$", body))
 
 
 def detect(records: list[dict]) -> list[dict]:
     """
     The quotations among a work's paragraphs.
 
-    @param records paragraph records from 12_ingest_writings.py
-    @returns [{unit_id, work, part, page, para_no, ang, text, how}]
+    @param records paragraph records from 12_ingest_writings.py, in reading order
+    @returns [{unit_id, work, part, page, para_no, ang, text, how, opened_by?}]
+             where `opened_by` names the paragraph a page break cut this
+             quotation away from; the span's text is both halves
     """
     out = []
+    prev = None
     for rec in records:
         italic = rec["style"] == "quote"
         if not italic and not looks_quoted(rec["text"]):
+            prev = rec
             continue
         ang, _ = find_ang(rec["text"])
         text = clean_quote(rec["text"])
-        if len(tokens(text)) < MIN_TOKENS:
+        span = {"unit_id": rec["unit_id"], "work": rec["work"], "part": rec["part"],
+                "page": rec["page"], "para_no": rec["para_no"], "ang": ang,
+                "text": text, "how": "italic" if italic else "marked"}
+        if not italic and opened_by(prev, rec):
+            span["text"] = clean_quote(prev["text"] + " " + rec["text"])
+            span["opened_by"] = prev["unit_id"]
+        prev = rec
+        if len(tokens(span["text"])) < MIN_TOKENS:
             continue
-        out.append({"unit_id": rec["unit_id"], "work": rec["work"], "part": rec["part"],
-                    "page": rec["page"], "para_no": rec["para_no"], "ang": ang,
-                    "text": text, "how": "italic" if italic else "marked"})
+        out.append(span)
     return out
 
 

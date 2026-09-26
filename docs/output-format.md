@@ -1,13 +1,14 @@
-# The output: a documents index
+# The output: a prose corpus
 
 What the pipeline produces is what `gurbani-search-api` serves. The contract is
-one directory per language, `artifacts/writings-<lang>/`, in the shape the
-server already discovers for its scripture indexes, distinguished by one
-field in its manifest. Drop it into a deployment's `ARTIFACTS_DIR` and
-`GET /api/documents?q=...` searches it.
+one corpus per language: a directory of vectors under `artifacts/corpora/`,
+one level deeper than the server's scripture indexes so that nothing that
+scans for those can mistake it for one, and a database of passages beside
+them. It is the shape the server's `writings-<key>` data packs carry; a
+deployment serves a corpus once its `CORPORA` table names the two.
 
 ```
-artifacts/writings-en/
+artifacts/corpora/writings-en/
   manifest.json          kind: "documents", index, db, label, roles, order,
                          text_lang, query_scripts, embed_dim, index_dim,
                          and the encoder block (model_dir, tokenizer, pooling,
@@ -18,8 +19,14 @@ artifacts/writings-en/
   units.mask.u8          N      uint8    1 = retrievable
   pca.components.f32     E x D  float32  the projection applied to a query
   pca.mean.f32           E      float32  subtracted before projecting
-  units.sqlite           the passages, their works, their citations
+artifacts/writings.sqlite  the passages, their works, their citations
 ```
+
+The database is named for the corpus without its `-en`: the server keys an
+English corpus by its bare name (`writings`, `akj`), so `writings-en` is
+served from `writings.sqlite`; a corpus in another language keeps its suffix
+(`writings-pa` -> `writings-pa.sqlite`), so the Punjabi and the English of
+one folder of books never write the same file.
 
 All numeric files are little-endian, C-ordered, headerless. D is `index_dim`
 (256), E is `embed_dim` (384). A query is encoded with the model the manifest
@@ -27,7 +34,7 @@ names, centred on `pca.mean`, projected by `pca.components`, L2-normalised,
 and scored by dot product against the dequantised rows
 (`units.i8[row] * units.scale.f32[row]`).
 
-## units.sqlite
+## The database
 
 ```sql
 CREATE TABLE works (
@@ -54,9 +61,9 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);   -- corpus, authors, unit
 
 | field | |
 |---|---|
-| `kind` | `"documents"` -- what keeps this index out of the scripture routes; a server keeps it in a map of its own |
-| `index` | the name used in `?index=` and `INDEXES=` |
-| `db` | the database beside the vectors; default `units.sqlite` |
+| `kind` | `"documents"` -- a corpus of passages, never a scripture index: the server's registry refuses one wherever it finds it |
+| `index` | the corpus's name (`writings-en`); the server's `CORPORA` row pairs it with a key |
+| `db` | the database of passages, relative to this directory (`../../writings.sqlite`) |
 | `label`, `label_pa`, `order` | presentation |
 | `roles` | `["text"]` |
 | `text_lang`, `query_scripts` | the language of `text`, and which scripts a query may use (a Gurmukhi query against an English index is refused) |
@@ -64,16 +71,15 @@ CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);   -- corpus, authors, unit
 | `model_dir`, `tokenizer`, `pooling`, `query_prefix`, `doc_prefix`, `max_len`, `pad_id`, `pad_token`, `lowercase`, `strip_accents` | how to encode a query; the same field names a scripture index uses, so the server builds the encoder without a special case |
 | `licences` | informational: works per licence status |
 
-## Licence, applied twice
+## Licence, recorded
 
-A serving API returns a passage of a `public-domain` work whole and any other
-passage as an excerpt of at most 300 characters around the sentence closest
-to the query. A data pack of the index is built the same way: copyright
-passages are cut to a fixed lead excerpt and their `text_src` removed before
-the file is published, and `meta.text_policy = excerpt:copyright` records it.
-The vectors ship whole -- they are derived data and do not reconstruct the
-text. Set `licence` in the manifest honestly; an unrecorded one counts as
-copyright.
+The pipeline records what the manifest says: `licence` on each row of
+`works`, and a count per status under `licences` in the manifest. What a
+server or a data pack does with a copyright work is that server's policy, not
+this pipeline's -- `gurbani-search-api` returns whole passages, a bounded
+number per query, and records the basis for each author in its NOTICE.md.
+Set `licence` in the manifest honestly; an unrecorded one counts as
+copyright, and `quote_policy` follows it unless the manifest says otherwise.
 
 ## Also written
 
@@ -81,7 +87,7 @@ copyright.
 |---|---|
 | `data/writings/<work>.jsonl` | one record per source paragraph, in reading order: `unit_id`, `work`, `part`, `page`, `para_no`, `style` (`body`, `heading`, `quote`, `footnote`), `text`, `lang`, and for a quoted verse its `line_ids`, `shabad_id`, `ang`, `match_score` |
 | `data/writings/<work>.en.jsonl` | `unit_id`, `en`, `engine`, `model` per translated paragraph |
-| `data/writings/units[-<lang>].jsonl` | the retrieval units, `_meta` first, exactly what `units.sqlite` holds |
+| `data/writings/units[-<lang>].jsonl` | the retrieval units, `_meta` first, exactly what the database holds |
 | `data/writings/citations.jsonl` | the resolved quotations |
 | `data/ocr/<book>/merged/NNNN.jsonl` | the merged page: every line with its `text`, `kind`, `zone`, `bbox`, `agreement`, and the corpus match if any |
 | `data/raw/ocr-eval-<book>.json`, `ocr-report-<book>.json`, `mt-bench-<work>.json` | the measurements |

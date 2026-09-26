@@ -151,13 +151,14 @@ engines and the numbers they reached.
 |---|---|
 | page images, per-engine OCR, merged pages, ground truth, the cost ledger | `data/ocr/<book>/` |
 | paragraphs and translations | `data/writings/<work>.jsonl`, `<work>.en.jsonl` |
-| the documents index, one per language | `artifacts/writings-<lang>/` |
+| the searchable corpus, one per language | `artifacts/corpora/writings-<lang>/` (vectors, manifest) and `artifacts/writings[-<lang>].sqlite` (the passages) |
 | reports and measurements | `data/raw/` |
 
-`artifacts/writings-<lang>/` is the contract with `gurbani-search-api`
-(`docs/output-format.md`): copy the directory into a deployment's
-`ARTIFACTS_DIR` and `GET /api/documents?q=...` searches it, full text for
-public-domain works and a 300-character excerpt for the rest.
+That pair is the contract with `gurbani-search-api` (`docs/output-format.md`):
+the shape its `writings-<key>` data packs carry. Copy both into a deployment's
+`ARTIFACTS_DIR`, name them in the server's `CORPORA` table (key, directory,
+database), and `GET /api/writings/search?corpus=<key>&q=...` returns whole
+passages, the nearest in meaning.
 
 ## 6. Paid services, only through a cap
 

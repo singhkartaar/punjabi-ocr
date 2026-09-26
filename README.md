@@ -1,11 +1,11 @@
 # punjabi-ocr
 
-Scanned or born-digital books in **Punjabi or English** in (Hindi in 1.1); a
+Scanned or born-digital books in **Punjabi or English** in (Hindi in 1.2); a
 corpus of passages, **searchable by meaning** and **translated into
 English**, out. Runs on one machine, with open-weight models, and sends
 nothing to a paid service unless you set a budget for it.
 
-Version 1.0.0 -- `CHANGELOG.md`. Step by step: `docs/runbook.md`.
+Version 1.1.0 -- `CHANGELOG.md`. Step by step: `docs/runbook.md`.
 
 ```
 a PDF of scanned pages
@@ -14,9 +14,9 @@ a PDF of scanned pages
   -> quoted scripture found in a corpus, not corrected;
      the rest voted, gated by a lexicon, corrected     22_ocr_merge.py  (scripture matching is optional)
   -> paragraphs, one file per work                    12_ingest_writings.py
-  -> embedded, quantised, written beside a SQLite     14_embed_writings.py, 15_build_writings_db.py
+  -> embedded, quantised, and a SQLite of passages    14_embed_writings.py, 15_build_writings_db.py
   -> translated into English, locally                 26_translate_writings.py  (sarvam-translate or IndicTrans2)
-  -> artifacts/<index>/   a "documents index" the gurbani-search-api server serves as /api/documents
+  -> artifacts/corpora/<corpus>/ + artifacts/<key>.sqlite   a prose corpus, the shape gurbani-search-api serves
 ```
 
 One command runs all of it for a book:
@@ -39,7 +39,7 @@ per book:
 | Santhya (pa, 300 dpi, 1-bit) | Tesseract `pan` 95.8% word accuracy | **94.9%** with every quoted verse matched to the corpus, 0 false matches | commentary CER 2.5% |
 | Gurbani Vayakaran (pa, typeset) | Tesseract `script/Gurmukhi` | **92.0%** | |
 | Ten Masters (en, 100 dpi, show-through) | Tesseract `eng` 99.1% | **99.1%** | `bleed: true` in the manifest |
-| a synthetic Hindi page | Tesseract `hin` 98.2%, dots.ocr 100% | | Hindi is plumbed but unmeasured on real scans: 1.1 |
+| a synthetic Hindi page | Tesseract `hin` 98.2%, dots.ocr 100% | | Hindi is plumbed but unmeasured on real scans: 1.2 |
 
 Translation: sarvam-translate rendered 8,594 Punjabi paragraphs in 78 minutes
 on an RTX 3080 Ti with 146 rejected by the checks. Against a Gemini
@@ -93,8 +93,8 @@ A `manifest.json` beside the PDFs (`docs/manifest.md`, `examples/manifest.json`)
 ```
 
 `language` picks the engines and the corpus; `licence` (`public-domain` or
-`copyright`) travels with the work and decides how much of it a public server
-shows; `reader` is `ocr` for a scan, `pdf-text` for a born-digital PDF.
+`copyright`) travels with the work into the corpus, for a server to act on;
+`reader` is `ocr` for a scan, `pdf-text` for a born-digital PDF.
 
 ## Run, then measure
 
@@ -141,14 +141,15 @@ Latin letters, far too long, looping -- and rejected rather than written.
 |---|---|
 | page images, per-engine OCR, merged pages, ground truth, the cost ledger | `data/ocr/<book>/` |
 | paragraphs and translations | `data/writings/<work>.jsonl`, `<work>.en.jsonl` |
-| the documents index, one per language | `artifacts/writings-<lang>/` |
+| the searchable corpus, one per language | `artifacts/corpora/writings-<lang>/` (vectors, manifest) and `artifacts/writings[-<lang>].sqlite` (the passages) |
 | reports and measurements | `data/raw/` |
 
-`artifacts/writings-<lang>/` is the contract with
-[gurbani-search-api](https://github.com/gurmukhi-repo/gurbani-search-api)
-(`docs/output-format.md`): drop the directory into a deployment's
-`ARTIFACTS_DIR` and `GET /api/documents?q=...` searches it, full text for
-public-domain works and a short excerpt for the rest.
+That pair is the contract with
+[gurbani-search-api](https://github.com/singhkartaar/gurbani-search-api)
+(`docs/output-format.md`): the shape its `writings-<key>` data packs carry.
+A deployment serves a corpus once its `CORPORA` table names the directory and
+the database, and `GET /api/writings/search?corpus=<key>&q=...` returns whole
+passages, the nearest in meaning, with the scripture each one quotes.
 
 ## Paid services, if you choose
 
@@ -162,10 +163,10 @@ pages or paragraphs so you can decide with numbers.
 
 ## Status and roadmap
 
-1.0.0 covers Punjabi and English scans end to end, measured. Hindi (`language: "hi"`)
+1.1.0 covers Punjabi and English scans end to end, measured. Hindi (`language: "hi"`)
 runs through the same code with Tesseract's `hin` model and Devanagari checks in
 the translator, but has only been measured on a synthetic typeset page; real
-scans, ground truth and a lexicon are 1.1. A legacy-Gurmukhi-font reader
+scans, ground truth and a lexicon are 1.2. A legacy-Gurmukhi-font reader
 (`reader: legacy-font`) needs a converter that is not in this repository and
 says so.
 

@@ -62,13 +62,17 @@ def list_sources(src: str, manifest: dict | None = None) -> list[str]:
     return out
 
 
-def parse_source(path: str, manifest: dict | None = None) -> dict:
+def parse_source(path: str, manifest: dict | None = None, roster: dict | None = None) -> dict:
     """
     parse_filename()'s keys plus language, licence, reader, book, quote_policy,
     author, scripture and any per-work extras (e.g. "bleed").
+
+    @param roster  an author's listing kept in the repository (rosters/*.json),
+        the other way a file gets named: a folder with no manifest is read
+        through it, exactly as parse_filename() would alone.
     """
     if manifest is None:
-        meta = parse_filename(path)
+        meta = parse_filename(path, roster)
         meta.update({k: v for k, v in DEFAULTS.items() if k not in meta})
         meta["quote_policy"] = "verbatim" if meta["original"] else "summarise"
         meta["book"] = _slug(os.path.splitext(os.path.basename(path))[0])

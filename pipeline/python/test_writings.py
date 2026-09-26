@@ -13,8 +13,10 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib.paths import ROOT
-from lib.writings_pdf import columns, group_lines, is_spread, join_runs, left_margin, paragraphs
-from lib.citations import clean_quote, find_ang, looks_quoted, resolve_lexical, tokens
+from lib.writings_pdf import (columns, group_lines, is_spread, join_runs, left_margin,
+                              paragraphs, read_pdf, running_heads)
+from lib.citations import (clean_quote, detect, find_ang, looks_quoted, opened_by, resolve_lexical,
+                           tokens, wholly)
 from lib.writings_works import parse_filename
 
 WRITINGS = os.path.join(ROOT, "data", "writings")
@@ -85,6 +87,63 @@ class JoinRunsTests(unittest.TestCase):
         runs = [run(430.9, "his mother does not hold it against him in her mind."), run(700.0, "478")]
         self.assertEqual(join_runs(runs), "his mother does not hold it against him in her mind. 478")
 
+    def test_a_font_that_states_its_widths_is_believed_over_the_estimate(self):
+        # Where a PDF gives the advance of every glyph, the end of a run is
+        # known rather than guessed. CHAR_W = 0.46 is calibrated for Bau Ji's
+        # scans and over-estimates a narrower face, which closes the gap and
+        # drops the space: the AKJ Autobiography came out as
+        # "On hearingthis,theInspectorGeneralwas" until this was read.
+        # "this," is 5 narrow glyphs: 22.0 wide in the real font, but the
+        # estimate makes it 5 x 12 x 0.46 = 27.6 and so runs past the next word.
+        pair = [run(0.0, "this,", size=12.0), run(24.7, "the", size=12.0)]
+        exact = [{**pair[0], "width": 22.0, "space": None},
+                 {**pair[1], "width": 14.0, "space": None}]
+        self.assertEqual(join_runs(exact), "this, the")
+        # the same pair with no metrics falls back, and the estimate loses it
+        self.assertEqual(join_runs(pair), "this,the")
+
+    def test_an_exact_run_split_mid_word_still_joins(self):
+        # the tighter threshold must not turn a mid-word split into two words
+        runs = [{**run(412.3, "or h"), "width": 20.0, "space": None},
+                {**run(432.3, "e stops"), "width": 30.0, "space": None}]
+        self.assertEqual(join_runs(runs), "or he stops")
+
+
+class FurnitureTests(unittest.TestCase):
+    """Running heads, printed page numbers and watermarks -- read_pdf(furniture=True)."""
+
+    @staticmethod
+    def book(pages):
+        return [[{"text": t} for t in page] for page in pages]
+
+    def test_a_head_that_recurs_and_a_watermark_that_wanders_are_both_found(self):
+        # six lines a page, so the middle two are nowhere near an edge
+        pages = self.book([["WWW.AKJ.ORG", "%d CHAPTER ONE" % n, "real prose here",
+                            "www.stamp", "and more prose", "%d" % n]
+                           for n in range(1, 11)])
+        heads, offset, stamps, repeated = running_heads(pages)
+        self.assertIn("WWW.AKJ.ORG", heads)
+        # the stamp sits in the middle of the page, so only recurrence finds it
+        self.assertIn("www.stamp", stamps)
+        # the printed number tracks the page at a fixed offset
+        self.assertEqual(offset, 0)
+        self.assertIn("CHAPTER ONE", repeated)
+        self.assertNotIn("real prose here", heads)
+
+    def test_a_numbered_line_that_does_not_recur_is_left_alone(self):
+        # "2. Where does it come from?" opens page 2 of a Bau Ji essay. It
+        # carries the page number at the right offset and sits at the top, so
+        # position and number alone would discard a real line of the essay.
+        pages = self.book([["%d. Where does it come from?" % n, "prose"] for n in range(1, 11)])
+        _, _, _, repeated = running_heads(pages)
+        self.assertNotIn(". Where does it come from?", repeated)
+
+    def test_nothing_is_stripped_unless_asked(self):
+        # Bau Ji's corpus is built and shipped from this reader; these filters
+        # move its output, so they are opt-in and he stays byte-identical.
+        import inspect
+        self.assertIs(inspect.signature(read_pdf).parameters["furniture"].default, False)
+
 
 class ParagraphTests(unittest.TestCase):
     def test_italic_separates_a_quoted_verse_from_the_prose(self):
@@ -130,6 +189,21 @@ class ParagraphTests(unittest.TestCase):
         lines = [line(200, 412, "The first thought ends here."),
                  line(150, 412, "A separate thought begins here.")]
         self.assertEqual(len(paragraphs(lines, body_size=10.0, margin=412.0)), 1)
+
+    def test_where_italic_is_not_the_quotation_face_a_title_is_a_heading_and_a_term_is_nothing(self):
+        # In Search of the True Guru sets its chapter titles and its Punjabi
+        # terms in italic, and no verse. Read as quotes, the title stood as a
+        # verse and the short last line "did not do Naam simran." -- mostly one
+        # italic term by ink -- was cut off its paragraph, 236 times.
+        lines = [line(200, 412, "Charitable Acts", italic=True),
+                 line(188, 412, "There are many people who do kind things for others but most"),
+                 line(176, 412, "did not do Naam simran.", italic=True)]
+        out = paragraphs(lines, body_size=10.0, margin=412.0, italic_quotes=False)
+        self.assertEqual([p["style"] for p in out], ["heading", "body"])
+        self.assertTrue(out[1]["text"].endswith("did not do Naam simran."))
+        # the default reading is unchanged for every book before it
+        self.assertEqual([p["style"] for p in paragraphs(lines, body_size=10.0, margin=412.0)],
+                         ["quote", "body", "quote"])
 
 
 class SpreadTests(unittest.TestCase):
@@ -218,6 +292,54 @@ class AngTests(unittest.TestCase):
         self.assertTrue(looks_quoted("detached, like the lotus upon the water. || 1 ||"))
         self.assertTrue(looks_quoted("Says Kabeer. [Pg. 289]"))
 
+    def test_the_forms_in_search_of_the_true_guru_uses(self):
+        # the whole bracket is the citation, whatever else it names
+        ang, rest = find_ang('"Says Nanak, sing this True Bani forever. || 23 ||" (Anand Sahib: SGGS p. 920)')
+        self.assertEqual(ang, 920)
+        self.assertNotIn("SGGS", rest)
+        self.assertNotIn("Anand Sahib", rest)
+        self.assertEqual(find_ang('"...on the palm of your hand." (Guru Nanak Dev Ji SGGS p. 1412).')[0], 1412)
+        self.assertEqual(find_ang('"...the world is drowning." ( SGGSp. 27)')[0], 27)
+        self.assertTrue(looks_quoted('"...furnace of the tenth gate." (SGGS p. 1123)'))
+        # a bracket with the number missing cites nothing
+        self.assertIsNone(find_ang('"Naam is the medicine for all types of disease." (Sukhmani: GGS p. )')[0])
+
+
+class PageBreakTests(unittest.TestCase):
+    """A verse quoted at the foot of a page arrives as two paragraphs."""
+
+    def rec(self, unit_id, text, style="body"):
+        return {"unit_id": unit_id, "work": "w", "part": None, "page": 1, "para_no": 1,
+                "style": style, "text": text}
+
+    def test_the_second_half_is_scored_with_the_first_in_front_of_it(self):
+        first = self.rec("w:1", '"Where there is no mother, father, children, friends or brothers, O my mind,')
+        second = self.rec("w:2", 'there, only the Naam shall be with you as your help and support. || 1 ||" (SGGS p. 264)')
+        self.assertTrue(opened_by(first, second))
+        spans = detect([first, second])
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0]["unit_id"], "w:2")
+        self.assertEqual(spans[0]["opened_by"], "w:1")
+        self.assertEqual(spans[0]["ang"], 264)
+        text = spans[0]["text"]
+        self.assertLess(text.index("Where there is no mother"), text.index("help and support"))
+
+    def test_a_page_of_dialogue_does_not_qualify(self):
+        # the first paragraph closes its quotation, so the second is not its rest
+        first = self.rec("w:1", '"Bhai Sahib Ji, is it important to live the life of a householder?"')
+        second = self.rec("w:2", '"Yes, if an individual is seeking salvation." (SGGS p. 264)')
+        self.assertFalse(opened_by(first, second))
+        # and a paragraph that merely mentions a number is not a half either
+        third = self.rec("w:3", "There were 700 of them.")
+        self.assertFalse(opened_by(third, second))
+
+    def test_only_a_paragraph_that_is_nothing_but_the_quotation_is_restyled(self):
+        self.assertTrue(wholly('"Come, O beloved Sikhs of the True Guru. || 23 ||" (Anand Sahib: SGGS p. 920)'))
+        self.assertTrue(wholly('“Sewa of the True Guru bears fruit only if done with total devotion." (SGGS p. 552)'))
+        # a verse inside his own sentence keeps the sentence
+        self.assertFalse(wholly('As Guru Nanak Dev Ji says: "contentment was the chariot." (SGGS p. 470) (See Yug.)'))
+        self.assertFalse(wholly('"Science has proven that Gurbani has spread. As Guru Ji says: "fire is the chariot." (SGGS p. 470) (See also Yug in the Glossary.)'))
+
 
 class ResolveTests(unittest.TestCase):
     def by_ang(self):
@@ -258,6 +380,35 @@ class ResolveTests(unittest.TestCase):
         # a shabad can run over a page break, so the cited ang can be one off
         span = {"ang": 480, "text": "Some are made beggars and some are given great kingdoms to rule over"}
         self.assertEqual(resolve_lexical(span, self.by_ang())["shabad_id"], 1781)
+
+
+class KeepSpanTests(unittest.TestCase):
+    """What a roster keeps of a file that mostly retells another."""
+
+    RECORDS = [{"text": t} for t in (
+        "4. Leaving Santokh Daas", "Baba Ji did selfless seva...", "Darshan",
+        "I was reading a in Se Kanehaa last night...",
+        "Jesus: My only wish is that all my Panth go and follow Guru Nanak's teachings.",
+        "5. The Search for Sikh 'Saints'", "32. What is Maya according to Gurbani?",
+        "Maya, or mammon, is that ignorance...", "(p938)", "33. The Initiation of Langar")]
+
+    def keep(self, spans):
+        return [r["text"] for r in import_module("12_ingest_writings").keep_spans(
+            self.RECORDS, spans, "summary.pdf")]
+
+    def test_each_span_runs_from_the_paragraph_it_opens_with_to_the_one_it_closes_with(self):
+        kept = self.keep([{"from": "Darshan", "to": "follow Guru Nanak's teachings."},
+                          {"from": "32. What is Maya", "to": "(p938)"}])
+        self.assertEqual(kept[0], "Darshan")
+        self.assertEqual(len(kept), 6)
+        self.assertNotIn("5. The Search for Sikh 'Saints'", kept)
+        self.assertEqual(kept[-1], "(p938)")
+
+    def test_an_end_that_is_not_found_is_an_error_not_an_empty_file(self):
+        with self.assertRaises(ValueError):
+            self.keep([{"from": "Darshan", "to": "no such ending"}])
+        with self.assertRaises(ValueError):
+            self.keep([{"from": "no such start", "to": "(p938)"}])
 
 
 class RepairSplitTests(unittest.TestCase):
@@ -390,6 +541,47 @@ class UnitTests(unittest.TestCase):
         # `en` index over the whole Granth already finds them
         self.assertNotIn("burning in the fire", units[0]["text"])
 
+    def test_a_paragraph_quoting_several_verses_keeps_all_of_them(self):
+        # The legacy-font resolver emits one citation per paragraph; the
+        # transliteration one finds every verse in a paragraph, and Bandginama
+        # runs three into one. Keyed singly, two of the three were overwritten
+        # and lost with no error anywhere.
+        records = [self.para("he writes -", no=1),
+                   self.para("three verses run together here", style="quote", no=2)]
+        cites = {"w:1:1:2": [
+            {"shabad_id": 11, "line_id": 1, "ang": 239, "score": 1.0,
+             "method": "skeleton", "span": "one"},
+            {"shabad_id": 22, "line_id": 2, "ang": 982, "score": 1.0,
+             "method": "skeleton", "span": "two"},
+            {"shabad_id": 33, "line_id": 3, "ang": 1309, "score": 1.0,
+             "method": "skeleton", "span": "three"}]}
+        units = self.build(records, cites, target=100)
+        self.assertEqual(sorted(c["ang"] for c in units[0]["cites"]), [239, 982, 1309])
+
+    def test_a_verse_quoted_inside_a_prose_paragraph_is_still_cited(self):
+        # Bhai Raghbir Singh quotes a tuk mid-sentence, and the resolver leaves
+        # such a paragraph as prose on purpose so his own words stay
+        # retrievable. Before this, only paragraphs restyled as quotes were
+        # linked at all -- 35 citations of Bandginama's 80 instead of 77.
+        records = [self.para("Disease and pain are shed dukh bharam dard bhau nasia "
+                             "when the Creator dwells in our mind.", no=1)]
+        cites = {"w:1:1:1": [{"shabad_id": 44, "line_id": 9, "ang": 240, "score": 1.0,
+                              "method": "skeleton", "span": "dukh bharam dard bhau nasia"}]}
+        units = self.build(records, cites, target=100)
+        self.assertEqual(units[0]["cites"][0]["ang"], 240)
+        # and the paragraph itself is kept, unlike a standalone quotation
+        self.assertIn("Disease and pain", units[0]["text"])
+
+    def test_the_older_one_citation_per_paragraph_shape_still_works(self):
+        # iterating a dict yields its keys, so a bare citation must be wrapped
+        # rather than trusted to be a list
+        records = [self.para("he writes -", no=1),
+                   self.para("a verse", style="quote", no=2)]
+        cites = {"w:1:1:2": {"shabad_id": 7, "line_id": 1, "ang": 100, "score": 1.0,
+                             "method": "letters", "span": "a verse"}}
+        units = self.build(records, cites, target=100)
+        self.assertEqual(units[0]["cites"][0]["shabad_id"], 7)
+
     def test_an_unresolved_quotation_attaches_nothing(self):
         records = [self.para("he writes -", no=1),
                    self.para("a verse nobody could resolve", style="quote", no=2)]
@@ -451,6 +643,78 @@ class IngestedCorpusTests(unittest.TestCase):
         multi = [w for w in self.roster["works"] if len(w["parts"]) > 1]
         self.assertTrue(multi, "no work has several parts")
         self.assertGreaterEqual(max(len(w["parts"]) for w in multi), 10)
+
+
+ROSTERS = os.path.join(ROOT, "pipeline", "python", "rosters")
+
+
+class RosterTests(unittest.TestCase):
+    """
+    What each roster says about attribution, asserted rather than assumed.
+
+    A roster exists because writings_works.py:100 infers `original = folder ==
+    "root"`, and a flat folder of PDFs counts as root. Left to that rule every
+    book in these four folders would have been marked the author's own English
+    and quotable verbatim -- five AKJ translations, twelve of Bhai Vir Singh's,
+    Bandginama. Puran Singh is the one author for whom `verbatim` is true, and
+    it is written down here rather than arrived at by accident.
+    """
+
+    POLICY = {"akj": "summarise", "puran": "verbatim",
+              "virsingh": "summarise", "raghbir": "summarise",
+              "bariaran": "summarise", "rama": "summarise",
+              "rampurkhera": "summarise"}
+
+    @classmethod
+    def setUpClass(cls):
+        # the rosters name the private corpora's files and do not ship with
+        # the public pipeline (tools/export-ingest.mjs), where a book is
+        # described by a manifest.json instead
+        if not os.path.isdir(ROSTERS):
+            raise unittest.SkipTest("no rosters/ in this checkout")
+
+    def roster(self, name):
+        with open(os.path.join(ROSTERS, name + ".json"), encoding="utf-8") as fh:
+            return json.load(fh)
+
+    def test_every_roster_states_its_quote_policy_explicitly(self):
+        for name, policy in self.POLICY.items():
+            with self.subTest(roster=name):
+                self.assertEqual(self.roster(name)["quote_policy"], policy)
+
+    def test_a_translated_corpus_is_never_marked_the_authors_own_words(self):
+        for name, policy in self.POLICY.items():
+            if policy == "verbatim":
+                continue
+            for fname, work in self.roster(name)["works"].items():
+                with self.subTest(roster=name, file=fname):
+                    self.assertNotEqual(work.get("original"), True)
+
+    def test_every_work_names_a_slug_and_a_title(self):
+        for name in self.POLICY:
+            for fname, work in self.roster(name)["works"].items():
+                with self.subTest(roster=name, file=fname):
+                    self.assertTrue(work.get("work"))
+                    self.assertTrue(work.get("title"))
+
+    def test_a_held_book_says_why_and_carries_the_measurement(self):
+        # Holding is not deleting: the entry stays, so the omission is visible
+        # where the roster is read and a better scan just replaces the file.
+        held = {f: w for f, w in self.roster("virsingh")["works"].items() if w.get("hold")}
+        self.assertEqual(len(held), 3, "the 1.0%% gate holds three of the twelve")
+        for fname, work in held.items():
+            with self.subTest(file=fname):
+                self.assertGreater(work["glue_pct"], 1.0)
+                self.assertIn("glue", work["hold"])
+        kept = [w for w in self.roster("virsingh")["works"].values() if not w.get("hold")]
+        self.assertEqual(len(kept), 9)
+
+    def test_the_akj_second_author_is_named_on_his_own_book(self):
+        # An answer names the author of the passage it used, so a book by
+        # somebody else inside one author's folder has to say so.
+        works = self.roster("akj")["works"]
+        self.assertEqual(works["GodasviewedthroughGurbaniandScience.pdf"]["author"],
+                         "Subedar Dharam Singh Sujjon")
 
 
 if __name__ == "__main__":

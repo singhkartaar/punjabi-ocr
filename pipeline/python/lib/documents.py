@@ -24,7 +24,12 @@ _SENTENCE = re.compile(r"(?<=[।॥\.\?!])\s+")
 
 
 def _token_len(emb, text: str) -> int:
-    return len(emb.tokenizer.encode(text, add_special_tokens=False).ids)
+    # Not emb.tokenizer: that one truncates at the model's window, so it would
+    # answer "160" for a text of any length and split_to_fit would conclude
+    # that nothing ever needs splitting. emb.measure is the same vocabulary
+    # without truncation (lib/embedder.py).
+    tok = getattr(emb, "measure", None) or emb.tokenizer
+    return len(tok.encode(text, add_special_tokens=False).ids)
 
 
 def split_to_fit(emb, text: str, max_tokens: int) -> list[str]:

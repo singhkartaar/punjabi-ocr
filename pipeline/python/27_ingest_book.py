@@ -19,9 +19,11 @@ language, its key under data/ocr/ and its work name, and runs, per book:
 and then, for the folder:
   ingest     12_ingest_writings.py paragraphs -> data/writings/<work>.jsonl
   cite       13_resolve_citations.py   skipped, with a message, when there is no scripture DB
-  embed, db  14_embed_writings.py --lang L; 15_build_writings_db.py     -> artifacts/writings-L/
+  embed, db  14_embed_writings.py --lang L; 15_build_writings_db.py
+                 -> artifacts/corpora/writings-L/ and artifacts/writings-L.sqlite
   translate  26_translate_writings.py  Punjabi/Hindi -> English, locally (--no-translate skips)
-  embed-en, db-en  14 --lang en --translations; 15                       -> artifacts/writings-en/
+  embed-en, db-en  14 --lang en --translations; 15
+                 -> artifacts/corpora/writings-en/ and artifacts/writings.sqlite
 
 A step that fails stops the run and names the --from value that resumes it.
 Nothing here is clever: plan() is a pure function of the manifest and the

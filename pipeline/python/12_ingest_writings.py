@@ -2,11 +2,18 @@
 Ingest an author's essays: PDFs in, one JSONL of paragraphs per work out.
 
   12_ingest_writings.py --src /path/to/essays --author "Bau Ji"
+  12_ingest_writings.py --src /path/to/books --roster rosters/akj.json --out data/akj
+  12_ingest_writings.py --src /path/to/scans            # a folder with a manifest.json
   12_ingest_writings.py --src ... --limit 5 --workers 4
 
-Writes data/writings/<work>.jsonl (one record per source paragraph, in reading
-order), data/writings/works.json (the roster a reader is shown), and
-data/raw/writings-report.json (the numbers the W-1 gate is judged on).
+Writes <out>/<work>.jsonl (one record per source paragraph, in reading order),
+<out>/works.json (the listing a reader is shown), and a report (the numbers
+the W-1 gate is judged on): data/raw/writings-report.json for the essays,
+<out>/report.json for another corpus.
+
+A source is read by the reader it needs: the PDF's own text layer, the legacy
+Gurmukhi-font converter, or the merged OCR of a scanned book (20-22_ocr_*.py),
+which a manifest.json beside the PDFs names (lib/writings_manifest.py).
 
 A record is one SOURCE paragraph, deliberately not one retrieval unit, so that
 re-chunking for the index never means re-reading a PDF. Everything later steps
@@ -38,11 +45,13 @@ ANG_TAIL = re.compile(r"(?:^|[^0-9])([0-9]{2,4})\s*$")
 QUOTE_KEYS = ("line_ids", "shabad_id", "ang", "match_score", "match_method")
 
 
-def read_source(path: str, meta: dict) -> dict:
+def read_source(path: str, meta: dict, furniture: bool = False, italic_quotes: bool = True) -> dict:
     """
     The reader a source needs: the PDF text layer (the essays), the legacy
     Gurmukhi-font converter (lib/writings_legacy.py), or the merged OCR
-    (lib/writings_ocr.py). All three return read_pdf()'s shape.
+    (lib/writings_ocr.py). All three return read_pdf()'s shape. `furniture`
+    and `italic_quotes` are the text layer's knobs (lib/writings_pdf.py); the
+    OCR merge has already decided both.
     """
     reader = meta.get("reader") or "pdf-text"
     if reader == "ocr":
@@ -51,14 +60,15 @@ def read_source(path: str, meta: dict) -> dict:
     if reader == "legacy-font":
         from lib.writings_legacy import read_legacy_pdf
         return read_legacy_pdf(path)
-    return read_pdf(path)
+    return read_pdf(path, furniture=furniture, italic_quotes=italic_quotes)
 
 
-def read_one(path: str, manifest: dict | None = None) -> dict:
+def read_one(path: str, manifest: dict | None = None, roster: dict | None = None,
+             furniture: bool = False, italic_quotes: bool = True) -> dict:
     """One source to its paragraph records. Runs in a worker process."""
-    meta = parse_source(path, manifest)
+    meta = parse_source(path, manifest, roster)
     try:
-        doc = read_source(path, meta)
+        doc = read_source(path, meta, furniture=furniture, italic_quotes=italic_quotes)
     except Exception as exc:
         return {"meta": meta, "error": "%s: %s" % (type(exc).__name__, exc), "records": [], "pages": 0}
     records, markers = [], []
@@ -73,14 +83,44 @@ def read_one(path: str, manifest: dict | None = None) -> dict:
                 "style": para["style"], "italic": para["italic"], "text": para["text"],
                 "lang": meta.get("language", "en"),
             }
+            # what the OCR merge already knew about a quoted verse travels
+            # with the paragraph (lib/writings_ocr.py); a text layer has none
             for k in QUOTE_KEYS:
                 if para.get(k) is not None:
                     rec[k] = para[k]
             if para.get("routed"):
                 rec["routed"] = True
             records.append(rec)
+    spans = ((roster or {}).get("works", {}).get(meta["file"]) or {}).get("keep")
+    if spans:
+        records = keep_spans(records, spans, meta["file"])
     return {"meta": meta, "records": records, "pages": len(doc["pages"]),
             "markers": markers, "spreads": sum(1 for p in doc["pages"] if p.get("spread"))}
+
+
+def keep_spans(records: list[dict], spans: list[dict], name: str = "") -> list[dict]:
+    """
+    Only the paragraphs inside the roster's spans, each named by its first and
+    last paragraph.
+
+    For a file that is mostly something already ingested: Se Kinehiya's summary
+    translation retells chapters the full book tells, and what it has that the
+    book does not starts and stops mid-page, where no page range can cut. A span
+    whose ends are not found is an error -- a changed scan must not quietly
+    ingest nothing, or everything.
+    """
+    kept = []
+    for span in spans:
+        start = next((i for i, r in enumerate(records)
+                      if r["text"].strip().startswith(span["from"])), None)
+        if start is None:
+            raise ValueError("%s: no paragraph starts with %r" % (name, span["from"]))
+        end = next((i for i in range(start, len(records))
+                    if records[i]["text"].strip().endswith(span["to"])), None)
+        if end is None:
+            raise ValueError("%s: no paragraph after %r ends with %r" % (name, span["from"], span["to"]))
+        kept.extend(records[start:end + 1])
+    return kept
 
 
 # Real one- and two-letter words. Without these, "a while" cannot be told from a
@@ -284,27 +324,85 @@ def main():
                     help="folder of PDFs: with a manifest.json, or in the essays' root/English/Punjabi convention")
     ap.add_argument("--author", default="Bau Ji", help="for a folder without a manifest (the essays); a manifest names its own")
     ap.add_argument("--out", default=OUT_DIR)
+    ap.add_argument("--roster", default=None,
+                    help="an author's own listing of their files (rosters/*.json); "
+                         "without one the filenames are parsed as Bau Ji's are")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) - 1))
     ap.add_argument("--limit", type=int, default=0, help="first N files only, for a quick look")
     args = ap.parse_args()
 
+    # Two ways a file gets named, and a folder has one of them. A manifest.json
+    # sits beside the PDFs and never enters the repository (a scanned book's
+    # author, language, licence and reader); a roster is kept here under
+    # rosters/ for a folder that has no manifest. Neither: the filenames are
+    # parsed as Bau Ji's are.
     manifest = load_manifest(args.src)
+    roster = {}
+    if args.roster:
+        with open(args.roster, encoding="utf-8") as fh:
+            roster = json.load(fh)
+        author = roster.get("author") or args.author
+        named = set(roster.get("works", {}))
+    else:
+        author, named = args.author, set()
+    if manifest is not None and args.author == ap.get_default("author"):
+        author = manifest.get("author") or next(
+            (w.get("author") for w in manifest["works"] if w.get("author")), args.author)
+
     sources = list_sources(args.src, manifest)
     if args.limit:
         sources = sources[:args.limit]
     if not sources:
         sys.exit("no PDFs under %s" % args.src)
-    if manifest is not None and args.author == ap.get_default("author"):
-        args.author = manifest.get("author") or next(
-            (w.get("author") for w in manifest["works"] if w.get("author")), args.author)
+    # A roster that misses a file would ingest it under a slug parsed from
+    # another author's naming scheme, and the reader would meet a work nobody
+    # named. Better to stop and say which.
+    missing = sorted({os.path.basename(p) for p in sources} - named) if named else []
+    if missing:
+        sys.exit("%s names no entry for: %s" % (args.roster, ", ".join(missing)))
+    # A file the roster HOLDS is named but not ingested. Bhai Vir Singh's twelve
+    # PDFs are image scans whose OCR damage varies twelve-fold, and three of them
+    # are past the point where the text is worth retrieving -- one reads "Goblnd
+    # Hal" for the Guru's own name throughout. Holding is not deleting: the entry
+    # stays, carrying the measured rate that decided it, so the omission is
+    # visible where the roster is read and a better scan just replaces the file.
+    held = []
+    for path in list(sources):
+        why = (roster.get("works", {}).get(os.path.basename(path)) or {}).get("hold")
+        if why:
+            held.append({"file": os.path.basename(path), "why": why})
+            sources.remove(path)
+    if held:
+        print("held %d of %d files:" % (len(held), len(held) + len(sources)))
+        for h in held:
+            print("  %s -- %s" % (h["file"], h["why"]))
+    if not sources:
+        sys.exit("every PDF under %s is held by %s" % (args.src, args.roster))
     os.makedirs(args.out, exist_ok=True)
-    os.makedirs(os.path.dirname(REPORT), exist_ok=True)
-    print("%d source(s), %d workers%s" % (len(sources), args.workers, ", manifest" if manifest else ""))
+    # beside the corpus, not in one fixed place: a second author must not
+    # overwrite the first author's gate report. A manifest's books share the
+    # default folder with the essays, so their report is named for the author.
+    if args.out != OUT_DIR:
+        report_path = os.path.join(args.out, "report.json")
+    elif manifest is not None:
+        report_path = REPORT.replace(
+            "writings-report.json", "writings-report-%s.json" % re.sub(r"[^a-z0-9]+", "-", author.lower()).strip("-"))
+    else:
+        report_path = REPORT
+    os.makedirs(os.path.dirname(report_path), exist_ok=True)
+    print("%d source(s), %d workers%s" % (
+        len(sources), args.workers,
+        ", manifest" if manifest else (", roster %s" % os.path.basename(args.roster) if args.roster else "")))
 
+    # what the italic face means is the book's to say (rosters/rama.json): in
+    # every book before that one it set the quoted verse, and that stays the
+    # default
+    read = functools.partial(read_one, manifest=manifest, roster=roster or None,
+                             furniture=bool(roster.get("furniture")),
+                             italic_quotes=bool(roster.get("italic_quotes", True)))
     results = []
-    reader = functools.partial(read_one, manifest=manifest)
     with cf.ProcessPoolExecutor(max_workers=args.workers) as pool:
-        for n, res in enumerate(pool.map(reader, sources), start=1):
+        for n, res in enumerate(pool.map(read, sources), start=1):
             results.append(res)
             if n % 20 == 0 or n == len(sources):
                 print("  %d/%d" % (n, len(sources)))
@@ -340,10 +438,14 @@ def main():
         records.sort(key=lambda r: (r["part"] or 0, r["page"], r["para_no"]))
         metas = [r["meta"] for r in results if not r.get("error") and r["meta"]["work"] == work]
         title = Counter(m["work_title"] for m in metas).most_common(1)[0][0]
-        author = metas[0].get("author") or args.author
         original = all(m["original"] for m in metas)
-        policy = metas[0].get("quote_policy") or ("verbatim" if original else "summarise")
-        head_meta = {"work": work, "title": title, "author": author, "original": original,
+        # a roster or manifest names the author per work: four of the AKJ books
+        # are Bhai Sahib Bhai Randhir Singh Ji and the fifth is someone else,
+        # and an answer must attribute each passage to the one who wrote it
+        work_author = next((m["author"] for m in metas if m.get("author")), author)
+        policy = (roster.get("quote_policy") or metas[0].get("quote_policy")
+                  or ("verbatim" if original else "summarise"))
+        head_meta = {"work": work, "title": title, "author": work_author, "original": original,
                      "quote_policy": policy, "files": sorted(m["file"] for m in metas),
                      "language": metas[0].get("language", "en"), "licence": metas[0].get("licence"),
                      "source": metas[0].get("reader") or "pdf-text"}
@@ -351,37 +453,37 @@ def main():
             fh.write(json.dumps({"_meta": head_meta}, ensure_ascii=False) + "\n")
             for r in records:
                 fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-        works.append({"work": work, "title": title, "author": author,
+        works.append({"work": work, "title": title, "author": work_author,
                       "parts": sorted(p for p in {m["part"] for m in metas} if p),
                       "files": len(metas), "folder": metas[0]["folder"],
                       "original": original, "quote_policy": policy,
                       "language": head_meta["language"], "licence": head_meta["licence"],
                       **measure(records)})
 
-    # works.json holds every author's works: this run replaces its own
-    # author's entries and keeps the others
-    roster_path = os.path.join(args.out, "works.json")
-    roster: dict = {"author": args.author, "works": []}
-    if os.path.exists(roster_path):
-        with open(roster_path, encoding="utf-8") as fh:
-            roster = json.load(fh)
+    # works.json holds every author's works in this folder: this run replaces
+    # its own authors' entries and keeps the others, so a manifest's books and
+    # the essays can share data/writings without one run erasing the other
+    listing_path = os.path.join(args.out, "works.json")
+    listing: dict = {"author": author, "works": []}
+    if os.path.exists(listing_path):
+        with open(listing_path, encoding="utf-8") as fh:
+            listing = json.load(fh)
     mine = {w["author"] for w in works}
-    kept = [w for w in roster.get("works", []) if w.get("author") not in mine]
-    roster_works = kept + works
-    with open(roster_path, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump({"author": roster.get("author") or args.author,
-                   "authors": sorted({w["author"] for w in roster_works}),
-                   "works": roster_works}, fh, ensure_ascii=False, indent=2)
+    kept = [w for w in listing.get("works", []) if w.get("author") not in mine]
+    listing_works = kept + works
+    with open(listing_path, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump({"author": listing.get("author") or author,
+                   "authors": sorted({w["author"] for w in listing_works}),
+                   "works": listing_works}, fh, ensure_ascii=False, indent=2)
 
     every = [r for recs in by_work.values() for r in recs]
-    report = {"src": args.src, "author": args.author, "files": len(sources),
-              "works": len(works), "failures": failures, "rejoined_words": rejoined,
+    report = {"src": args.src, "author": author, "files": len(sources),
+              "works": len(works), "failures": failures, "held": held,
+              "rejoined_words": rejoined,
               "essay_number_mismatch": mismatched,
               "pages": sum(r.get("pages", 0) for r in results),
               "spread_pages": sum(r.get("spreads", 0) for r in results),
               "totals": measure(every)}
-    report_path = REPORT if manifest is None else REPORT.replace(
-        "writings-report.json", "writings-report-%s.json" % re.sub(r"[^a-z0-9]+", "-", args.author.lower()).strip("-"))
     with open(report_path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=2)
 

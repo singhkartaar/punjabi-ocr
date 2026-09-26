@@ -65,11 +65,27 @@ def _slug(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 
-def parse_filename(path: str) -> dict:
+def parse_filename(path: str, roster: dict | None = None) -> dict:
     """
+    @param roster  an author's own listing (pipeline/python/rosters/*.json).
+        Everything below this line is Bau Ji's provenance -- his upload stamps,
+        his typists' initials, his six titles -- and means nothing for another
+        author. Where a roster names a file it is believed and none of it runs.
     @returns {"essay": int|None, "part": int|None, "title": str, "work": str,
               "work_title": str, "file": str}
     """
+    name = os.path.basename(path)
+    named = (roster or {}).get("works", {}).get(name)
+    if named:
+        part = named.get("part")
+        title = named["title"] + (f", Part {part}" if part else "")
+        return {"essay": named.get("essay"), "part": part, "title": title,
+                "work": named["work"], "work_title": named["title"], "file": name,
+                "folder": source_folder(path),
+                "author": named.get("author") or roster.get("author"),
+                # never inferred from where the file sits: see the roster's note
+                "original": bool(named.get("original", roster.get("quote_policy") == "verbatim"))}
+
     stem = os.path.splitext(os.path.basename(path))[0]
     essay, rest = None, stem
     m = STAMP_ESSAY.match(stem) or STAMP_LEKH.match(stem)
@@ -95,7 +111,7 @@ def parse_filename(path: str) -> dict:
     # his Punjabi, so an answer should say what he says rather than reproduce a
     # translator's wording as if it were his.
     folder = source_folder(path)
-    return {"essay": essay, "part": part, "title": title, "work": work,
+    return {"essay": essay, "part": part, "title": title, "work": work, "author": None,
             "work_title": work_title, "file": os.path.basename(path),
             "folder": folder, "original": folder == "root"}
 
@@ -104,6 +120,22 @@ def source_folder(path: str) -> str:
     """Which of the three folders a PDF came from: "root", "English" or "Punjabi"."""
     parent = os.path.basename(os.path.dirname(os.path.abspath(path)))
     return parent if parent in ("English", "Punjabi") else "root"
+
+
+def db_name(corpus: str) -> str:
+    """
+    The database a corpus is served from: `writings-en` -> writings.sqlite,
+    `akj-en` -> akj.sqlite, `writings-pa` -> writings-pa.sqlite.
+
+    The server keys an English corpus by its bare name (server.js CORPORA:
+    key `akj`, dir `akj-en`, db akj.sqlite); a corpus in another language is
+    a different corpus and keeps its suffix, so that the Punjabi and the
+    English of one folder of books never write the same file.
+    14_embed_writings.py records it in the manifest and 15_build_writings_db.py
+    writes it.
+    """
+    key = corpus[:-3] if corpus.endswith("-en") else corpus
+    return key + ".sqlite"
 
 
 def list_sources(root: str) -> list[str]:

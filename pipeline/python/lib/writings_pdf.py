@@ -23,10 +23,17 @@ Two signals are lifted from page geometry rather than guessed from wording:
            continuation lines sit on it. Breaking on "indented" rather than on
            "x differs" is what keeps a paragraph whole.
 
-Run joining is calibrated, not guessed: across 261 same-line run pairs the
+Run joining is measured where it can be and calibrated where it cannot. A PDF
+states the advance of every glyph it embeds, and where those widths are present
+(`font_metrics`) the end of a run is known exactly and the gap that remains IS
+the space. Where they are absent -- Bau Ji's scans give none -- the older
+calibration stands in: across 261 same-line run pairs the
 advance of a contiguous run is 0.38-0.46 of (characters x size) and a real word
 gap is 0.64 or more. A run's end is therefore estimated at CHAR_W per character
 and a space inserted only when the next run starts SPACE_W of a size beyond it.
+
+Furniture -- running heads, printed page numbers, watermarks -- is stripped only
+when `read_pdf(furniture=True)` asks. See that function for why it is opt-in.
 
 Page markers ("L127.1", "L68/3") are the essay number and the page within it,
 captured before the running-header filter discards them because they are the
@@ -49,6 +56,7 @@ PAGE_NO = re.compile(r"^[0-9]{1,3}$")       # a line that is only a small number
 ITALIC_RATIO = 0.10                          # tm[2]/tm[0]; 0.34 on quotes, 0.0 on body
 CHAR_W = 0.46                                # mean advance per character (calibrated, p75)
 SPACE_W = 0.25                               # a gap wider than this fraction of the size is a space
+EXACT_SPACE = 0.12                            # ... but half that when the run end is exact (see join_runs)
 SPREAD_X = 380.0                             # the English column of a spread starts near 412
 GUTTER = 80.0                                # an empty x band this wide separates two columns
 COLUMN_SHARE = 0.25                          # each column must hold at least this share of the runs
@@ -76,6 +84,62 @@ INDENT = 6.0                                 # a first line sits this far past t
 LEADING_BREAK = 1.6
 
 
+ITALIC_NAME = re.compile(r"italic|oblique", re.I)
+
+
+def font_metrics(font_dict) -> tuple | None:
+    """
+    `(first_char, widths, space_width)` from an embedded font, or None.
+
+    A PDF states the advance of every glyph it embeds, in thousandths of the em.
+    Reading them removes the guesswork below: where they are present the end of
+    a run is known rather than estimated, and the width of the font's OWN space
+    is what decides whether a gap is one.
+    """
+    try:
+        first, widths = font_dict.get("/FirstChar"), font_dict.get("/Widths")
+        if first is None or not widths:
+            return None
+        first = int(first)
+        widths = [float(w) for w in widths]
+        i = 32 - first                                   # the space glyph
+        space = widths[i] if 0 <= i < len(widths) and widths[i] else None
+        return first, widths, space
+    except Exception:
+        return None                                      # a font we cannot read is a fallback
+
+
+def run_width(text: str, metrics, size: float):
+    """The exact advance of `text`, or None if any glyph is unknown."""
+    if not metrics:
+        return None
+    first, widths, _ = metrics
+    total = 0.0
+    for ch in text:
+        i = ord(ch) - first
+        if not (0 <= i < len(widths)) or not widths[i]:
+            return None
+        total += widths[i]
+    return total / 1000.0 * size
+
+
+# A conventionally typeset book sets ff, fi and fl as SINGLE glyphs, so
+# `suffering` arrives as "suﬀering" -- one character no vocabulary knows,
+# no tokeniser splits, and a reader sees on the page. Bandginama has ~700.
+# Expand these six and nothing else: blanket NFKC would also rewrite fractions,
+# superscripts and some Gurmukhi composition, none of which is broken here.
+LIGATURES = {"ﬀ": "ff", "ﬁ": "fi", "ﬂ": "fl",
+             "ﬃ": "ffi", "ﬄ": "ffl", "ﬅ": "st", "ﬆ": "st"}
+LIGATURE = re.compile("[ﬀ-ﬆ]")
+
+
+def unligature(text: str) -> str:
+    """Expanded AFTER the run is measured: a ligature is one glyph, not two, and
+    the PDF states ITS width -- measuring "ff" instead would widen the run and
+    swallow the space after it."""
+    return LIGATURE.sub(lambda m: LIGATURES[m.group()], text)
+
+
 def page_runs(page) -> list[dict]:
     """Every non-blank text run on the page with its position, size and slant."""
     out: list[dict] = []
@@ -84,22 +148,71 @@ def page_runs(page) -> list[dict]:
         if not text or not text.strip():
             return
         scale = abs(tm[0]) or 1.0
+        m = font_metrics(font_dict) if font_dict else None
+        name = str(font_dict.get("/BaseFont")) if font_dict else ""
+        # Measure the INK, not the string pypdf hands over. pypdf adds a space
+        # or a newline of its own wherever it reads a displacement as one, and
+        # a Word-set book (Calibri, whose subset has no space glyph) gets both
+        # wrong: "Thos\n" + "e" is one word split by kerning -- 1,301 of the
+        # 1,307 such breaks in In Search of the True Guru touch the next run --
+        # and " their" measured with its space meets no glyph, falls back to
+        # the estimate, and the estimate overshoots and swallows the real gap
+        # ("theirhearts"). So the glyphs are measured on their own, and the
+        # newline is dropped where the ink is exact and the gap can decide. It
+        # stays a space where it cannot, which is every scan without metrics.
+        # And a font whose subset has no space glyph never SET a space, so a
+        # space inside one of its runs is pypdf's reading of a kerning
+        # displacement -- "an d" + "said," measured 2.7 units short of the
+        # next run exactly where "and" would be -- and is dropped for the
+        # same reason: the gap to the next run decides.
+        if m and not m[2]:
+            text = text.replace(" ", "")
+        ink = text.strip()
+        width = run_width(ink, m, scale)
+        text = text.replace("\n", "" if width is not None else " ")
         out.append({"x": tm[4], "y": tm[5], "size": scale,
-                    "italic": abs(tm[2]) / scale > ITALIC_RATIO,
-                    "text": text.replace("\n", " ")})
+                    # Two ways to be italic, and a book uses one or the other:
+                    # a synthetic slant in the text matrix, or a real italic
+                    # face. Bau Ji's scans are the first, typeset books the
+                    # second -- testing only for the slant makes every quote in
+                    # a typeset book read as body.
+                    "italic": abs(tm[2]) / scale > ITALIC_RATIO or bool(ITALIC_NAME.search(name)),
+                    "text": unligature(text),
+                    "width": width,
+                    "space": (m[2] / 1000.0 * scale) if m and m[2] else None})
 
     page.extract_text(visitor_text=visit)
     return out
 
 
 def join_runs(runs: list[dict]) -> str:
-    """Concatenate runs left to right, inserting a space only at a real gap."""
+    """
+    Concatenate runs left to right, inserting a space only at a real gap.
+
+    These PDFs emit one run per word with no separator of their own, so every
+    space in the output is inferred here -- which makes getting it wrong the
+    difference between prose and `On hearingthis,theInspectorGeneralwas`.
+    Where the font states its metrics both sides of the test are exact: the end
+    of the previous run, and half the width of that font's own space. Where it
+    does not, the calibrated estimate above is used instead.
+    """
     parts: list[str] = []
     prev = None
     for r in runs:
         if prev is not None and not r["text"].startswith(" ") and not parts[-1].endswith(" "):
-            end = prev["x"] + len(prev["text"]) * prev["size"] * CHAR_W
-            if r["x"] - end > SPACE_W * prev["size"]:
+            if prev.get("width") is not None:
+                # With an exact end, the gap that remains IS the space, so the
+                # test is much tighter than the estimated case: a word boundary
+                # measures ~0.22 em and a run split mid-word ~0. Many subset
+                # fonts drop the space glyph entirely (FirstChar 33) because the
+                # PDF positions every word itself, so its own width is often
+                # unavailable and EXACT_SPACE stands in.
+                end = prev["x"] + prev["width"]
+                gap = prev["space"] * 0.5 if prev.get("space") else EXACT_SPACE * prev["size"]
+            else:
+                end = prev["x"] + len(prev["text"]) * prev["size"] * CHAR_W
+                gap = SPACE_W * prev["size"]
+            if r["x"] - end > gap:
                 parts.append(" ")
         parts.append(r["text"])
         prev = r
@@ -196,7 +309,8 @@ def left_margin(lines: list[dict]) -> float:
     return statistics.mode(starts) if len(set(starts)) < len(starts) else min(starts)
 
 
-def paragraphs(lines: list[dict], body_size: float, margin: float) -> list[dict]:
+def paragraphs(lines: list[dict], body_size: float, margin: float,
+               italic_quotes: bool = True) -> list[dict]:
     """
     Lines gathered into paragraphs.
 
@@ -206,6 +320,13 @@ def paragraphs(lines: list[dict], body_size: float, margin: float) -> list[dict]
     how a new paragraph announces itself. Quoted blocks deliberately do NOT break
     on indent: a verse's own lines are indented relative to its leading number,
     and splitting there would cut a couplet in half.
+
+    `italic_quotes` is what the italic face MEANS in this book. In every book
+    before In Search of the True Guru it set the quoted verse; there it sets the
+    chapter titles and the Punjabi terms (Naam, sewa, Amrit), and a line whose
+    ink is mostly one of those -- the short last line of a paragraph -- was cut
+    off as a one-word "quote", 236 times. With it False the italic is still
+    recorded on the paragraph and decides nothing.
     """
     lines = [ln for ln in lines if ln["text"]]
     if not lines:
@@ -215,9 +336,20 @@ def paragraphs(lines: list[dict], body_size: float, margin: float) -> list[dict]
     out: list[dict] = []
     cur = None
     for i, ln in enumerate(lines):
-        style = "quote" if ln["italic"] else (
-            "heading" if ln["size"] >= body_size * 1.15 and len(ln["text"]) < 80 else "body")
         gap = (lines[i - 1]["y"] - ln["y"]) if i else 0.0
+        big = ln["size"] >= body_size * 1.15 and len(ln["text"]) < 80
+        if italic_quotes:
+            style = "quote" if ln["italic"] else ("heading" if big else "body")
+        else:
+            # An italic line that OPENS a paragraph -- first on the page, after
+            # a wide gap, or indented -- and is shaped like a title is one:
+            # "Charitable Acts", "The Holocaust". Read as body it ran into the
+            # poem beneath it. An italic line inside a paragraph is a Punjabi
+            # term's, and decides nothing.
+            opens = cur is None or (normal and gap > normal * LEADING_BREAK) or ln["x0"] > margin + INDENT
+            titled = (ln["italic"] and opens and len(ln["text"]) < 80
+                      and not re.search(r"[.,;:]$", ln["text"]))
+            style = "heading" if big or titled else "body"
         indented = style == "body" and ln["x0"] > margin + INDENT
         if (cur is None or style != cur["style"] or abs(ln["size"] - cur["size"]) > 1.0
                 or (normal and gap > normal * LEADING_BREAK) or indented):
@@ -235,9 +367,84 @@ def paragraphs(lines: list[dict], body_size: float, margin: float) -> list[dict]
     return out
 
 
-def read_pdf(path: str) -> dict:
+HEAD_BAND = 2          # lines from the top or bottom of a page that may be a running head
+HEAD_MAX = 60          # a running head is short
+HEAD_SHARE = 0.30      # and stands on at least this share of the pages
+# The printed number sits beside the head, and a book separates them with
+# either a space ("NATURAL MEDITATION 65") or a slash ("SUNDRI/41"). Without the
+# slash form every page's head is a different string, none recurs, and the whole
+# running-head test never fires for that book.
+HEAD_NUM = re.compile(r"^\s*[0-9ivxlc]{1,6}\s*/\s*|\s*/\s*[0-9ivxlc]{1,6}\s*$"
+                      r"|^\s*[0-9ivxlc]{1,6}\s+|\s+[0-9ivxlc]{1,6}\s*$", re.I)
+STAMP_MAX = 40         # a watermark is short
+STAMP_SHARE = 0.60     # and is stamped on most pages, wherever it lands
+HEAD_REPEATS = 3       # a numbered chapter head must still recur this many times
+
+
+def running_heads(per_page: list[list[dict]]) -> tuple:
+    """
+    The lines that are furniture rather than text: `(texts, offset)`.
+
+    A running head is recognised only at the very top or bottom of its page, and
+    only when short — either condition alone would take real text with it. Two
+    things then mark it, because books do it two ways:
+
+      it recurs    `WWW.AKJ.ORG` stands on every page of the AKJ scans. The
+                   printed number is stripped before counting, so `NATURAL
+                   MEDITATION 65` and `... 67` count as one head.
+      it is numbered   a head that names the current chapter changes too often
+                   to recur — but it carries the printed page number, and that
+                   number tracks the PDF's own index at a fixed offset through
+                   the whole book. Finding the offset identifies the head on
+                   every page, including the chapters that appear on two pages.
+
+    Bau Ji's essays have neither: their header IS the `L127.1` marker, which is
+    captured and dropped before this, so both come back empty for him.
+    """
+    seen: dict = {}
+    offsets: dict = {}
+    stamps: dict = {}
+    pages = 0
+    for n, lines in enumerate(per_page, start=1):
+        if not lines:
+            continue
+        pages += 1
+        # a watermark is not at an edge -- it is stamped wherever it lands, so
+        # it is found by recurring on nearly every page instead
+        for text in {ln["text"].strip() for ln in lines if len(ln["text"].strip()) <= STAMP_MAX}:
+            if text:
+                stamps[text] = stamps.get(text, 0) + 1
+        edge = lines[:HEAD_BAND] + lines[-HEAD_BAND:]
+        for text in {ln["text"].strip() for ln in edge if len(ln["text"].strip()) <= HEAD_MAX}:
+            bare = HEAD_NUM.sub("", text).strip()
+            if bare:
+                seen[bare] = seen.get(bare, 0) + 1
+            for m in re.finditer(r"[0-9]{1,4}", text):
+                offsets[n - int(m.group())] = offsets.get(n - int(m.group()), 0) + 1
+    floor = max(2, int(pages * HEAD_SHARE))
+    texts = {t for t, n in seen.items() if n >= floor}
+    best = max(offsets.items(), key=lambda kv: kv[1], default=(None, 0))
+    mark = max(2, int(pages * STAMP_SHARE))
+    # longest first, so a stamp containing another is removed whole
+    marks = sorted((t for t, n in stamps.items() if n >= mark), key=len, reverse=True)
+    # A chapter head recurs over its own chapter, not the book, so it never
+    # reaches `floor`. Carrying the page number earns it a much lower bar --
+    # but NOT no bar: "2. Where does it come from?" is a numbered list item at
+    # the top of page 2, and dropping it would lose a real line of the essay.
+    repeated = {t for t, n in seen.items() if n >= HEAD_REPEATS}
+    return texts, (best[0] if best[1] >= floor else None), marks, repeated
+
+
+def read_pdf(path: str, furniture: bool = False, italic_quotes: bool = True) -> dict:
     """
     One PDF as pages of paragraphs.
+
+    `furniture` strips running heads, printed page numbers and watermarks. It is
+    OFF by default and that is not a judgement about whether it helps: Bau Ji's
+    corpus is already built and shipped from this reader, and these filters move
+    its output (his essay titles double as running heads). A published corpus
+    does not get to shift underneath a change made for a different book. Pass it
+    for a new author -- the AKJ scans carry `www.AKJ.Org` on all 373 pages.
 
     @returns {"path", "body_size", "pages": [{"page", "marker", "spread", "paragraphs"}]}
     where a paragraph is {"text", "style", "italic", "x0", "size"}.
@@ -262,25 +469,64 @@ def read_pdf(path: str) -> dict:
                     "columns": len(bands), **({"error": p["error"]} if p.get("error") else {})})
         sizes.extend(ln["size"] for ln in every if len(ln["text"]) > 20)
     body = statistics.median(sizes) if sizes else 10.0
+    heads, head_offset, stamps, repeated = running_heads(
+        [[ln for col in pg.get("cols", []) for ln in col] for pg in raw]) if furniture \
+        else (set(), None, [], set())
+    # A head is usually its own line and is dropped whole. Sometimes the scan
+    # runs it into the first line of the body -- "40/SUNDRI wrought havoc among
+    # the Sikhs" -- and then the line is too long to look like a head at all. So
+    # a head is ALSO removed as a string, but only where it is glued to a page
+    # number at the very start or end of the line, which is the one shape that
+    # cannot be a sentence.
+    alts = "|".join(sorted((re.escape(h) for h in heads if h), key=len, reverse=True))
+    head_glued = re.compile(
+        r"^\s*[0-9ivxlc]{1,6}\s*/\s*(?:%s)|(?:%s)\s*/\s*[0-9ivxlc]{1,6}\s*$"
+        % (alts, alts), re.I) if alts else None
 
     pages = []
     for pg in raw:
         marker, out = None, []
+        edge = {id(ln) for col in pg.get("cols", []) for ln in (col[:HEAD_BAND] + col[-HEAD_BAND:])}
+        printed = str(pg["page"] - head_offset) if head_offset is not None else None
         for col in pg.get("cols", []):
             kept = []
             for ln in col:
                 text = ln["text"].strip()
+                # FIRST, before any furniture is discarded: the marker is an
+                # essay's only in-document identifier, and it stands exactly
+                # where a running head does. Dropping it as furniture would
+                # lose it silently.
                 found = MARKER.findall(text.replace(" ", ""))
                 if found and len(text) < 32:
                     essay, page_no = found[-1]   # the English half's marker wins
                     marker = marker or f"L{int(essay)}.{int(page_no)}"
+                    continue
+                # A watermark is removed as a STRING, not as a line: these
+                # scans stamp it wherever it lands, and it arrives glued onto
+                # real text as often as alone ("Super-Natural Power Of
+                # Amritwww.AKJ.Org").
+                for s in stamps:
+                    if s in text:
+                        text = text.replace(s, " ")
+                if head_glued is not None:
+                    text = head_glued.sub(" ", text)
+                ln["text"] = text = re.sub(r"\s+", " ", text).strip()
+                if not text:
+                    continue
+                if HEAD_NUM.sub("", text).strip() in heads:
+                    continue                     # a running head or foot
+                # the same line named by its printed page number instead, but
+                # only where the rest of it is a head that recurs
+                if (printed and id(ln) in edge and len(text) <= HEAD_MAX
+                        and HEAD_NUM.sub("", text).strip() in repeated
+                        and re.search(r"(?<![0-9])%s(?![0-9])" % re.escape(printed), text)):
                     continue
                 if PAGE_NO.match(text):
                     continue
                 if pg.get("spread") and ln["x0"] < SPREAD_X:
                     continue                     # stray ink from the scanned Punjabi half
                 kept.append(ln)
-            out.extend(paragraphs(kept, body, left_margin(kept)))
+            out.extend(paragraphs(kept, body, left_margin(kept), italic_quotes))
         pages.append({
             "page": pg["page"], "marker": marker, "spread": bool(pg.get("spread")),
             "columns": pg.get("columns", 0), "paragraphs": out,

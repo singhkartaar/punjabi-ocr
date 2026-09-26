@@ -40,6 +40,12 @@ class Embedder:
         self.dim = self.profile["embed_dim"]
 
         self.tokenizer = Tokenizer.from_file(os.path.join(model_dir, "tokenizer.json"))
+        # A second handle on the same vocabulary, with truncation OFF. The
+        # encoder's own tokenizer truncates at the window, so it can never
+        # report a length above it -- and a caller asking "does this text fit?"
+        # would be told yes about every text, however long, and the tail would
+        # be dropped in silence. `documents.split_to_fit` asks this one.
+        self.measure = Tokenizer.from_file(os.path.join(model_dir, "tokenizer.json"))
         self.tokenizer.enable_truncation(max_length=self.max_len)
         self.tokenizer.enable_padding(length=None, pad_id=self.profile["pad_id"],
                                       pad_token=self.profile["pad_token"])
