@@ -16,7 +16,7 @@ weights from the evaluation.
 | `dotsocr` | dots.ocr (3B VLM) through transformers; its own venv (transformers 4.51.3); input capped at 2.6 MP for a 12 GB card | GPU, ~350 s a page | Punjabi 87% at line level, perfect where its blocks align; Hindi 100% |
 | `surya` | Surya 2, through `llama-server` (`SURYA_INFERENCE_BACKEND=llamacpp`); returns paragraph blocks the merge cuts at the pivot's lines | GPU, ~13 s a page | English voter |
 | `indicocr` | Bodhan / AI4Bharat IndicOCR (layout detector + 1.7 GB recogniser, transformers >= 5.7); gated on Hugging Face (accept the licence, `hf auth login`); the engine fetches the repository and imports its code from there | GPU, ~17 s a page | Punjabi 83.1%: clean Gurmukhi, but two of 29 lines missed and below the bar |
-| `vision` | Google Cloud Vision `DOCUMENT_TEXT_DETECTION`, $1.50 per 1,000 pages, whole pages, only through `--budget-usd` and the ledger; `--gt-pages` runs it on the ground-truth pages alone | cloud | not yet measured here |
+| `vision` | Google Cloud Vision `DOCUMENT_TEXT_DETECTION`, $1.50 per 1,000 pages, whole pages, only through `--budget-usd` and the ledger; `--gt-pages` runs it on the ground-truth pages alone | cloud, ~1.1 s a page | Punjabi 88.6% on a clean 300 dpi scan: below Tesseract and the bar, so set aside as a voter there (`docs/design.md`) |
 
 Which engines a language runs by default is in `27_ingest_book.py`
 (`DEFAULT_ENGINES`): Punjabi runs both Tesseract variants and lets the merge

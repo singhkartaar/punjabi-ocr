@@ -1,5 +1,17 @@
 # Changelog -- punjabi-ocr
 
+## 1.1.2
+
+Documentation only.
+
+- `docs/design.md`: the design reference -- what each step reads and writes,
+  every engine and translator measured on ground truth, and the decisions
+  those numbers led to (an engine below the bar does not vote; wrapped verse
+  is matched as a stream; a gutter must be ink-free; vote weights come from
+  the measurement; and the rest).
+- `docs/engines.md` records Google Vision's measurement (88.6% on the
+  Santhya), which it had listed as not yet measured.
+
 ## 1.1.1
 
 No change to what the pipeline does; two things that keep it from changing

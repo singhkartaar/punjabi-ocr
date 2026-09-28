@@ -9,6 +9,9 @@ keep a change usable.
 A Python pipeline that turns scanned or born-digital books in Punjabi or
 English into a searchable, translated corpus. `README.md` has the overview,
 `docs/runbook.md` the commands, `docs/output-format.md` the output contract.
+**Read `docs/design.md` before changing the merge, the zones, the matching or
+the translation checks**: most of its decisions record something that was
+tried the other way first, with the number that settled it.
 
 The repository is **exported from a larger private one, file for file at the
 same paths**. Changes made here are carried back there as patches, and the

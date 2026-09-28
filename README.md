@@ -5,7 +5,8 @@ corpus of passages, **searchable by meaning** and **translated into
 English**, out. Runs on one machine, with open-weight models, and sends
 nothing to a paid service unless you set a budget for it.
 
-Version 1.1.1 -- `CHANGELOG.md`. Step by step: `docs/runbook.md`.
+Version 1.1.2 -- `CHANGELOG.md`. Step by step: `docs/runbook.md`. What was
+measured and why it is built this way: `docs/design.md`.
 
 ```
 a PDF of scanned pages
@@ -46,7 +47,8 @@ on an RTX 3080 Ti with 146 rejected by the checks. Against a Gemini
 reference on thirty paragraphs it scored chrF 53.5, ahead of Gemma 3 12B
 (49.8), Qwen3 8B (43.9), IndicTrans2 (41.8) and NLLB (39.4); Google Vision
 read the same scans at 88.6% word accuracy against Tesseract's 95.8%.
-`docs/engines.md` has the engines, their licences and how they were measured.
+`docs/engines.md` has the engines, their licences and how they were measured;
+`docs/design.md` has every number and the decisions they led to.
 
 ## Install
 
