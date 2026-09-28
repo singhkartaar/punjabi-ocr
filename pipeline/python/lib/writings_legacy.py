@@ -4,10 +4,10 @@ A PDF typed in a legacy Gurmukhi font, read without OCR.
 The Vaaran Bhai Gurdas file is not a scan: its text layer is real, but the
 font is GurbaniAkharHeavy and the characters are the keystrokes of that
 keyboard ("suxI pukwr dwqwr pRB gur nwnk"), which no Unicode-aware reader
-recognises. Converting the keystrokes is a font map, not a reading, and the
-map already exists in packages/search-core/src/gurmukhi.js (anvaad-js), so
-this module extracts the text with PyMuPDF and pipes it through a small Node
-helper rather than carrying a second copy of the table.
+recognises. Converting the keystrokes is a font map, not a reading
+(lib/legacy_font.py), so this module extracts the text with PyMuPDF and
+converts the lines that are set in such a font, leaving any other line --
+a page number, an English heading -- as the PDF has it.
 
 Lines are grouped into paragraphs by the vertical gap, with the "(1-23-1)"
 vaar-pauri-line ids the file prints after each line kept as the paragraph's
@@ -15,32 +15,19 @@ marker, so a Vaar line can later be checked against BaniDB source B.
 Returns read_pdf()'s shape.
 """
 from __future__ import annotations
-import os
 import re
 import statistics
-import subprocess
 
-from lib.paths import ROOT
+from lib import legacy_font
 
-CLI = os.path.join(ROOT, "pipeline", "node", "src", "lib", "legacy-font-cli.js")
 LEGACY = re.compile(r"GurbaniAkhar|GurbaniLipi|AnmolLipi|Satluj|Amrit|Joy|Punjabi|Gurmukhi|Chatrik|Asees", re.I)
 MARKER = re.compile(r"\(\s*(\d{1,2})\s*-\s*(\d{1,3})\s*-\s*(\d{1,3})\s*\)")
 LEADING_BREAK = 1.6
 
 
 def to_unicode(lines: list[str]) -> list[str]:
-    """Legacy-font strings -> Unicode, via the Node helper, one call per document."""
-    if not lines:
-        return []
-    if not os.path.exists(CLI):
-        raise RuntimeError("the legacy Gurmukhi font converter (%s) is not in this checkout; it is a Node "
-                           "helper of the private pipeline. Convert the PDF to Unicode another way and set "
-                           "reader: pdf-text, or OCR it with reader: ocr." % os.path.relpath(CLI, ROOT))
-    proc = subprocess.run(["node", CLI], input="\n".join(lines) + "\n", capture_output=True,
-                          text=True, encoding="utf-8", check=True)
-    out = proc.stdout.split("\n")
-    out = out[:len(lines)] + [""] * max(0, len(lines) - len(out))
-    return out
+    """Legacy-font strings -> Unicode, line for line; an empty line stays empty."""
+    return [legacy_font.to_unicode(line) if line.strip() else "" for line in lines]
 
 
 def read_legacy_pdf(path: str) -> dict:

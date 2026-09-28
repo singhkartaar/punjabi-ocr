@@ -30,7 +30,7 @@ reads it; nothing else knows a book by name.
 | `book` | a slug | the working directory under `data/ocr/`. Default: a slug of the file stem |
 | `author` | text | |
 | `language` | `pa`, `en`, `hi` | which OCR engines run, which corpus the passages join, whether it is translated |
-| `reader` | `ocr`, `pdf-text`, `legacy-font` | a scan; a born-digital PDF with a text layer; a PDF in a legacy Gurmukhi font (needs a converter this repository does not ship). Absent: probed from the file |
+| `reader` | `ocr`, `pdf-text`, `legacy-font` | a scan; a born-digital PDF with a text layer; a PDF whose text layer is typed in a legacy Gurmukhi font such as GurbaniAkhar or AnmolLipi, converted to Unicode without OCR (`lib/legacy_font.py`). Absent: probed from the file |
 | `licence` | `public-domain`, `copyright` | recorded on the work and in the output; a serving API shows a copyright work as excerpts only. Absent counts as copyright |
 | `original` | `true`, `false` | whether the text is the author's own or a translation of it |
 | `quote_policy` | `verbatim`, `summarise` | how an answer may use the prose; default follows the licence |

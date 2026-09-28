@@ -17,6 +17,14 @@ on comes from other people, under other terms, and this file says which.
 | `Xenova/bge-small-en-v1.5`, `Xenova/multilingual-e5-small` | embedding passages | MIT (BAAI, intfloat; ONNX exports by Xenova) | |
 | Google Cloud Vision, Gemini via Vertex | optional benchmarks and arbiters | Google's terms; paid | only through a budget cap and a ledger |
 
+## Code carried from elsewhere
+
+`lib/legacy_font.py` is the ASCII-to-Unicode half of
+[anvaad-js](https://github.com/KhalisFoundation/anvaad-js) 1.5.1 (Khalis
+Foundation, **MIT**), ported to Python with its conversion table unchanged.
+`lib/indictrans_processor.py` is IndicTransToolkit's preprocessor (AI4Bharat,
+**MIT**), in plain Python.
+
 ## Data you may point it at
 
 **A scripture database** (`CORPUS_DB`). The one `gurbani-search-api`
@@ -38,10 +46,9 @@ above.
 ## The books
 
 The books are yours. The pipeline records a `licence` on every work from its
-manifest (`public-domain` or `copyright`) and carries it into the output, and
-the search API that serves the output shows a copyright work as short
-excerpts only; that is a courtesy to a rights holder, not a licence to scan
-their book. Under Indian copyright law a work enters the public domain sixty
+manifest (`public-domain` or `copyright`) and carries it into the output;
+what a server does with it is that server's policy. Recording a licence is
+not a licence to scan a book. Under Indian copyright law a work enters the public domain sixty
 years after the author's death; check the law that applies to you before you
 publish anything.
 

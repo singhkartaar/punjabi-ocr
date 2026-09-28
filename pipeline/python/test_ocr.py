@@ -443,6 +443,188 @@ class TranslationTests(unittest.TestCase):
         self.assertGreater(sc["ratio"], 1.0)
 
 
+class LegacyFontTests(unittest.TestCase):
+    """
+    Text typed in a legacy Gurmukhi font, converted without OCR (lib/legacy_font.py).
+
+    The cases are the examples anvaad-js 1.5.1 tests itself with, and each
+    expected value is what that library returned for it: the port is held to
+    the library, not to a second opinion about Gurmukhi.
+    """
+
+    LIBRARY = [
+        ("0123456789!?()'‘’:/",
+         "੦੧੨੩੪੫੬੭੮੯!?()'‘’:/"),
+        ("hy myry gurU dy ipAwry is`K! mYƒ Aw ky iml, mYƒ Aw ky iml [rhwau[",
+         "ਹੇ ਮੇਰੇ ਗੁਰੂ ਦੇ ਪਿਆਰੇ ਸਿੱਖ! ਮੈਨੂੰ ਆ ਕੇ ਮਿਲ, ਮੈਨੂੰ ਆ ਕੇ ਮਿਲ ।ਰਹਾਉ।"),
+        ("rzw b^So rwizk irhwko rhIm ]1]",
+         "ਰਜ਼ਾ ਬਖ਼ਸ਼ੋ ਰਾਜ਼ਿਕ ਰਿਹਾਕੋ ਰਹੀਮ ॥੧॥"),
+        ("rjæw bKæsæo rwijæk irhwko rhIm ]1]",
+         "ਰਜ਼ਾ ਬਖ਼ਸ਼ੋ ਰਾਜ਼ਿਕ ਰਿਹਾਕੋ ਰਹੀਮ ॥੧॥"),
+        ("rwm jpau jIA AYsy AYsy ] DR¨ pRihlwd jipE hir jYsy ]1]",
+         "ਰਾਮ ਜਪਉ ਜੀਅ ਐਸੇ ਐਸੇ ॥ ਧ੍ਰੂ ਪ੍ਰਹਿਲਾਦ ਜਪਿਓ ਹਰਿ ਜੈਸੇ ॥੧॥"),
+        ("ijgw CqR jVwv kælZI cOr mukqw lwlrI",
+         "ਜਿਗਾ ਛਤ੍ਰ ਜੜਾਵ ਕ਼ਲਗ਼ੀ ਚੌਰ ਮੁਕਤਾ ਲਾਲਰੀ"),
+        ("ikRpws kæwkæm AqlsI bhu mol cIrn cusq nO ]",
+         "ਕ੍ਰਿਪਾਸ ਕ਼ਾਕ਼ਮ ਅਤਲਸੀ ਬਹੁ ਮੋਲ ਚੀਰਨ ਚੁਸਤ ਨੌ ॥"),
+        ("su`D ispwh durMq dubwh su swj snwh durjwn dlYNgy ]",
+         "ਸੁੱਧ ਸਿਪਾਹ ਦੁਰੰਤ ਦੁਬਾਹ ਸੁ ਸਾਜ ਸਨਾਹ ਦੁਰਜਾਨ ਦਲੈਂਗੇ ॥"),
+        ("rwgu gauVI pUrbI₁ mhlw 5",
+         "ਰਾਗੁ ਗਉੜੀ ਪੂਰਬੀ₁ ਮਹਲਾ ੫"),
+        ("gauVI kbIr jI iqpdy₁₅ ]",
+         "ਗਉੜੀ ਕਬੀਰ ਜੀ ਤਿਪਦੇ₁₅ ॥"),
+        ("<> siqgur pRswid ]",
+         "ੴ ਸਤਿਗੁਰ ਪ੍ਰਸਾਦਿ ॥"),
+        ("1Eå siqgur pRswid ]",
+         "ੴ ਸਤਿਗੁਰ ਪ੍ਰਸਾਦਿ ॥"),
+        ("¡ siqgur pRswid ]",
+         "ੴ ਸਤਿਗੁਰ ਪ੍ਰਸਾਦਿ ॥"),
+        ("ÅÆ siqgur pRswid ]",
+         "ੴ ਸਤਿਗੁਰ ਪ੍ਰਸਾਦਿ ॥"),
+        ("hUM",
+         "ਹੂੰ"),
+        ("El@w",
+         "ਓਲੑਾ"),
+        ("aulwm@y",
+         "ਉਲਾਮੑੇ"),
+        ("suohwgix",
+         "ਸੋੁਹਾਗਣਿ"),
+        ("clwey",
+         "ਚਲਾਏ"),
+        ("AOr",
+         "ਔਰ"),
+        ("hoveI",
+         "ਹੋਵਈ"),
+        ("ny Awein guil gulSin &¤ro zyb",
+         "ਨੇ ਆੲਨਿ ਗੁਲਿ ਗੁਲਸ਼ਨਿ ਫ਼ੱਰੋ ਜ਼ੇਬ"),
+        ("lweIAW",
+         "ਲਾਈਆਂ"),
+        ("vfw swihbu aUcw Qwau ]",
+         "ਵਡਾ ਸਾਹਿਬੁ ਊਚਾ ਥਾਉ ॥"),
+        ("pRB kau sd bil jweI jIa ]2]",
+         "ਪ੍ਰਭ ਕਉ ਸਦ ਬਲਿ ਜਾਈ ਜੀੳ ॥੨॥"),
+        ("AMimRq vylw scu nwau vifAweI vIcwru ]",
+         "ਅੰਮ੍ਰਿਤ ਵੇਲਾ ਸਚੁ ਨਾਉ ਵਡਿਆਈ ਵੀਚਾਰੁ ॥"),
+        ("sMiDAw pRwq ies˜wnu krwhI ]",
+         "ਸੰਧਿਆ ਪ੍ਰਾਤ ਇਸ੍ਨਾਨੁ ਕਰਾਹੀ ॥"),
+        ("BwTI ggnu isMi|Aw Aru cuMi|Aw knk kls ieku pwieAw ]",
+         "ਭਾਠੀ ਗਗਨੁ ਸਿੰਙਿਆ ਅਰੁ ਚੁੰਙਿਆ ਕਨਕ ਕਲਸ ਇਕੁ ਪਾਇਆ ॥"),
+        ("iqn ky nwm Anyk Anµq ]",
+         "ਤਿਨ ਕੇ ਨਾਮ ਅਨੇਕ ਅਨੰਤ ॥"),
+        ("6 : sMgq dw Asr-nwn`qÍ",
+         "੬ : ਸੰਗਤ ਦਾ ਅਸਰ-ਨਾਨੱਤ੍ਵ"),
+        ("iPir puCix isD nwnkw! mwq lok ivic ikAw vrqwrw?",
+         "ਫਿਰਿ ਪੁਛਣਿ ਸਿਧ ਨਾਨਕਾ! ਮਾਤ ਲੋਕ ਵਿਚਿ ਕਿਆ ਵਰਤਾਰਾ?"),
+        ("5 : jpujI AMqly slok ‘pvx gurU’ dw ArQ",
+         "੫ : ਜਪੁਜੀ ਅੰਤਲੇ ਸਲੋਕ ‘ਪਵਣ ਗੁਰੂ’ ਦਾ ਅਰਥ"),
+        ("hr do Awlm kImiq X¤k qwir mUie Xwir mw ] 2 ] 1 ]",
+         "ਹਰ ਦੋ ਆਲਮ ਕੀਮਤਿ ਯੱਕ ਤਾਰਿ ਮੂਇ ਯਾਰਿ ਮਾ ॥ ੨ ॥ ੧ ॥"),
+        ("vwihgurU jI kI &qh ]",
+         "ਵਾਹਿਗੁਰੂ ਜੀ ਕੀ ਫ਼ਤਹ ॥"),
+        ("ik®s˜w qy jwnaU hir hir nwcMqI nwcnw ]1]",
+         "ਕ੍ਰਿਸ੍ਨਾ ਤੇ ਜਾਨਊ ਹਰਿ ਹਰਿ ਨਾਚੰਤੀ ਨਾਚਨਾ ॥੧॥"),
+        ("ibKu kw kIVw ibKu isau lwgw ibs†w mwih smweI ]",
+         "ਬਿਖੁ ਕਾ ਕੀੜਾ ਬਿਖੁ ਸਿਉ ਲਾਗਾ ਬਿਸ੍ਟਾ ਮਾਹਿ ਸਮਾਈ ॥"),
+        ("Asçrj rUpM rhMq jnmM ]",
+         "ਅਸ੍ਚਰਜ ਰੂਪੰ ਰਹੰਤ ਜਨਮੰ ॥"),
+        ("duKu prhir suKu Gir lY jwie ]",
+         "ਦੁਖੁ ਪਰਹਰਿ ਸੁਖੁ ਘਰਿ ਲੈ ਜਾਇ ॥"),
+        ("kwrHw quJY n ibAwpeI nwnk imtY aupwiD ]1]",
+         "ਕਾਰ੍ਹਾ ਤੁਝੈ ਨ ਬਿਆਪਈ ਨਾਨਕ ਮਿਟੈ ਉਪਾਧਿ ॥੧॥"),
+        ("sB lwlc iqAwg dey igRh ky iek sÎwm ky pÎwr kI hY su BuKI ]636]",
+         "ਸਭ ਲਾਲਚ ਤਿਆਗ ਦਏ ਗ੍ਰਿਹ ਕੇ ਇਕ ਸ੍ਯਾਮ ਕੇ ਪ੍ਯਾਰ ਕੀ ਹੈ ਸੁ ਭੁਖੀ ॥੬੩੬॥"),
+        ("AnfMf bwFÎ ]7]93]",
+         "ਅਨਡੰਡ ਬਾਢ੍ਯ ॥੭॥੯੩॥"),
+        ("hM BI vM\\w fumxI rovw JIxI bwix ]2]",
+         "ਹੰ ਭੀ ਵੰਞਾ ਡੁਮਣੀ ਰੋਵਾ ਝੀਣੀ ਬਾਣਿ ॥੨॥"),
+        ("mhW du`K pwvY iqs ko kwL(35)",
+         "ਮਹਾਂ ਦੁੱਖ ਪਾਵੈ ਤਿਸ ਕੋ ਕਾਲ਼(੩੫)"),
+        ("ikDO sMKnI icqRnI pdmnI hY ]23]191]",
+         "ਕਿਧੌ ਸੰਖਨੀ ਚਿਤ੍ਰਨੀ ਪਦਮਨੀ ਹੈ ॥੨੩॥੧੯੧॥"),
+        ("kvnu jogu kaunu g´wnu D´wnu kvn ibiD ausœiq krIAY ]",
+         "ਕਵਨੁ ਜੋਗੁ ਕਉਨੁ ਗੵਾਨੁ ਧੵਾਨੁ ਕਵਨ ਬਿਧਿ ਉਸ੍ਤਤਿ ਕਰੀਐ ॥"),
+        ("kW@n",
+         "ਕੑਾਂਨ"),
+        ("s`uD ispwh durMq dubwh su swj snwh durjwn dlYNgy ]",
+         "ਸੁੱਧ ਸਿਪਾਹ ਦੁਰੰਤ ਦੁਬਾਹ ਸੁ ਸਾਜ ਸਨਾਹ ਦੁਰਜਾਨ ਦਲੈਂਗੇ ॥"),
+        ("sq`Rün ko pl mo bD kIE ]386]",
+         "ਸਤ੍ਰੁੱਨ ਕੋ ਪਲ ਮੋ ਬਧ ਕੀਓ ॥੩੮੬॥"),
+        ("slok mÚ 3 ]",
+         "ਸਲੋਕ ਮਃ ੩ ॥"),
+        ("hir Awpy kwn@ü aupwiedw myry goivdw hir Awpy gopI KojI jIau ]",
+         "ਹਰਿ ਆਪੇ ਕਾਨੑੁ ਉਪਾਇਦਾ ਮੇਰੇ ਗੋਵਿਦਾ ਹਰਿ ਆਪੇ ਗੋਪੀ ਖੋਜੀ ਜੀਉ ॥"),
+        ("Xky dwnh muMgo idZr nu^d nIm ]45]",
+         "ਯਕੇ ਦਾਨਹ ਮੁੰਗੋ ਦਿਗ਼ਰ ਨੁਖ਼ਦ ਨੀਮ ॥੪੫॥"),
+    ]
+
+    def test_it_returns_what_the_library_it_was_ported_from_returns(self):
+        from lib.legacy_font import to_unicode
+        for typed, expected in self.LIBRARY:
+            with self.subTest(typed=typed):
+                self.assertEqual(to_unicode(typed), expected)
+
+    def test_the_sihari_is_typed_before_its_consonant_and_written_after(self):
+        from lib.legacy_font import to_unicode
+        self.assertEqual(to_unicode("ik"), "ਕਿ")
+        self.assertEqual(to_unicode("ikRpw"), "ਕ੍ਰਿਪਾ")           # past the half letter too
+        self.assertEqual(to_unicode("ie"), "ਇ")                  # and on the vowel carrier it is the vowel
+        self.assertEqual(to_unicode("i"), "ਿ")                   # with nothing after it, it is itself
+
+    def test_a_mark_typed_in_the_wrong_order_is_put_right(self):
+        from lib.legacy_font import to_unicode
+        self.assertEqual(to_unicode("hUM"), to_unicode("hMU"))
+        self.assertEqual(to_unicode("dlYNgy"), to_unicode("dlNYgy"))
+
+    def test_what_is_already_unicode_or_not_a_key_passes_through(self):
+        from lib.legacy_font import to_unicode
+        self.assertEqual(to_unicode("ਸਤਿ ਨਾਮੁ"), "ਸਤਿ ਨਾਮੁ")
+        self.assertEqual(to_unicode(""), "")
+        self.assertEqual(to_unicode("(1-23-1)"), "(੧-੨੩-੧)")
+        # where the library writes the word "undefined", the character is kept
+        self.assertEqual(to_unicode("i, k"), ",ਿ ਕ")
+        self.assertNotIn("undefined", to_unicode("i(k) i. i-"))
+
+    def test_the_table_has_one_entry_per_key_and_every_half_letter_in_it(self):
+        from lib.legacy_font import CORRECTIONS, HALF, MAPPING
+        self.assertEqual(len(MAPPING), 97)
+        self.assertTrue(all(len(k) == 1 for k in MAPPING))
+        self.assertEqual(HALF - set(MAPPING), set())
+        self.assertTrue(all(len(c) == 2 for c in CORRECTIONS))
+
+    def test_a_pdf_in_a_legacy_font_is_read_line_for_line(self):
+        # PyMuPDF stood in for: four lines of a pauri in GurbaniAkhar with the
+        # id the book prints after each, a gap, and a heading in a Latin font
+        from lib import writings_legacy
+
+        def ln(y, text, font):
+            return {"bbox": (72.0, y, 400.0, y + 12.0), "spans": [{"text": text, "font": font}]}
+        page = SimpleNamespace(get_text=lambda kind: {"blocks": [{"lines": [
+            ln(100.0, "suxI pukwr dwqwr pRB (1-23-1)", "GurbaniAkharHeavy"),
+            ln(114.0, "gur nwnk jg mwih pTwieAw (1-23-2)", "GurbaniAkharHeavy"),
+            ln(128.0, "crn Doie rhrwis kir (1-23-3)", "GurbaniAkharHeavy"),
+            ln(142.0, "crxwimRqu isKW pIlwieAw (1-23-4)", "GurbaniAkharHeavy"),
+            ln(200.0, "Vaar 1", "TimesNewRoman"),
+        ]}]})
+
+        class Doc(list):
+            def close(self):
+                pass
+        real = sys.modules.get("pymupdf")
+        sys.modules["pymupdf"] = SimpleNamespace(open=lambda path: Doc([page]))
+        try:
+            out = writings_legacy.read_legacy_pdf("vaaran.pdf")
+        finally:
+            if real is None:
+                del sys.modules["pymupdf"]
+            else:
+                sys.modules["pymupdf"] = real
+        (only,) = out["pages"]
+        self.assertEqual(only["marker"], "1.23")
+        self.assertEqual([p["text"] for p in only["paragraphs"]],
+                         ["ਸੁਣੀ ਪੁਕਾਰ ਦਾਤਾਰ ਪ੍ਰਭ ਗੁਰ ਨਾਨਕ ਜਗ ਮਾਹਿ ਪਠਾਇਆ "
+                          "ਚਰਨ ਧੋਇ ਰਹਰਾਸਿ ਕਰਿ ਚਰਣਾਮ੍ਰਿਤੁ ਸਿਖਾਂ ਪੀਲਾਇਆ", "Vaar 1"])
+
+
 class MergeStageTests(unittest.TestCase):
     """The M1 stages: multi-span matching, block segmentation, voting, the lexicon gate, correction."""
 

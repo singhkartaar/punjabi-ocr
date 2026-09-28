@@ -5,7 +5,7 @@ corpus of passages, **searchable by meaning** and **translated into
 English**, out. Runs on one machine, with open-weight models, and sends
 nothing to a paid service unless you set a budget for it.
 
-Version 1.1.2 -- `CHANGELOG.md`. Step by step: `docs/runbook.md`. What was
+Version 1.1.3 -- `CHANGELOG.md`. Step by step: `docs/runbook.md`. What was
 measured and why it is built this way: `docs/design.md`.
 
 ```
@@ -96,7 +96,8 @@ A `manifest.json` beside the PDFs (`docs/manifest.md`, `examples/manifest.json`)
 
 `language` picks the engines and the corpus; `licence` (`public-domain` or
 `copyright`) travels with the work into the corpus, for a server to act on;
-`reader` is `ocr` for a scan, `pdf-text` for a born-digital PDF.
+`reader` is `ocr` for a scan, `pdf-text` for a born-digital PDF,
+`legacy-font` for one typed in a pre-Unicode Gurmukhi font.
 
 ## Run, then measure
 
@@ -168,9 +169,9 @@ pages or paragraphs so you can decide with numbers.
 1.1 covers Punjabi and English scans end to end, measured. Hindi (`language: "hi"`)
 runs through the same code with Tesseract's `hin` model and Devanagari checks in
 the translator, but has only been measured on a synthetic typeset page; real
-scans, ground truth and a lexicon are 1.2. A legacy-Gurmukhi-font reader
-(`reader: legacy-font`) needs a converter that is not in this repository and
-says so.
+scans, ground truth and a lexicon are 1.2. A PDF typed in a legacy Gurmukhi
+font (GurbaniAkhar, AnmolLipi and their kin) needs no OCR at all:
+`reader: legacy-font` converts its text layer to Unicode.
 
 ## Contributing
 

@@ -1,5 +1,22 @@
 # Changelog -- punjabi-ocr
 
+## 1.1.3
+
+`reader: legacy-font` works here. A PDF typed in a pre-Unicode Gurmukhi font
+(GurbaniAkhar, AnmolLipi, GurbaniLipi and their kin) has a real text layer
+made of that keyboard's keystrokes; `lib/legacy_font.py` turns them into
+Unicode, so such a book is read exactly, with no OCR. Until now the reader
+needed a helper this repository did not carry, and said so.
+
+- The converter is the ASCII-to-Unicode half of anvaad-js 1.5.1 (Khalis
+  Foundation, MIT) in Python, its table unchanged. It returns what that
+  library returns on the library's own 52 examples and on 300,000 random
+  strings, with one deliberate difference: where that library writes the
+  word "undefined" (a sihari before a character its table lacks), this keeps
+  the character.
+- `NOTICE.md` names the two pieces of code carried from elsewhere, and no
+  longer says what a server does with a work's licence.
+
 ## 1.1.2
 
 Documentation only.
