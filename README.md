@@ -5,7 +5,7 @@ corpus of passages, **searchable by meaning** and **translated into
 English**, out. Runs on one machine, with open-weight models, and sends
 nothing to a paid service unless you set a budget for it.
 
-Version 1.1.0 -- `CHANGELOG.md`. Step by step: `docs/runbook.md`.
+Version 1.1.1 -- `CHANGELOG.md`. Step by step: `docs/runbook.md`.
 
 ```
 a PDF of scanned pages
@@ -163,7 +163,7 @@ pages or paragraphs so you can decide with numbers.
 
 ## Status and roadmap
 
-1.1.0 covers Punjabi and English scans end to end, measured. Hindi (`language: "hi"`)
+1.1 covers Punjabi and English scans end to end, measured. Hindi (`language: "hi"`)
 runs through the same code with Tesseract's `hin` model and Devanagari checks in
 the translator, but has only been measured on a synthetic typeset page; real
 scans, ground truth and a lexicon are 1.2. A legacy-Gurmukhi-font reader

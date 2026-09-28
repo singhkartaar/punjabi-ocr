@@ -1,5 +1,21 @@
 # Changelog -- punjabi-ocr
 
+## 1.1.1
+
+No change to what the pipeline does; two things that keep it from changing
+by accident.
+
+- `OutputContractTests` (`pipeline/python/test_writings.py`) builds a small
+  corpus end to end, with a stand-in for the embedding model, and states what
+  a reader of it depends on: the five vector files and their sizes, the
+  manifest's fields, the database's tables and columns and their order,
+  `unit_row` as the row in the vectors, where a citation lands, the default
+  locations, and the keys of a paragraph record. Adding passes; renaming,
+  removing or reordering fails.
+- `GEMINI.md`: the rules for an AI coding assistant working here -- keep
+  paths and names, change only what the task needs, leave the contract and
+  the flags alone, commit code only, measure before claiming.
+
 ## 1.1.0
 
 The output takes the shape the search API actually serves, and the shared

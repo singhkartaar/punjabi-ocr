@@ -607,6 +607,219 @@ class UnitTests(unittest.TestCase):
         self.assertNotIn("text_src", self.build(records[:1], target=100)[0])
 
 
+class OutputContractTests(unittest.TestCase):
+    """
+    The shape of what the pipeline writes, which a server reads without asking.
+
+    Nothing else in these suites would notice a file renamed, a column dropped
+    or the rows renumbered: the scripts would run, every test would pass, and
+    the corpus would fail to load somewhere else, later. These cases build a
+    small corpus end to end -- with a stand-in for the embedding model, so no
+    weights are needed -- and state what a reader of it depends on
+    (docs/output-format.md; packages/search-core's corpus reader in the
+    repository this one is exported from).
+
+    ADDING a column, a manifest field or a record key passes. Renaming,
+    removing or reordering one fails, and that is the point: change the
+    reader and the document first, then these cases.
+    """
+
+    N = 300                     # PCA to 256 dimensions needs more rows than that
+    EMBED_DIM, INDEX_DIM = 384, 256
+
+    VECTOR_FILES = {            # name -> bytes, for N passages
+        "units.i8": lambda n: n * OutputContractTests.INDEX_DIM,
+        "units.scale.f32": lambda n: n * 4,
+        "units.mask.u8": lambda n: n,
+        "pca.components.f32": lambda n: OutputContractTests.INDEX_DIM * OutputContractTests.EMBED_DIM * 4,
+        "pca.mean.f32": lambda n: OutputContractTests.EMBED_DIM * 4,
+    }
+    MANIFEST_FIELDS = {"kind", "index", "corpus", "db", "model", "model_dir", "tokenizer", "pooling",
+                       "query_prefix", "doc_prefix", "pad_token", "pad_id", "lowercase", "strip_accents",
+                       "max_len", "embed_dim", "index_dim", "units", "works", "citations",
+                       "text_lang", "query_scripts", "files"}
+    COLUMNS = {
+        "works": ["work_id", "title", "title_en", "author", "folder", "original", "quote_policy",
+                  "parts", "files", "units", "language", "licence"],
+        "units": ["unit_row", "unit_id", "work_id", "part", "page", "para_no", "marker", "text", "text_src"],
+        "citations": ["unit_row", "shabad_id", "line_id", "ang", "score", "method", "span"],
+        "meta": ["key", "value"],
+    }
+    META_KEYS = {"corpus", "author", "authors", "units", "works", "citations", "built"}
+    RECORD_KEYS = {"unit_id", "work", "part", "essay", "page", "para_no", "marker",
+                   "style", "italic", "text", "lang"}
+    UNIT_KEYS = {"unit_row", "unit_id", "work", "part", "page", "para_no", "marker", "text",
+                 "cites", "title", "author", "quote_policy"}
+
+    @classmethod
+    def setUpClass(cls):
+        import contextlib
+        import io
+        import sqlite3
+        import tempfile
+        import numpy as np
+
+        cls.tmp = tempfile.TemporaryDirectory()
+        src = os.path.join(cls.tmp.name, "src")
+        cls.out_dir = os.path.join(cls.tmp.name, "artifacts", "corpora", "writings-en")
+        cls.db_path = os.path.join(cls.tmp.name, "artifacts", "writings.sqlite")
+        cls.units_path = os.path.join(src, "units.jsonl")
+        os.makedirs(src)
+
+        # one work: a heading, a paragraph that leads into a verse, the verse,
+        # and enough prose that every paragraph closes a unit of its own
+        def rec(no, text, style="body"):
+            page, para = no // 10 + 1, no % 10 + 1
+            return {"unit_id": "book:1:%d:%d" % (page, para), "work": "book", "part": 1, "essay": None,
+                    "page": page, "para_no": para, "marker": None, "style": style,
+                    "italic": style == "quote", "text": text, "lang": "en"}
+        records = [rec(0, "The Opening", style="heading"),
+                   rec(1, "The Guru says this of the Name, as the verse below shows."),
+                   rec(2, "By the Name alone is one carried across. 468", style="quote")]
+        records += [rec(i, "Passage number %d speaks of the Name and nothing else." % i)
+                    for i in range(3, cls.N + 2)]
+        with open(os.path.join(src, "book.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(json.dumps({"_meta": {
+                "work": "book", "title": "A Book", "author": "An Author", "original": True,
+                "quote_policy": "verbatim", "files": ["book.pdf"], "language": "en",
+                "licence": "public-domain", "source": "pdf-text"}}) + "\n")
+            for r in records:
+                fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+        with open(os.path.join(src, "citations.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(json.dumps({"_meta": {}}) + "\n")
+            fh.write(json.dumps({"unit_id": records[2]["unit_id"], "shabad_id": 1712, "line_id": 20101,
+                                 "ang": 468, "score": 0.91, "method": "lexical_ang",
+                                 "span": "By the Name alone is one carried across."}) + "\n")
+
+        embed = import_module("14_embed_writings")
+        build = import_module("15_build_writings_db")
+        rng = np.random.default_rng(0)
+        real = (embed.Embedder, embed.embed_long, sys.argv)
+        # the model is the one thing a test cannot carry: what it returns is
+        # stood in for, what is done with it is not
+        embed.Embedder = lambda name, max_len=256: object()
+        embed.embed_long = lambda emb, texts, max_len: (
+            rng.standard_normal((len(texts), cls.EMBED_DIM)).astype(np.float32), 0)
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                sys.argv = ["14_embed_writings.py", "--src", src, "--out-dir", cls.out_dir,
+                            "--model", "bge-small-en-v1.5", "--target-tokens", "3", "--hard-tokens", "40"]
+                embed.main()
+                sys.argv = ["15_build_writings_db.py", "--units", cls.units_path, "--out", cls.db_path]
+                build.main()
+        finally:
+            embed.Embedder, embed.embed_long, sys.argv = real
+
+        with open(os.path.join(cls.out_dir, "manifest.json"), encoding="utf-8") as fh:
+            cls.manifest = json.load(fh)
+        with open(cls.units_path, encoding="utf-8") as fh:
+            rows = [json.loads(line) for line in fh]
+        cls.head, cls.units = rows[0]["_meta"], rows[1:]
+        cls.con = sqlite3.connect(cls.db_path)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.con.close()
+        cls.tmp.cleanup()
+
+    def test_the_vector_files_have_the_names_and_sizes_a_reader_maps(self):
+        n = len(self.units)
+        self.assertGreaterEqual(n, self.INDEX_DIM)
+        for name, size in self.VECTOR_FILES.items():
+            with self.subTest(file=name):
+                path = os.path.join(self.out_dir, name)
+                self.assertTrue(os.path.exists(path), name)
+                self.assertEqual(os.path.getsize(path), size(n))
+                self.assertEqual(self.manifest["files"][name], size(n))
+
+    def test_the_manifest_carries_every_field_a_server_reads(self):
+        self.assertEqual(self.MANIFEST_FIELDS - set(self.manifest), set())
+        self.assertEqual(self.manifest["kind"], "documents")
+        self.assertEqual(self.manifest["corpus"], "writings-en")
+        self.assertEqual((self.manifest["embed_dim"], self.manifest["index_dim"]),
+                         (self.EMBED_DIM, self.INDEX_DIM))
+        self.assertEqual(self.manifest["units"], len(self.units))
+        self.assertEqual(self.manifest["text_lang"], "en")
+        self.assertEqual(self.manifest["query_scripts"], ["latin"])
+
+    def test_the_database_has_the_tables_and_columns_a_reader_selects(self):
+        for table, wanted in self.COLUMNS.items():
+            with self.subTest(table=table):
+                have = [r[1] for r in self.con.execute("PRAGMA table_info(%s)" % table)]
+                self.assertEqual([c for c in wanted if c not in have], [])
+        # works and units are inserted by position: the columns a reader knows
+        # come first and in this order, and anything new goes after them
+        for table in ("works", "units", "citations"):
+            with self.subTest(order=table):
+                have = [r[1] for r in self.con.execute("PRAGMA table_info(%s)" % table)]
+                self.assertEqual(have[:len(self.COLUMNS[table])], self.COLUMNS[table])
+        keys = {k for (k,) in self.con.execute("SELECT key FROM meta")}
+        self.assertEqual(self.META_KEYS - keys, set())
+
+    def test_unit_row_is_the_row_in_the_vectors_and_nothing_renumbers_it(self):
+        n = len(self.units)
+        self.assertEqual([u["unit_row"] for u in self.units], list(range(n)))
+        self.assertEqual([r for (r,) in self.con.execute("SELECT unit_row FROM units ORDER BY unit_row")],
+                         list(range(n)))
+        # the same passage under the same number in both
+        for row in (0, n // 2, n - 1):
+            (text,) = self.con.execute("SELECT text FROM units WHERE unit_row=?", (row,)).fetchone()
+            self.assertEqual(text, self.units[row]["text"])
+
+    def test_a_unit_and_its_work_say_what_a_passage_is_shown_with(self):
+        self.assertEqual(self.UNIT_KEYS - set(self.units[0]), set())
+        self.assertRegex(self.units[0]["unit_id"], r"^book:1:\d+:\d+$")
+        self.assertEqual(self.head["corpus"], "writings-en")
+        work = self.con.execute(
+            "SELECT work_id, title, author, quote_policy, language, licence, units FROM works").fetchall()
+        self.assertEqual(work, [("book", "A Book", "An Author", "verbatim", "en", "public-domain",
+                                 len(self.units))])
+
+    def test_the_verse_is_a_citation_on_the_passage_that_led_into_it(self):
+        rows = self.con.execute(
+            "SELECT unit_row, shabad_id, line_id, ang, method FROM citations").fetchall()
+        self.assertEqual(len(rows), 1)
+        unit_row, shabad_id, line_id, ang, method = rows[0]
+        self.assertEqual((shabad_id, line_id, ang, method), (1712, 20101, 468, "lexical_ang"))
+        (text,) = self.con.execute("SELECT text FROM units WHERE unit_row=?", (unit_row,)).fetchone()
+        self.assertIn("as the verse below shows", text)
+        # and the verse itself is in no passage's text
+        (n,) = self.con.execute("SELECT count(*) FROM units WHERE text LIKE '%carried across%'").fetchone()
+        self.assertEqual(n, 0)
+
+    def test_where_a_corpus_lands_by_default(self):
+        from lib.writings_works import db_name
+        embed = import_module("14_embed_writings")
+        self.assertEqual([db_name(c) for c in ("writings-en", "akj-en", "writings-pa", "treatises-pa")],
+                         ["writings.sqlite", "akj.sqlite", "writings-pa.sqlite", "treatises-pa.sqlite"])
+        self.assertEqual([embed.units_name(lang) for lang in ("en", "pa", "hi")],
+                         ["units.jsonl", "units-pa.jsonl", "units-hi.jsonl"])
+        self.assertEqual({lang: d["corpus"] for lang, d in embed.LANG_DEFAULTS.items()},
+                         {"en": "writings-en", "pa": "writings-pa", "hi": "writings-hi"})
+
+    def test_a_paragraph_record_has_the_keys_every_later_step_reads(self):
+        ingest = import_module("12_ingest_writings")
+        doc = {"path": "x.pdf", "body_size": 10.0, "pages": [{
+            "page": 7, "marker": "12", "spread": False, "paragraphs": [
+                {"text": "Prose.", "style": "body", "italic": False},
+                {"text": "ਨਾਨਕ ਨਾਮੁ", "style": "quote", "italic": False, "line_ids": [20101, 20102],
+                 "shabad_id": 1712, "ang": 468, "match_score": 0.97, "match_method": "exact"}]}]}
+        real = ingest.read_source
+        ingest.read_source = lambda path, meta, **kw: doc
+        try:
+            res = ingest.read_one("A-Book.pdf")
+        finally:
+            ingest.read_source = real
+        prose, verse = res["records"]
+        self.assertEqual(self.RECORD_KEYS - set(prose), set())
+        self.assertEqual(prose["unit_id"], "%s:0:7:1" % prose["work"])
+        self.assertEqual((prose["page"], prose["para_no"], prose["marker"]), (7, 1, "12"))
+        self.assertIn(prose["style"], ("body", "heading", "quote", "footnote"))
+        # what the OCR merge matched travels with the verse, under these names
+        self.assertEqual((verse["line_ids"], verse["shabad_id"], verse["ang"]), ([20101, 20102], 1712, 468))
+        self.assertNotIn("line_ids", prose)
+
+
 class IngestedCorpusTests(unittest.TestCase):
     """Runs only where the ingested corpus is present (it is gitignored)."""
 
