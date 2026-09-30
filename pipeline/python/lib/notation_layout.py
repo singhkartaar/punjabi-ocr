@@ -366,6 +366,12 @@ def raag_descriptions(layouts: list[dict]) -> list[dict]:
             p = r.get("parsed") or {}
             if role == "heading" and p.get("raag") and not p.get("taal") and not p.get("section") and not _running_header(r, lay.get("page_h") or 0) \
                     and not _shabad_heading(r):
+                if cur and (cur["raag"] or {}).get("key") and (cur["raag"] or {}).get("key") == p["raag"].get("key"):
+                    # a sentence of the same description that names the raag again: not a new one
+                    if page not in cur["pages"]:
+                        cur["pages"].append(page)
+                    cur["regions"].append((page, r))
+                    continue
                 if cur:
                     out.append(cur)
                 cur = {"raag": p["raag"], "heading": r, "page": page, "pages": [page], "regions": []}
