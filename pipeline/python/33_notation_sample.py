@@ -263,17 +263,22 @@ def write_page(args, results: list[dict]) -> None:
         unknown = sum(r["quality"]["unknown"] for r in recs)
         resolved = sum(1 for r in recs if r["shabad"].get("shabad_id") is not None)
         with_grid = sum(1 for r in recs if r.get("sections"))
-        verdict = ("no notation found" if not recs else
-                   "reads" if resolved and with_grid and cells and unknown / cells <= 0.15 else
-                   "partly" if with_grid or resolved else "not a notation page")
-        rows_html.append("<tr><td><a href='#b-%s'>%s</a></td><td>%s</td><td>%d</td><td>%s</td><td>%d</td><td>%d / %d</td><td>%d / %d</td><td>%s</td><td class='v-%s'>%s</td></tr>"
+        multi = sum(1 for r in recs if len(r["pages"]) > 1)
+        verdict = ("no shabad found" if not recs else
+                   "shabads" if resolved == len(recs) else
+                   "partly" if resolved else "unnamed")
+        status = b["status"] if b["status"] != "ok" else ""
+        rows_html.append("<tr><td><a href='#b-%s'>%s</a></td><td>%s</td><td>%d</td><td>%s</td><td>%d</td><td>%d / %d</td><td>%d</td><td>%d / %d</td><td>%s</td><td class='v-%s'>%s%s</td></tr>"
                          % (html_mod.escape(b["book"]), html_mod.escape(b["title"]), html_mod.escape(b["author"]), b["pages"], html_mod.escape(b["pages_arg"]),
-                            b["found"], resolved, len(recs), with_grid, len(recs),
-                            ("%d%%" % round(100.0 * unknown / cells)) if cells else "-", verdict.split()[0], verdict))
+                            b["found"], resolved, len(recs), multi, with_grid, len(recs),
+                            ("%d%%" % round(100.0 * unknown / cells)) if cells else "-", verdict.split()[0], verdict,
+                            (" · run " + html_mod.escape(status)) if status else ""))
     parts.append("<table class='sum'><thead><tr><th>book</th><th>author</th><th>pages</th><th>read at</th><th>found</th>"
-                 "<th>shabad named</th><th>grid read</th><th>unread cells</th><th>verdict</th></tr></thead><tbody>%s</tbody></table>"
-                 "<p class='legend'>The verdict is mechanical: <b>reads</b> = a shabad named and a grid read with at most 15%% of its cells unread; "
-                 "<b>partly</b> = one of the two; <b>not a notation page</b> = the window fell on prose, a picture or a table of another kind. "
+                 "<th>shabad named</th><th>over pages</th><th>grid read</th><th>unread cells</th><th>verdict</th></tr></thead><tbody>%s</tbody></table>"
+                 "<p class='legend'>The verdict is mechanical and about the cut, not the grid: <b>shabads</b> = every notation found in the windows is linked to a shabad "
+                 "the corpus knows; <b>partly</b> = some are; <b>unnamed</b> = notations were cut but none linked (a shabad the corpus lacks, or its text unread); "
+                 "<b>no shabad found</b> = the windows held no shabad (prose, exercises, a picture), or the book is not a notation book. "
+                 "<b>over pages</b> counts the notations that run over a page turn. The grid columns are the parked machine reading. "
                  "Judge each notation below against its page; the original page is the authority.</p>" % "".join(rows_html))
     for b in results:
         parts.append('<h2 class="book" id="b-%s">%s <small>%s · %d pages · read at %s · %s · %d found</small></h2>'
@@ -303,7 +308,7 @@ def write_page(args, results: list[dict]) -> None:
 table.sum{margin:14px 16px;border-collapse:collapse;font-size:13px;background:#fff}
 table.sum th,table.sum td{border:1px solid #ddd;padding:4px 8px;text-align:left}
 table.sum th{background:#f0efe9}
-td.v-reads{background:#e3f4e6}td.v-partly{background:#fff4d6}td.v-not{background:#fde2e2}td.v-no{background:#eee}
+td.v-shabads{background:#e3f4e6}td.v-partly{background:#fff4d6}td.v-unnamed{background:#fde2e2}td.v-no{background:#eee}
 .legend{margin:0 16px 8px;color:#555;font-size:13px}
 """
     extra_js = """

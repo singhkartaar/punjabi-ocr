@@ -107,6 +107,8 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
         if confidence < RESOLVED:
             flags.append("weak-shabad")
         method_str = "+".join(method) if method else "ref-window"
+        if method_str == "ref":
+            method_str = "ref-window"
     kind_hint = "notation"
     if shabad_id is None and not weight and (ref is None or ref.get("source") == "G") and n_lines == 0:
         kind_hint = "non-gurbani" if merged_lines else "partial"

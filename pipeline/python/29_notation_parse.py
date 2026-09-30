@@ -330,7 +330,8 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
                 for k, v in q["marks"].items():
                     quality["marks"][k] = quality["marks"].get(k, 0) + v
                 if got.get("taal_inferred") and heading is not None and not sec_taal:
-                    heading.setdefault("taal", {})
+                    if not heading.get("taal"):
+                        heading["taal"] = {}
                     if not heading["taal"].get("key"):
                         heading["taal"].update({"key": got["taal_inferred"], "confidence": 0.5,
                                                 "matras": (notation_vocab.taal_info(got["taal_inferred"]) or {}).get("matras")})
@@ -532,6 +533,18 @@ def main():
         seq_by_page[page] = seq_by_page.get(page, 0) + 1
         rec, images = span_record(span, book, style, con, seq_by_page[page], book_dir, images_dir, page_files,
                                   args.no_grid, engine, body_h_of)
+        if rec["shabad"].get("shabad_id") is None and "no-shabad-text" in rec["flags"] and "continued-from-prev" in rec["flags"] \
+                and not rec["layout"].get("shabad_at_number"):
+            # grids at the edge of the pages read with no shabad before them and none the bol row names: nothing anchors them
+            dropped.append({"why": "edge-no-shabad", "pages": rec["pages"], "roles": ["grid"]})
+            for im in images:
+                try:
+                    os.remove(os.path.join(images_dir, os.path.basename(im["file"])))
+                    if im.get("thumb"):
+                        os.remove(os.path.join(images_dir, os.path.basename(im["thumb"])))
+                except OSError:
+                    pass
+            continue
         errs = validate(rec)
         if errs and rec["sections"] and all(e["path"].startswith("sections") for e in errs):
             # the grid reading is wrong somewhere; the notation (its images, its shabad) stands without it

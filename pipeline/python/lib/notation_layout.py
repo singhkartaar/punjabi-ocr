@@ -173,7 +173,7 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
         if r["role"] != "shabad":
             continue
         after_ = regions[i + 1] if i + 1 < len(regions) else None
-        over_ref = bool(after_ and after_["role"] == "ref" and re.search("[।॥]", r["text"]))
+        over_ref = bool(after_ and after_["role"] == "ref" and _verse_shaped(r["text"]))
         if not (_verse_block(r) or over_ref):
             r["role"] = "text"
     # a grid of one line that is really a marker row or a stray
@@ -255,6 +255,15 @@ def _fold_shreds(regions: list[dict]) -> list[dict]:
                 changed = True
                 break
     return regions
+
+
+def _verse_shaped(text: str) -> bool:
+    """Two lines or more, most of them closed by a danda or a comma, as a Kabitt or a Savaiya is set; prose is not."""
+    lines = [l.strip() for l in (text or "").split("\n") if l.strip()]
+    if len(lines) < 2:
+        return False
+    closed = sum(1 for l in lines if l.rstrip("0-9੦-੯ ॥।)")[-1:] in ("।", "॥", ",") or l[-1:] in ("।", "॥", ","))
+    return closed / len(lines) >= 0.5
 
 
 def _verse_block(region: dict) -> bool:
