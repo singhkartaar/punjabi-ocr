@@ -267,7 +267,7 @@ def write_page(args, results: list[dict]) -> None:
         verdict = ("no shabad found" if not recs else
                    "shabads" if resolved == len(recs) else
                    "partly" if resolved else "unnamed")
-        status = b["status"] if b["status"] != "ok" else ""
+        status = b["status"] if b["status"] not in ("ok", "skipped") else ""
         rows_html.append("<tr><td><a href='#b-%s'>%s</a></td><td>%s</td><td>%d</td><td>%s</td><td>%d</td><td>%d / %d</td><td>%d</td><td>%d / %d</td><td>%s</td><td class='v-%s'>%s%s</td></tr>"
                          % (html_mod.escape(b["book"]), html_mod.escape(b["title"]), html_mod.escape(b["author"]), b["pages"], html_mod.escape(b["pages_arg"]),
                             b["found"], resolved, len(recs), multi, with_grid, len(recs),
@@ -319,10 +319,13 @@ document.addEventListener('click', e => { if (e.target.tagName === 'IMG' && e.ta
     doc = ("<!doctype html><html lang=en><meta charset=utf-8><title>notation sample · %d books</title>"
            "<meta name=viewport content='width=device-width,initial-scale=1'>"
            "<style>%s%s%s</style><body>"
-           "<header><h1>A sample across the shelf <small>%d books · %d notations · seed %d · the original page, the crops, and the grid as read</small></h1>"
+           "<header><h1>A sample across the shelf <small>%d books · %d notations · %s · each notation as printed, its page, the finer cuts</small></h1>"
            "<span id=count class=count></span><button id=download class=primary>download candidates.jsonl</button><button id=reset>reset</button></header>"
            "%s<script id=cands type=application/json>%s</script><script>%s%s</script></html>"
-           % (n_books, gt.PAGE_CSS, gt.NOTATION_CSS, extra_css, n_books, n_shown, args.seed, "".join(parts), data, gt.PAGE_JS, extra_js))
+           % (n_books, gt.PAGE_CSS, gt.NOTATION_CSS, extra_css, n_books, n_shown,
+              ("%d pages at the %s of every book" % (args.window, " and the ".join(args.places.split(","))) if args.places != "random"
+               else "%d random places a book, seed %d" % (args.per_book, args.seed)),
+              "".join(parts), data, gt.PAGE_JS, extra_js))
     with open(os.path.join(args.out, "review.html"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(doc)
     with open(os.path.join(args.out, "candidates.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
