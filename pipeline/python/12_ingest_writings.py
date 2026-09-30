@@ -350,6 +350,12 @@ def main():
             (w.get("author") for w in manifest["works"] if w.get("author")), args.author)
 
     sources = list_sources(args.src, manifest)
+    if manifest is not None:
+        # a notation book is not prose: 29_notation_parse.py reads it
+        skipped = [p for p in sources if parse_source(p, manifest).get("kind") == "notation"]
+        sources = [p for p in sources if p not in skipped]
+        if skipped:
+            print("skipping %d notation book(s) (kind: notation)" % len(skipped))
     if args.limit:
         sources = sources[:args.limit]
     if not sources:

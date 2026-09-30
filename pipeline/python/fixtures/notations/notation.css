@@ -1,0 +1,17 @@
+.ntn{font-family:inherit}.ntn-line{border-collapse:collapse;margin:.4em 0}
+.ntn-cell{padding:.1em .45em;text-align:center;vertical-align:bottom;white-space:nowrap}
+.ntn-vb{border-left:1px solid currentColor}.ntn-line tr:first-child .ntn-cell{padding-top:.6em}
+.ntn-row-swar .ntn-cell{font-size:1.25em;line-height:1.1}.ntn-row-mark .ntn-cell{font-size:.85em;opacity:.75}
+.ntn-row-m .ntn-cell{font-size:.7em;opacity:.55;font-weight:normal}
+.n{position:relative;display:inline-block;padding:0 .05em}
+.n-komal{text-decoration:underline;text-underline-offset:.15em}
+.n-tivra::after{content:"|";position:absolute;top:-.55em;left:50%;transform:translateX(-50%);font-size:.6em;line-height:1}
+.n-taar::before,.n-mandra::after{content:"\2022";position:absolute;left:50%;transform:translateX(-50%);font-size:.45em;line-height:1}
+.n-taar::before{top:-.6em}.n-mandra::after{bottom:-.55em}
+.n-taar2::before{content:"\2022\2022"}.n-mandra2::after{content:"\2022\2022"}
+.n-grp{display:inline-block;border-bottom:1px solid currentColor;border-radius:0 0 .5em .5em;padding:0 .1em}
+.n-kan{font-size:.6em;vertical-align:super;margin-right:-.1em}.n-khatka::after{content:"~";font-size:.6em;vertical-align:super}
+.n-rest,.n-ext{opacity:.7}.n-unknown{color:#b00;border-bottom:1px dotted #b00}
+.ntn-unknown{background:rgba(255,0,0,.06)}.b-held{opacity:.6}
+.ntn-sam{font-weight:600}.ntn-khali .ntn-cell,.ntn-row-mark .ntn-khali{opacity:.9}
+.ntn-sec-label{font-weight:600;margin-top:.8em}.ntn-cont{border-left-style:dashed}

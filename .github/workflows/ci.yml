@@ -22,7 +22,7 @@ jobs:
           pip install pymupdf pytesseract gurmukhifix opencv-python-headless Pillow regex rapidfuzz symspellpy dinglehopper sacrebleu sacremoses indic-nlp-library-itt tqdm
       - name: test
         working-directory: pipeline/python
-        run: python -m unittest test_ocr test_writings
+        run: python -m unittest test_ocr test_writings test_notation
       # the driver plans a run from the example manifest without touching a
       # PDF, an engine or a model: the whole sequence, printed, is the smoke test
       - name: dry run

@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/singhkartaar/punjabi-ocr/pipeline/python/lib/notation.schema.json",
+  "title": "Keertan notation",
+  "description": "One parsed notation of a Gurbani shabad from a printed keertan book. Structural half of the contract; the cross-field rules (beat exclusivity, length sums, komal/tivra letters, matra sequence, bol spans) live in lib/notation.py validate() and its JavaScript twin. Defaults are omitted on write.",
+  "type": "object",
+  "required": ["schema_version", "notation_id", "book_key", "page", "seq", "pages", "kind", "script", "shabad", "sections", "images", "source", "flags", "verified"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "notation_id": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*:[0-9]{4}:[0-9]+$"},
+    "book_key": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"},
+    "page": {"type": "integer", "minimum": 1},
+    "seq": {"type": "integer", "minimum": 1},
+    "pages": {"type": "array", "items": {"type": "integer", "minimum": 1}, "minItems": 1},
+    "kind": {"enum": ["notation", "partial", "reet-ref", "non-gurbani"]},
+    "script": {"enum": ["gurmukhi", "latin", "devanagari"]},
+    "heading": {
+      "type": "object",
+      "properties": {
+        "raw": {"type": "string"},
+        "number": {"type": ["integer", "null"]},
+        "raag": {"$ref": "#/$defs/raagRef"},
+        "taal": {"oneOf": [{"$ref": "#/$defs/taalRef"}, {"type": "null"}]},
+        "reet_of": {"type": ["string", "null"]}
+      }
+    },
+    "shabad": {
+      "type": "object",
+      "required": ["shabad_id", "confidence", "method", "line_ids", "verified"],
+      "properties": {
+        "shabad_id": {"type": ["integer", "null"]},
+        "source": {"enum": ["G", "D", "B", "K", "N", null]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "method": {"enum": ["stream+ref+bol", "stream+ref", "stream+bol", "stream", "ref-window", "ref+bol", "bol", "manual", "none"]},
+        "line_ids": {"type": "array", "items": {"type": "integer"}},
+        "ang": {"type": ["integer", "null"]},
+        "writer": {"type": ["string", "null"]},
+        "first_line": {"type": ["string", "null"]},
+        "printed": {"type": "array", "items": {"type": "string"}},
+        "ref": {"type": ["object", "null"]},
+        "verified": {"type": "boolean"}
+      }
+    },
+    "raag_shabad": {"type": ["string", "null"]},
+    "raag_differs": {"type": "boolean"},
+    "sections": {"type": "array", "items": {"$ref": "#/$defs/section"}},
+    "images": {"type": "array", "items": {"$ref": "#/$defs/image"}},
+    "source": {
+      "type": "object",
+      "required": ["book_key", "author", "author_key", "title", "parser", "vocab_version", "built"],
+      "properties": {
+        "book_key": {"type": "string"}, "author": {"type": "string"}, "author_key": {"type": "string"},
+        "title": {"type": "string"}, "title_en": {"type": ["string", "null"]}, "part": {"type": ["integer", "null"]},
+        "pages": {"type": "array", "items": {"type": "integer"}},
+        "engines": {"type": "array", "items": {"type": "string"}},
+        "row_engine": {"type": ["string", "null"]},
+        "parser": {"type": "object", "required": ["name", "version"], "properties": {"name": {"type": "string"}, "version": {"type": "string"}}},
+        "vocab_version": {"type": "string"},
+        "built": {"type": "string"},
+        "content_hash": {"type": "string"},
+        "gold": {"type": ["object", "null"]}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "properties": {
+        "cells": {"type": "integer"}, "unknown": {"type": "integer"}, "conf_mean": {"type": "number"},
+        "matra_check": {"enum": ["ok", "mismatch", "n/a"]},
+        "marks": {"type": "object"}, "watermark": {"type": "number"}
+      }
+    },
+    "flags": {"type": "array", "items": {"type": "string"}},
+    "verified": {"type": "boolean"}
+  },
+  "$defs": {
+    "raagRef": {
+      "type": "object",
+      "properties": {"printed": {"type": "string"}, "key": {"type": ["string", "null"]}, "parent_key": {"type": ["string", "null"]}, "confidence": {"type": "number"}}
+    },
+    "taalRef": {
+      "type": "object",
+      "properties": {"printed": {"type": "string"}, "key": {"type": ["string", "null"]}, "matras": {"type": ["integer", "null"]}, "laya": {"enum": ["vilambit", "madh", "drut", null]}, "confidence": {"type": "number"}}
+    },
+    "section": {
+      "type": "object",
+      "required": ["kind", "lines"],
+      "properties": {
+        "kind": {"enum": ["sthai", "antara", "sanchari", "abhog", "alaap", "taan", "tihai", "other"]},
+        "n": {"type": ["integer", "null"], "minimum": 1},
+        "label": {"type": ["string", "null"]},
+        "taal": {"oneOf": [{"$ref": "#/$defs/taalRef"}, {"type": "null"}]},
+        "line_ids": {"type": "array", "items": {"type": "integer"}},
+        "lines": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/line"}}
+      }
+    },
+    "line": {
+      "type": "object",
+      "required": ["kind", "beats"],
+      "properties": {
+        "kind": {"enum": ["avartan", "free"]},
+        "avartan": {"type": "integer", "minimum": 1},
+        "matra_from": {"type": "integer", "minimum": 1, "default": 1},
+        "continues": {"type": "boolean", "default": false},
+        "line_id": {"type": ["integer", "null"]},
+        "page": {"type": "integer"},
+        "bbox": {"type": "array", "items": {"type": "integer"}, "minItems": 4, "maxItems": 4},
+        "beats": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/beat"}},
+        "raw": {"type": "object", "properties": {"swar": {"type": "string"}, "bol": {"type": "string"}, "marks": {"type": ["string", "null"]}, "conf": {"type": ["number", "null"]}}}
+      }
+    },
+    "beat": {
+      "type": "object",
+      "description": "Exactly one of notes (a list, or null for unreadable), ext:true, rest:true.",
+      "properties": {
+        "m": {"type": "integer", "minimum": 1},
+        "div": {"enum": [1, 2, 3, 4, 6, 8], "default": 1},
+        "notes": {"oneOf": [{"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/note"}}, {"type": "null"}]},
+        "ext": {"const": true},
+        "rest": {"const": true},
+        "bol": {"oneOf": [{"$ref": "#/$defs/bol"}, {"type": "null"}]},
+        "raw": {"type": "string"},
+        "c": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "note": {
+      "type": "object",
+      "required": ["s"],
+      "properties": {
+        "s": {"enum": ["S", "R", "G", "M", "P", "D", "N"]},
+        "o": {"type": "integer", "minimum": -2, "maximum": 2, "default": 0},
+        "k": {"type": "boolean", "default": false},
+        "t": {"type": "boolean", "default": false},
+        "len": {"type": "integer", "minimum": 1, "default": 1},
+        "kan": {"type": "object", "required": ["s"], "properties": {"s": {"enum": ["S", "R", "G", "M", "P", "D", "N"]}, "o": {"type": "integer"}, "k": {"type": "boolean"}, "t": {"type": "boolean"}}},
+        "kh": {"type": "boolean", "default": false}
+      }
+    },
+    "bol": {
+      "type": "object",
+      "required": ["g"],
+      "properties": {
+        "g": {"type": "string"},
+        "h": {"type": "integer", "minimum": 0, "default": 0},
+        "span": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 2, "maxItems": 2}
+      }
+    },
+    "image": {
+      "type": "object",
+      "required": ["n", "file", "role", "page", "sha256", "bytes"],
+      "properties": {
+        "n": {"type": "integer", "minimum": 1}, "file": {"type": "string"},
+        "role": {"enum": ["grid", "shabad", "heading"]}, "page": {"type": "integer"},
+        "bbox": {"type": "array", "items": {"type": "integer"}}, "w": {"type": "integer"}, "h": {"type": "integer"},
+        "bytes": {"type": "integer"}, "sha256": {"type": "string"}, "thumb": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

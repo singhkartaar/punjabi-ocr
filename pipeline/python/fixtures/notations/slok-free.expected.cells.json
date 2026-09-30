@@ -1,0 +1,278 @@
+[
+ {
+  "section": "other",
+  "n": 1,
+  "label": "ਸਲੋਕ",
+  "kind": "free",
+  "avartan": null,
+  "matra_from": 1,
+  "taal": null,
+  "continues": false,
+  "beats": [
+   {
+    "notes": [
+     {
+      "s": "P",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਸ",
+     "span": [
+      0,
+      1
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "div": 2,
+    "notes": [
+     {
+      "s": "D",
+      "k": true,
+      "o": 0,
+      "t": false,
+      "len": 1,
+      "kh": false
+     },
+     {
+      "s": "P",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਤਿ",
+     "span": [
+      1,
+      3
+     ],
+     "h": 0
+    }
+   },
+   {
+    "ext": true,
+    "bol": {
+     "g": "",
+     "h": 2
+    },
+    "div": 1
+   },
+   {
+    "notes": [
+     {
+      "s": "M",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਨਾਮੁ",
+     "span": [
+      4,
+      8
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "notes": [
+     {
+      "s": "S",
+      "o": -1,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਕਰ",
+     "span": [
+      9,
+      11
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "notes": [
+     {
+      "s": "S",
+      "o": -2,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਤਾ",
+     "span": [
+      11,
+      13
+     ],
+     "h": 0
+    },
+    "div": 1
+   }
+  ],
+  "matras": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "marks": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ],
+  "vibhag": [
+   false,
+   false,
+   false,
+   false,
+   false,
+   false
+  ],
+  "swar_pa": [
+   "ਪ",
+   "ਧ̲ਪ",
+   "—",
+   "ਮ",
+   "ਸ̣",
+   "ਸ̣̣"
+  ],
+  "swar_en": [
+   "P",
+   "dP",
+   "-",
+   "M",
+   "S,",
+   "S,,"
+  ],
+  "bol_pa": [
+   "ਸ",
+   "ਤਿ",
+   "ऽऽ",
+   "ਨਾਮੁ",
+   "ਕਰ",
+   "ਤਾ"
+  ],
+  "bol_en": [
+   "s",
+   "t",
+   "--",
+   "naam",
+   "kar",
+   "taa"
+  ],
+  "unknown": [
+   false,
+   false,
+   false,
+   false,
+   false,
+   false
+  ],
+  "has_bol": true
+ },
+ {
+  "section": "other",
+  "n": 1,
+  "label": "ਸਲੋਕ",
+  "kind": "free",
+  "avartan": null,
+  "matra_from": 1,
+  "taal": null,
+  "continues": true,
+  "beats": [
+   {
+    "notes": [
+     {
+      "s": "S",
+      "o": 2,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "div": 1
+   },
+   {
+    "notes": [
+     {
+      "s": "N",
+      "k": true,
+      "o": 1,
+      "kan": {
+       "s": "S",
+       "o": 1,
+       "k": false,
+       "t": false,
+       "kh": false
+      },
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "div": 1
+   }
+  ],
+  "matras": [
+   null,
+   null
+  ],
+  "marks": [
+   null,
+   null
+  ],
+  "vibhag": [
+   false,
+   false
+  ],
+  "swar_pa": [
+   "ਸ̇̇",
+   "{ਸ̇}ਨ̲̇"
+  ],
+  "swar_en": [
+   "S''",
+   "{S'}n'"
+  ],
+  "bol_pa": [
+   "",
+   ""
+  ],
+  "bol_en": [
+   "",
+   ""
+  ],
+  "unknown": [
+   false,
+   false
+  ],
+  "has_bol": false
+ }
+]

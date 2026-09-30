@@ -314,6 +314,30 @@ class ManifestTests(unittest.TestCase):
     def test_no_manifest_is_todays_behaviour(self):
         meta = parse_source("C:/x/1492003384127-Dhooja-Bhau-Part-2.pdf", None)
         self.assertEqual((meta["essay"], meta["part"], meta["work"], meta["reader"]), (127, 2, "dhooja-bhau", "pdf-text"))
+        self.assertEqual(meta["kind"], "prose")
+
+    def test_a_notation_book_carries_its_kind_and_style(self):
+        with tempfile.TemporaryDirectory() as d:
+            for name in ("a.pdf", "b.pdf", "c.pdf"):
+                open(os.path.join(d, name), "wb").close()
+            json.dump({"author": "X", "language": "pa", "reader": "ocr", "kind": "notation",
+                       "style": {"table": "bars", "shabad_position": "after"},
+                       "works": [{"file": "a.pdf", "title": "A", "book": "a"},
+                                 {"file": "b.pdf", "title": "B", "book": "b", "style": {"table": "ruled", "labels": True}},
+                                 {"file": "c.pdf", "title": "C", "book": "c", "kind": "prose"}]},
+                      open(os.path.join(d, "manifest.json"), "w", encoding="utf-8"))
+            m = load_manifest(d)
+            a, b, c = (parse_source(os.path.join(d, n), m) for n in ("a.pdf", "b.pdf", "c.pdf"))
+            self.assertEqual(a["kind"], "notation")
+            # the folder's style under the defaults; a work's keys over the folder's
+            self.assertEqual((a["style"]["table"], a["style"]["shabad_position"], a["style"]["swar_row"]), ("bars", "after", "above"))
+            self.assertEqual((b["style"]["table"], b["style"]["labels"], b["style"]["shabad_position"]), ("ruled", True, "after"))
+            # a prose work in a notation folder has no style at all
+            self.assertEqual((c["kind"], c.get("style")), ("prose", None))
+            json.dump({"author": "X", "kind": "notation", "style": {"table": "wavy"},
+                       "works": [{"file": "a.pdf", "title": "A"}]}, open(os.path.join(d, "manifest.json"), "w", encoding="utf-8"))
+            with self.assertRaises(ValueError):
+                parse_source(os.path.join(d, "a.pdf"), load_manifest(d))
 
 
 class DriverTests(unittest.TestCase):

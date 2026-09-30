@@ -1,0 +1,450 @@
+{
+ "raag_pa": [
+  [
+   "ਰਾਗ ਸੋਰਠਿ",
+   "sorath"
+  ],
+  [
+   "ਰਾਗੁ ਸੋਰਠਿ ਮਹਲਾ ੫",
+   "sorath"
+  ],
+  [
+   "ਸਿਰੀਰਾਗੁ",
+   "sri_raag"
+  ],
+  [
+   "ਸ੍ਰੀ ਰਾਗ",
+   "sri_raag"
+  ],
+  [
+   "ਬਿਲਾਵਲੁ",
+   "bilaval"
+  ],
+  [
+   "ਆਸਾ",
+   "asa"
+  ],
+  [
+   "ਆਸਾਵਰੀ",
+   "asavari"
+  ],
+  [
+   "ਤੋੜੀ",
+   "todi"
+  ],
+  [
+   "ਟੋਡੀ",
+   "todi"
+  ],
+  [
+   "ਮੀਆਂ ਕੀ ਤੋੜੀ",
+   "miyan_ki_todi"
+  ],
+  [
+   "ਬਸੰਤ ਹਿੰਡੋਲ",
+   "basant_hindol"
+  ],
+  [
+   "ਦੇਵ ਗੰਧਾਰੀ",
+   "devgandhari"
+  ],
+  [
+   "ਦੇਵਗੰਧਾਰੀ",
+   "devgandhari"
+  ],
+  [
+   "ਗਉੜੀ ਪੂਰਬੀ",
+   "gauri_purbi"
+  ],
+  [
+   "ਗੌੜੀ",
+   "gauri"
+  ],
+  [
+   "ਯਮਨ ਕਲਿਆਣ",
+   "yaman"
+  ],
+  [
+   "ਈਮਨ",
+   "yaman"
+  ],
+  [
+   "ਜੋਨਪੁਰੀ",
+   "jaunpuri"
+  ],
+  [
+   "ਭੈਰਵੀ",
+   "bhairavi"
+  ],
+  [
+   "ਭੈਰਉ",
+   "bhairav"
+  ],
+  [
+   "ਭੈਰਵ",
+   "bhairav"
+  ],
+  [
+   "ਰਾਗ: ਪਹਾੜੀ",
+   "pahadi"
+  ],
+  [
+   "ਸ਼ਿਵਰੰਜਨੀ",
+   "shivranjani"
+  ],
+  [
+   "ਸਿਵਰੰਜਨੀ",
+   "shivranjani"
+  ],
+  [
+   "ਬਿੰਦ੍ਰਾਬਨੀ ਸਾਰੰਗ",
+   "brindavani_sarang"
+  ],
+  [
+   "ਸੁਧ ਬਿਲਾਵਲ",
+   "shuddh_bilaval"
+  ],
+  [
+   "ਜੈਜੈਵੰਤੀ",
+   "jaijaivanti"
+  ],
+  [
+   "ਆਸਾ ਕਾਫੀ",
+   "asa_kafi"
+  ],
+  [
+   "ਕਾਫੀ",
+   "kafi"
+  ],
+  [
+   "ਰਾਗ ਮਾਲਾ",
+   "raag_mala"
+  ],
+  [
+   "ਮਲਾਰ",
+   "malhar"
+  ],
+  [
+   "ਰਾਗ ਜੌਨਪੁਰੀ (ਮਿਸ਼ਰਤ)",
+   "jaunpuri"
+  ],
+  [
+   "ਰਾਗ ਗਉੜੀ ਪੂਰਬੀ ਮਹਲਾ ੫",
+   "gauri_purbi"
+  ],
+  [
+   "ਰਾਗ ਸਾਰੰਗ (ਬਿੰਦ੍ਰਾਬਨੀ ਸਾਰੰਗ)",
+   "brindavani_sarang"
+  ],
+  [
+   "ਸੂਹੀ ਵਿਚ ਕਾਫੀ",
+   "suhi_kafi"
+  ],
+  [
+   "ਰਾਗੁ ਭੈਰਉ",
+   "bhairav"
+  ],
+  [
+   "ਰਾਗ ਸ੍ਰੀ",
+   "sri_raag"
+  ],
+  [
+   "ਮਹਲਾ ੫",
+   null
+  ],
+  [
+   "ਰਾਗ",
+   null
+  ],
+  [
+   "ਸ",
+   null
+  ],
+  [
+   "ਸ਼ਬਦ",
+   null
+  ]
+ ],
+ "raag_en": [
+  [
+   "Raag Sorath",
+   "sorath"
+  ],
+  [
+   "Sorath",
+   "sorath"
+  ],
+  [
+   "Raag Aasaa",
+   "asa"
+  ],
+  [
+   "Aasaa",
+   "asa"
+  ],
+  [
+   "Siree Raag",
+   "sri_raag"
+  ],
+  [
+   "Sri Raag",
+   "sri_raag"
+  ],
+  [
+   "Raag Raamkalee",
+   "ramkali"
+  ],
+  [
+   "Ramkali",
+   "ramkali"
+  ],
+  [
+   "Basant Hindol",
+   "basant_hindol"
+  ],
+  [
+   "Gauree Poorbee",
+   "gauri_purbi"
+  ],
+  [
+   "Tilang Kaafee",
+   "tilang_kafi"
+  ],
+  [
+   "Raag Dayv Gandhaaree",
+   "devgandhari"
+  ],
+  [
+   "Raag Bilaaval",
+   "bilaval"
+  ],
+  [
+   "Raag Bhairao",
+   "bhairav"
+  ],
+  [
+   "Raag Nat Naaraayan",
+   "nat_narayan"
+  ],
+  [
+   "Raag Maalee Gauraa",
+   "mali_gaura"
+  ],
+  [
+   "Raag Kalyaan",
+   "kalyan"
+  ],
+  [
+   "Raag Jaijaavantee",
+   "jaijaivanti"
+  ],
+  [
+   "Soohee Lalit",
+   "suhi_lalit"
+  ],
+  [
+   "Jap",
+   "jap"
+  ],
+  [
+   "Salok Sehskritee",
+   "salok_sahaskriti"
+  ],
+  [
+   "Raag Maalaa",
+   "raag_mala"
+  ],
+  [
+   "Wadhans",
+   "vadhans"
+  ],
+  [
+   "Bilaaval Gond",
+   "bilaval_gond"
+  ],
+  [
+   "Yaman Kalyan",
+   "yaman"
+  ],
+  [
+   "Mian ki Todi",
+   "miyan_ki_todi"
+  ],
+  [
+   "Guru Arjan Dev Ji",
+   null
+  ]
+ ],
+ "taal": [
+  [
+   "ਤਿੰਨ ਤਾਲ",
+   "teentaal",
+   null
+  ],
+  [
+   "ਤੀਨ ਤਾਲ",
+   "teentaal",
+   null
+  ],
+  [
+   "ਤਿੰਨਤਾਲ",
+   "teentaal",
+   null
+  ],
+  [
+   "ਛੋਟਾ ਤਿੰਨ ਤਾਲ",
+   "teentaal",
+   null
+  ],
+  [
+   "ਝਪਤਾਲ",
+   "jhaptaal",
+   null
+  ],
+  [
+   "ਏਕ ਤਾਲ",
+   "ektaal",
+   null
+  ],
+  [
+   "ਇੱਕ ਤਾਲਾ",
+   "ektaal",
+   null
+  ],
+  [
+   "ਇਕਤਾਲਾ",
+   "ektaal",
+   null
+  ],
+  [
+   "ਚਾਰ ਤਾਲ",
+   "chautaal",
+   null
+  ],
+  [
+   "ਚੌਤਾਲ",
+   "chautaal",
+   null
+  ],
+  [
+   "ਕਹਿਰਵਾ",
+   "keharwa",
+   null
+  ],
+  [
+   "ਕਹਰਵਾ",
+   "keharwa",
+   null
+  ],
+  [
+   "ਦਾਦਰਾ",
+   "dadra",
+   null
+  ],
+  [
+   "ਰੂਪਕ ਤਾਲ",
+   "rupak",
+   null
+  ],
+  [
+   "ਦੀਪ ਚੰਦੀ",
+   "deepchandi",
+   null
+  ],
+  [
+   "ਝੂਮਰਾ",
+   "jhumra",
+   null
+  ],
+  [
+   "ਧਮਾਰ",
+   "dhamar",
+   null
+  ],
+  [
+   "ਤਿਲਵਾੜਾ",
+   "tilwada",
+   null
+  ],
+  [
+   "ਆੜਾ ਚੌਤਾਲ",
+   "ada_chautaal",
+   null
+  ],
+  [
+   "ਸੂਲਤਾਲ",
+   "sooltaal",
+   null
+  ],
+  [
+   "ਪੰਜਾਬੀ ਠੇਕਾ",
+   "punjabi_theka",
+   null
+  ],
+  [
+   "ਤਾਲ ਕਹਿਰਵਾ (ਮੱਧ ਲਯ)",
+   "keharwa",
+   "madh"
+  ],
+  [
+   "ਤੀਨਤਾਲ ਵਿਲੰਬਿਤ",
+   "teentaal",
+   "vilambit"
+  ],
+  [
+   "ਦਰੁਤ ਏਕਤਾਲ",
+   "ektaal",
+   "drut"
+  ],
+  [
+   "ਤਿੰਨਤਾਲ (ਮੱਧ ਲਯ)",
+   "teentaal",
+   "madh"
+  ],
+  [
+   "ਤੀਨ ਤਾਲ ਮਾਤਰਾ 16",
+   "teentaal",
+   null
+  ],
+  [
+   "Teen Taal",
+   "teentaal",
+   null
+  ],
+  [
+   "Tintal",
+   "teentaal",
+   null
+  ],
+  [
+   "Jhaptal",
+   "jhaptaal",
+   null
+  ],
+  [
+   "Kaharva",
+   "keharwa",
+   null
+  ],
+  [
+   "Rupak",
+   "rupak",
+   null
+  ],
+  [
+   "Ektal",
+   "ektaal",
+   null
+  ],
+  [
+   "ਤਾਲ",
+   null,
+   null
+  ],
+  [
+   "ਮਹਲਾ ੫",
+   null,
+   null
+  ]
+ ]
+}

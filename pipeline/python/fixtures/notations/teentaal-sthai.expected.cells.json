@@ -1,0 +1,750 @@
+[
+ {
+  "section": "sthai",
+  "n": 1,
+  "label": "ਸਥਾਈ",
+  "kind": "avartan",
+  "avartan": 1,
+  "matra_from": 1,
+  "taal": "teentaal",
+  "continues": false,
+  "beats": [
+   {
+    "m": 1,
+    "notes": [
+     {
+      "s": "S",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਮੇ",
+     "span": [
+      0,
+      2
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 2,
+    "notes": [
+     {
+      "s": "R",
+      "k": true,
+      "o": 0,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਰੇ",
+     "span": [
+      2,
+      4
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 3,
+    "notes": [
+     {
+      "s": "G",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਮਾ",
+     "span": [
+      5,
+      7
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 4,
+    "notes": [
+     {
+      "s": "M",
+      "t": true,
+      "o": 0,
+      "k": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਧਉ",
+     "span": [
+      7,
+      9
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 5,
+    "notes": [
+     {
+      "s": "P",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਜੀ",
+     "span": [
+      10,
+      12
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 6,
+    "ext": true,
+    "bol": {
+     "g": "",
+     "h": 1
+    },
+    "div": 1
+   },
+   {
+    "m": 7,
+    "div": 2,
+    "notes": [
+     {
+      "s": "D",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     },
+     {
+      "s": "N",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਸ",
+     "span": [
+      13,
+      14
+     ],
+     "h": 0
+    }
+   },
+   {
+    "m": 8,
+    "notes": [
+     {
+      "s": "S",
+      "o": 1,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਤ",
+     "span": [
+      14,
+      15
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 9,
+    "rest": true,
+    "bol": {
+     "g": "",
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 10,
+    "notes": [
+     {
+      "s": "N",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਸੰ",
+     "span": [
+      15,
+      17
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 11,
+    "notes": [
+     {
+      "s": "D",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਗ",
+     "span": [
+      17,
+      18
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 12,
+    "notes": [
+     {
+      "s": "P",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਤਿ",
+     "span": [
+      18,
+      20
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 13,
+    "notes": [
+     {
+      "s": "M",
+      "kan": {
+       "s": "P",
+       "o": 0,
+       "k": false,
+       "t": false,
+       "kh": false
+      },
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਮਿ",
+     "span": [
+      21,
+      23
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 14,
+    "notes": [
+     {
+      "s": "G",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਲੇ",
+     "span": [
+      23,
+      25
+     ],
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 15,
+    "div": 3,
+    "notes": [
+     {
+      "s": "R",
+      "len": 2,
+      "o": 0,
+      "k": false,
+      "t": false,
+      "kh": false
+     },
+     {
+      "s": "S",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਸੁ",
+     "span": [
+      26,
+      28
+     ],
+     "h": 0
+    }
+   },
+   {
+    "m": 16,
+    "notes": [
+     {
+      "s": "S",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਤਰਿਆ",
+     "span": [
+      29,
+      33
+     ],
+     "h": 0
+    },
+    "div": 1
+   }
+  ],
+  "matras": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "marks": [
+   "×",
+   null,
+   null,
+   null,
+   "2",
+   null,
+   null,
+   null,
+   "0",
+   null,
+   null,
+   null,
+   "3",
+   null,
+   null,
+   null
+  ],
+  "vibhag": [
+   true,
+   false,
+   false,
+   false,
+   true,
+   false,
+   false,
+   false,
+   true,
+   false,
+   false,
+   false,
+   true,
+   false,
+   false,
+   false
+  ],
+  "swar_pa": [
+   "ਸ",
+   "ਰ̲",
+   "ਗ",
+   "ਮ́",
+   "ਪ",
+   "—",
+   "ਧਨ",
+   "ਸ̇",
+   "*",
+   "ਨ",
+   "ਧ",
+   "ਪ",
+   "{ਪ}ਮ",
+   "ਗ",
+   "ਰ-ਸ",
+   "ਸ"
+  ],
+  "swar_en": [
+   "S",
+   "r",
+   "G",
+   "m",
+   "P",
+   "-",
+   "DN",
+   "S'",
+   "*",
+   "N",
+   "D",
+   "P",
+   "{P}M",
+   "G",
+   "R-S",
+   "S"
+  ],
+  "bol_pa": [
+   "ਮੇ",
+   "ਰੇ",
+   "ਮਾ",
+   "ਧਉ",
+   "ਜੀ",
+   "ऽ",
+   "ਸ",
+   "ਤ",
+   "",
+   "ਸੰ",
+   "ਗ",
+   "ਤਿ",
+   "ਮਿ",
+   "ਲੇ",
+   "ਸੁ",
+   "ਤਰਿਆ"
+  ],
+  "bol_en": [
+   "may",
+   "ray",
+   "maa",
+   "dhau",
+   "jee",
+   "-",
+   "s",
+   "t",
+   "",
+   "san",
+   "g",
+   "t",
+   "m",
+   "lay",
+   "so",
+   "tariaa"
+  ],
+  "unknown": [
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false,
+   false
+  ],
+  "has_bol": true
+ },
+ {
+  "section": "antara",
+  "n": 1,
+  "label": "ਅੰਤਰਾ",
+  "kind": "avartan",
+  "avartan": 1,
+  "matra_from": 9,
+  "taal": "teentaal",
+  "continues": false,
+  "beats": [
+   {
+    "m": 9,
+    "notes": [
+     {
+      "s": "M",
+      "kh": true,
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1
+     }
+    ],
+    "bol": {
+     "g": "ਹਰਿ",
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 10,
+    "notes": [
+     {
+      "s": "P",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਹਰਿ",
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 11,
+    "notes": [
+     {
+      "s": "D",
+      "o": 1,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਨਾ",
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 12,
+    "notes": [
+     {
+      "s": "S",
+      "o": -1,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਮੁ",
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 13,
+    "notes": null,
+    "raw": "ਗ਼?",
+    "c": 0.31,
+    "bol": {
+     "g": "ਜਪਿ",
+     "h": 0
+    },
+    "div": 1
+   },
+   {
+    "m": 14,
+    "div": 4,
+    "notes": [
+     {
+      "s": "N",
+      "k": true,
+      "o": 0,
+      "t": false,
+      "len": 1,
+      "kh": false
+     },
+     {
+      "s": "D",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     },
+     {
+      "s": "P",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     },
+     {
+      "s": "M",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਜਪਿ",
+     "h": 1
+    }
+   },
+   {
+    "m": 15,
+    "ext": true,
+    "bol": null,
+    "div": 1
+   },
+   {
+    "m": 16,
+    "notes": [
+     {
+      "s": "G",
+      "o": 0,
+      "k": false,
+      "t": false,
+      "len": 1,
+      "kh": false
+     }
+    ],
+    "bol": {
+     "g": "ਓ",
+     "h": 0
+    },
+    "div": 1
+   }
+  ],
+  "matras": [
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "marks": [
+   "0",
+   null,
+   null,
+   null,
+   "3",
+   null,
+   null,
+   null
+  ],
+  "vibhag": [
+   true,
+   false,
+   false,
+   false,
+   true,
+   false,
+   false,
+   false
+  ],
+  "swar_pa": [
+   "ਮ~",
+   "ਪ",
+   "ਧ̇",
+   "ਸ̣",
+   "?",
+   "ਨ̲ਧਪਮ",
+   "—",
+   "ਗ"
+  ],
+  "swar_en": [
+   "M~",
+   "P",
+   "D'",
+   "S,",
+   "?",
+   "nDPM",
+   "-",
+   "G"
+  ],
+  "bol_pa": [
+   "ਹਰਿ",
+   "ਹਰਿ",
+   "ਨਾ",
+   "ਮੁ",
+   "ਜਪਿ",
+   "ਜਪਿऽ",
+   "",
+   "ਓ"
+  ],
+  "bol_en": [
+   "har",
+   "har",
+   "naa",
+   "m",
+   "jap",
+   "jap-",
+   "",
+   "o"
+  ],
+  "unknown": [
+   false,
+   false,
+   false,
+   false,
+   true,
+   false,
+   false,
+   false
+  ],
+  "has_bol": true
+ }
+]

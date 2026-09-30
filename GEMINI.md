@@ -53,7 +53,7 @@ survives only if it can be applied there.
 
 ```bash
 cd pipeline/python
-python -m unittest test_ocr test_writings
+python -m unittest test_ocr test_writings test_notation
 python 27_ingest_book.py --src <a folder with a manifest.json> --dry-run
 ```
 

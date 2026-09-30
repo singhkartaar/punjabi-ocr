@@ -94,6 +94,7 @@ def run_book(pdf: str, book: str, meta: dict, args) -> dict:
     out = {"pdf": pdf, "book": book, "dpi": args.dpi, "language": meta.get("language", "en"),
            "author": meta.get("author"), "work": meta.get("work"), "part": meta.get("part"),
            "scripture": meta.get("scripture", "G"), "quote_policy": meta.get("quote_policy"),
+           "kind": meta.get("kind", "prose"), "style": meta.get("style"),
            "probe": probe, "options": {"crop": crop, "deskew": deskew, "bleed": bleed},
            "pages": [by_page[k] for k in sorted(by_page)]}
     with open(meta_path, "w", encoding="utf-8", newline="\n") as fh:

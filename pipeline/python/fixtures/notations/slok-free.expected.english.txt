@@ -1,0 +1,4 @@
+[other 1]
+P dP - M S, S,,
+  s t -- naam kar taa
+S'' {S'}n'

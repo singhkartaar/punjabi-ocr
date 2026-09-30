@@ -1,0 +1,4186 @@
+{
+  "version": "2026.09.1",
+  "_about": "Raags, taals and notation symbols the keertan books print, keyed once for both the pipeline and the web app. The mirror packages/search-core/src/notation-vocab.json must be byte-identical (tools/sync-notation-vocab.mjs). English aliases marked in `banidb` are the spellings BaniDB's /v2/raags returns; the corpus's shabads.raag is checked against them by a corpus-gated test.",
+  "raags": [
+    {
+      "key": "sri_raag",
+      "en": "Sri Raag",
+      "pa": "ਸਿਰੀ ਰਾਗ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 1,
+      "parent": null,
+      "thaat": "purvi",
+      "aliases": {
+        "pa": [
+          "ਸਿਰੀਰਾਗੁ",
+          "ਸਿਰੀ ਰਾਗੁ",
+          "ਸਿਰੀ ਰਾਗ",
+          "ਸ੍ਰੀ ਰਾਗ",
+          "ਸ੍ਰੀਰਾਗ",
+          "ਸ੍ਰੀ",
+          "ਸਿਰੀ",
+          "ਸ੍ਰੀ ਰਾਗੁ"
+        ],
+        "en": [
+          "Siree Raag",
+          "Sri Raag",
+          "Sri Rag",
+          "Shri Raag",
+          "Sriraag",
+          "Sirree Raag"
+        ]
+      },
+      "banidb": "Siree Raag"
+    },
+    {
+      "key": "majh",
+      "en": "Majh",
+      "pa": "ਮਾਝ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 2,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਮਾਝ",
+          "ਮਾਝੁ"
+        ],
+        "en": [
+          "Raag Maajh",
+          "Maajh",
+          "Majh",
+          "Manjh"
+        ]
+      },
+      "banidb": "Raag Maajh"
+    },
+    {
+      "key": "gauri",
+      "en": "Gauri",
+      "pa": "ਗਉੜੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 3,
+      "parent": null,
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ",
+          "ਗੌੜੀ",
+          "ਗੌਰੀ",
+          "ਗਉਰੀ"
+        ],
+        "en": [
+          "Raag Gauree",
+          "Gauree",
+          "Gauri",
+          "Gaudi",
+          "Gori",
+          "Gowri"
+        ]
+      },
+      "banidb": "Raag Gauree"
+    },
+    {
+      "key": "gauri_guareri",
+      "en": "Gauri Guareri",
+      "pa": "ਗਉੜੀ ਗੁਆਰੇਰੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਗੁਆਰੇਰੀ",
+          "ਗੌੜੀ ਗੁਆਰੇਰੀ"
+        ],
+        "en": [
+          "Gauree Guaarayree",
+          "Gauri Guareri",
+          "Gauri Gwareri"
+        ]
+      }
+    },
+    {
+      "key": "gauri_cheti",
+      "en": "Gauri Cheti",
+      "pa": "ਗਉੜੀ ਚੇਤੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਚੇਤੀ",
+          "ਗੌੜੀ ਚੇਤੀ"
+        ],
+        "en": [
+          "Gauree Chaytee",
+          "Gauri Cheti"
+        ]
+      }
+    },
+    {
+      "key": "gauri_bairagan",
+      "en": "Gauri Bairagan",
+      "pa": "ਗਉੜੀ ਬੈਰਾਗਣਿ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਬੈਰਾਗਣਿ",
+          "ਗਉੜੀ ਬੈਰਾਗਣ",
+          "ਗੌੜੀ ਬੈਰਾਗਣ"
+        ],
+        "en": [
+          "Gauree Bairaagan",
+          "Gauri Bairagan",
+          "Gauri Bairagni"
+        ]
+      }
+    },
+    {
+      "key": "gauri_dipki",
+      "en": "Gauri Dipki",
+      "pa": "ਗਉੜੀ ਦੀਪਕੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਦੀਪਕੀ",
+          "ਗੌੜੀ ਦੀਪਕੀ"
+        ],
+        "en": [
+          "Gauree Deepkee",
+          "Gauri Dipki",
+          "Gauri Deepki"
+        ]
+      }
+    },
+    {
+      "key": "gauri_purbi",
+      "en": "Gauri Purbi",
+      "pa": "ਗਉੜੀ ਪੂਰਬੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "purvi",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਪੂਰਬੀ",
+          "ਗੌੜੀ ਪੂਰਬੀ",
+          "ਗਉੜੀ ਪੂਰਬੀ ਦੀਪਕੀ"
+        ],
+        "en": [
+          "Gauree Poorbee",
+          "Gauri Purbi",
+          "Gauri Poorvi",
+          "Gauree Poorbee Deepkee"
+        ]
+      }
+    },
+    {
+      "key": "gauri_majh",
+      "en": "Gauri Majh",
+      "pa": "ਗਉੜੀ ਮਾਝ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਮਾਝ",
+          "ਗੌੜੀ ਮਾਝ"
+        ],
+        "en": [
+          "Gauree Maajh",
+          "Gauri Majh"
+        ]
+      }
+    },
+    {
+      "key": "gauri_malva",
+      "en": "Gauri Malva",
+      "pa": "ਗਉੜੀ ਮਾਲਵਾ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਮਾਲਵਾ",
+          "ਗੌੜੀ ਮਾਲਵਾ"
+        ],
+        "en": [
+          "Gauree Maalvaa",
+          "Gauri Malva",
+          "Gauri Malwa"
+        ]
+      }
+    },
+    {
+      "key": "gauri_mala",
+      "en": "Gauri Mala",
+      "pa": "ਗਉੜੀ ਮਾਲਾ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਮਾਲਾ",
+          "ਗੌੜੀ ਮਾਲਾ"
+        ],
+        "en": [
+          "Gauree Maalaa",
+          "Gauri Mala"
+        ]
+      }
+    },
+    {
+      "key": "gauri_sorath",
+      "en": "Gauri Sorath",
+      "pa": "ਗਉੜੀ ਸੋਰਠਿ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਸੋਰਠਿ",
+          "ਗਉੜੀ ਸੋਰਠ"
+        ],
+        "en": [
+          "Gauree Sorath",
+          "Gauri Sorath"
+        ]
+      }
+    },
+    {
+      "key": "gauri_dakhni",
+      "en": "Gauri Dakhni",
+      "pa": "ਗਉੜੀ ਦਖਣੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "gauri",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗਉੜੀ ਦਖਣੀ",
+          "ਗਉੜੀ ਦੱਖਣੀ"
+        ],
+        "en": [
+          "Gauree Dakhnee",
+          "Gauri Dakhni",
+          "Gauri Dakhani"
+        ]
+      }
+    },
+    {
+      "key": "asa",
+      "en": "Asa",
+      "pa": "ਆਸਾ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 4,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਆਸਾ",
+          "ਆਸਾਵਰੀ ਆਸਾ"
+        ],
+        "en": [
+          "Raag Aasaa",
+          "Aasaa",
+          "Asa",
+          "Aasa"
+        ]
+      },
+      "banidb": "Raag Aasaa"
+    },
+    {
+      "key": "asa_kafi",
+      "en": "Asa Kafi",
+      "pa": "ਆਸਾ ਕਾਫੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "asa",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਆਸਾ ਕਾਫੀ",
+          "ਆਸਾ ਕਾਫ਼ੀ"
+        ],
+        "en": [
+          "Aasaa Kaafee",
+          "Asa Kafi"
+        ]
+      }
+    },
+    {
+      "key": "asavari",
+      "en": "Asavari",
+      "pa": "ਆਸਾਵਰੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "asa",
+      "thaat": "asavari",
+      "aliases": {
+        "pa": [
+          "ਆਸਾਵਰੀ",
+          "ਆਸਾਵਰੀ ਸੁਧੰਗ"
+        ],
+        "en": [
+          "Aasaavaree",
+          "Asavari",
+          "Asawari",
+          "Aasaavaree Sudhang"
+        ]
+      }
+    },
+    {
+      "key": "asa_asavari",
+      "en": "Asa Asavari",
+      "pa": "ਆਸਾ ਆਸਾਵਰੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "asa",
+      "thaat": "asavari",
+      "aliases": {
+        "pa": [
+          "ਆਸਾ ਆਸਾਵਰੀ"
+        ],
+        "en": [
+          "Aasaa Aasaavaree",
+          "Asa Asavari"
+        ]
+      }
+    },
+    {
+      "key": "gujri",
+      "en": "Gujri",
+      "pa": "ਗੂਜਰੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 5,
+      "parent": null,
+      "thaat": "todi",
+      "aliases": {
+        "pa": [
+          "ਗੂਜਰੀ",
+          "ਗੁਜਰੀ",
+          "ਗੁੱਜਰੀ"
+        ],
+        "en": [
+          "Raag Gujri",
+          "Gujri",
+          "Goojaree",
+          "Gujari",
+          "Gurjari"
+        ]
+      },
+      "banidb": "Raag Gujri"
+    },
+    {
+      "key": "devgandhari",
+      "en": "Devgandhari",
+      "pa": "ਦੇਵਗੰਧਾਰੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 6,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਦੇਵਗੰਧਾਰੀ",
+          "ਦੇਵ ਗੰਧਾਰੀ",
+          "ਦੇਵ ਗਾਂਧਾਰੀ"
+        ],
+        "en": [
+          "Raag Dayv Gandhaaree",
+          "Dayv Gandhaaree",
+          "Dev Gandhari",
+          "Devgandhari",
+          "Dev Gandhaari"
+        ]
+      },
+      "banidb": "Raag Dayv Gandhaaree"
+    },
+    {
+      "key": "bihagra",
+      "en": "Bihagra",
+      "pa": "ਬਿਹਾਗੜਾ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 7,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਬਿਹਾਗੜਾ",
+          "ਬਿਹਾਗਰਾ"
+        ],
+        "en": [
+          "Raag Bihaagraa",
+          "Bihaagraa",
+          "Bihagra",
+          "Bihagara"
+        ]
+      },
+      "banidb": "Raag Bihaagraa"
+    },
+    {
+      "key": "vadhans",
+      "en": "Vadhans",
+      "pa": "ਵਡਹੰਸ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 8,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਵਡਹੰਸੁ",
+          "ਵਡਹੰਸ",
+          "ਵਡਹੰਸ਼"
+        ],
+        "en": [
+          "Raag Vadhans",
+          "Vadhans",
+          "Wadhans",
+          "Wadahans"
+        ]
+      },
+      "banidb": "Raag Vadhans"
+    },
+    {
+      "key": "vadhans_dakhni",
+      "en": "Vadhans Dakhni",
+      "pa": "ਵਡਹੰਸ ਦਖਣੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "vadhans",
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਵਡਹੰਸ ਦਖਣੀ",
+          "ਵਡਹੰਸੁ ਦਖਣੀ"
+        ],
+        "en": [
+          "Vadhans Dakhnee",
+          "Vadhans Dakhni",
+          "Wadhans Dakhni"
+        ]
+      }
+    },
+    {
+      "key": "sorath",
+      "en": "Sorath",
+      "pa": "ਸੋਰਠ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 9,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਸੋਰਠਿ",
+          "ਸੋਰਠ"
+        ],
+        "en": [
+          "Raag Sorath",
+          "Sorath",
+          "Sorathi"
+        ]
+      },
+      "banidb": "Raag Sorath"
+    },
+    {
+      "key": "dhanasri",
+      "en": "Dhanasri",
+      "pa": "ਧਨਾਸਰੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 10,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਧਨਾਸਰੀ",
+          "ਧਨਾਸ੍ਰੀ",
+          "ਧਨਾਸ਼੍ਰੀ"
+        ],
+        "en": [
+          "Raag Dhanaasree",
+          "Dhanaasree",
+          "Dhanasri",
+          "Dhanashri",
+          "Dhanashree"
+        ]
+      },
+      "banidb": "Raag Dhanaasree"
+    },
+    {
+      "key": "jaitsri",
+      "en": "Jaitsri",
+      "pa": "ਜੈਤਸਰੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 11,
+      "parent": null,
+      "thaat": "purvi",
+      "aliases": {
+        "pa": [
+          "ਜੈਤਸਰੀ",
+          "ਜੈਤਸ੍ਰੀ",
+          "ਜੈਤਸ਼੍ਰੀ"
+        ],
+        "en": [
+          "Raag Jaithsree",
+          "Jaithsree",
+          "Jaitsri",
+          "Jaitshri",
+          "Jaitsari"
+        ]
+      },
+      "banidb": "Raag Jaithsree"
+    },
+    {
+      "key": "todi",
+      "en": "Todi",
+      "pa": "ਟੋਡੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 12,
+      "parent": null,
+      "thaat": "todi",
+      "aliases": {
+        "pa": [
+          "ਟੋਡੀ",
+          "ਤੋੜੀ",
+          "ਟੋੜੀ",
+          "ਤੋਡੀ"
+        ],
+        "en": [
+          "Raag Todee",
+          "Todee",
+          "Todi",
+          "Tori",
+          "Todhi"
+        ]
+      },
+      "banidb": "Raag Todee"
+    },
+    {
+      "key": "bairari",
+      "en": "Bairari",
+      "pa": "ਬੈਰਾੜੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 13,
+      "parent": null,
+      "thaat": "marva",
+      "aliases": {
+        "pa": [
+          "ਬੈਰਾੜੀ",
+          "ਬੈਰਾਰੀ",
+          "ਬੈਰਾਗੀ"
+        ],
+        "en": [
+          "Raag Baihaaree",
+          "Baihaaree",
+          "Bairari",
+          "Bairadi",
+          "Bairaree"
+        ]
+      },
+      "banidb": "Raag Baihaaree"
+    },
+    {
+      "key": "tilang",
+      "en": "Tilang",
+      "pa": "ਤਿਲੰਗ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 14,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਤਿਲੰਗ",
+          "ਤਿਲੰਗੁ"
+        ],
+        "en": [
+          "Raag Tilang",
+          "Tilang",
+          "Tilak",
+          "Tilung"
+        ]
+      },
+      "banidb": "Raag Tilang"
+    },
+    {
+      "key": "tilang_kafi",
+      "en": "Tilang Kafi",
+      "pa": "ਤਿਲੰਗ ਕਾਫੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "tilang",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਤਿਲੰਗ ਕਾਫੀ",
+          "ਤਿਲੰਗ ਕਾਫ਼ੀ"
+        ],
+        "en": [
+          "Tilang Kaafee",
+          "Tilang Kafi"
+        ]
+      }
+    },
+    {
+      "key": "suhi",
+      "en": "Suhi",
+      "pa": "ਸੂਹੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 15,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਸੂਹੀ",
+          "ਸੂਹਾ"
+        ],
+        "en": [
+          "Raag Soohee",
+          "Soohee",
+          "Suhi",
+          "Soohi"
+        ]
+      },
+      "banidb": "Raag Soohee"
+    },
+    {
+      "key": "suhi_kafi",
+      "en": "Suhi Kafi",
+      "pa": "ਸੂਹੀ ਕਾਫੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "suhi",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਸੂਹੀ ਕਾਫੀ",
+          "ਸੂਹੀ ਕਾਫ਼ੀ",
+          "ਸੂਹੀ ਵਿਚ ਕਾਫੀ"
+        ],
+        "en": [
+          "Soohee Kaafee",
+          "Suhi Kafi"
+        ]
+      }
+    },
+    {
+      "key": "suhi_lalit",
+      "en": "Suhi Lalit",
+      "pa": "ਸੂਹੀ ਲਲਿਤ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "suhi",
+      "thaat": "marva",
+      "aliases": {
+        "pa": [
+          "ਸੂਹੀ ਲਲਿਤ",
+          "ਸੂਹੀ ਲਲਤ"
+        ],
+        "en": [
+          "Soohee Lalit",
+          "Suhi Lalit"
+        ]
+      }
+    },
+    {
+      "key": "bilaval",
+      "en": "Bilaval",
+      "pa": "ਬਿਲਾਵਲ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 16,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਬਿਲਾਵਲੁ",
+          "ਬਿਲਾਵਲ",
+          "ਬਿਲਾਵਲੁ"
+        ],
+        "en": [
+          "Raag Bilaaval",
+          "Bilaaval",
+          "Bilaval",
+          "Bilawal",
+          "Bilaawal"
+        ]
+      },
+      "banidb": "Raag Bilaaval"
+    },
+    {
+      "key": "bilaval_dakhni",
+      "en": "Bilaval Dakhni",
+      "pa": "ਬਿਲਾਵਲ ਦਖਣੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "bilaval",
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਬਿਲਾਵਲ ਦਖਣੀ",
+          "ਬਿਲਾਵਲੁ ਦਖਣੀ"
+        ],
+        "en": [
+          "Bilaaval Dakhnee",
+          "Bilaval Dakhni"
+        ]
+      }
+    },
+    {
+      "key": "bilaval_mangal",
+      "en": "Bilaval Mangal",
+      "pa": "ਬਿਲਾਵਲ ਮੰਗਲ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "bilaval",
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਬਿਲਾਵਲ ਮੰਗਲ",
+          "ਬਿਲਾਵਲੁ ਮੰਗਲ"
+        ],
+        "en": [
+          "Bilaaval Mangal",
+          "Bilaval Mangal"
+        ]
+      }
+    },
+    {
+      "key": "bilaval_gond",
+      "en": "Bilaval Gond",
+      "pa": "ਬਿਲਾਵਲ ਗੋਂਡ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "bilaval",
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਬਿਲਾਵਲ ਗੋਂਡ",
+          "ਬਿਲਾਵਲੁ ਗੋਂਡ",
+          "ਬਿਲਾਵਲ ਗੌਂਡ"
+        ],
+        "en": [
+          "Bilaaval Gond",
+          "Bilaval Gond",
+          "Bilawal Gaund"
+        ]
+      }
+    },
+    {
+      "key": "gond",
+      "en": "Gond",
+      "pa": "ਗੋਂਡ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 17,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਗੋਂਡ",
+          "ਗੌਂਡ",
+          "ਗੋਂਡੁ"
+        ],
+        "en": [
+          "Raag Gond",
+          "Gond",
+          "Gaund",
+          "Gonda"
+        ]
+      },
+      "banidb": "Raag Gond"
+    },
+    {
+      "key": "ramkali",
+      "en": "Ramkali",
+      "pa": "ਰਾਮਕਲੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 18,
+      "parent": null,
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਰਾਮਕਲੀ",
+          "ਰਾਮ ਕਲੀ"
+        ],
+        "en": [
+          "Raag Raamkalee",
+          "Raamkalee",
+          "Ramkali",
+          "Ramkalee",
+          "Raamkali"
+        ]
+      },
+      "banidb": "Raag Raamkalee"
+    },
+    {
+      "key": "ramkali_dakhni",
+      "en": "Ramkali Dakhni",
+      "pa": "ਰਾਮਕਲੀ ਦਖਣੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "ramkali",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਰਾਮਕਲੀ ਦਖਣੀ",
+          "ਰਾਮਕਲੀ ਦੱਖਣੀ"
+        ],
+        "en": [
+          "Raamkalee Dakhnee",
+          "Ramkali Dakhni"
+        ]
+      }
+    },
+    {
+      "key": "nat_narayan",
+      "en": "Nat Narayan",
+      "pa": "ਨਟ ਨਾਰਾਇਨ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 19,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਨਟ ਨਾਰਾਇਨ",
+          "ਨਟ ਨਾਰਾਇਣ",
+          "ਨਟਨਾਰਾਇਣ"
+        ],
+        "en": [
+          "Raag Nat Naaraayan",
+          "Nat Naaraayan",
+          "Nat Narayan",
+          "Nat Naraayan",
+          "Nat Naaraaein"
+        ]
+      },
+      "banidb": "Raag Nat Naaraayan"
+    },
+    {
+      "key": "nat",
+      "en": "Nat",
+      "pa": "ਨਟ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "nat_narayan",
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਨਟ",
+          "ਨਟੁ"
+        ],
+        "en": [
+          "Nat",
+          "Raag Nat"
+        ]
+      }
+    },
+    {
+      "key": "mali_gaura",
+      "en": "Mali Gaura",
+      "pa": "ਮਾਲੀ ਗਉੜਾ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 20,
+      "parent": null,
+      "thaat": "marva",
+      "aliases": {
+        "pa": [
+          "ਮਾਲੀ ਗਉੜਾ",
+          "ਮਾਲੀ ਗੌੜਾ",
+          "ਮਾਲੀਗਉੜਾ"
+        ],
+        "en": [
+          "Raag Maalee Gauraa",
+          "Maalee Gauraa",
+          "Mali Gaura",
+          "Maligaura"
+        ]
+      },
+      "banidb": "Raag Maalee Gauraa"
+    },
+    {
+      "key": "maru",
+      "en": "Maru",
+      "pa": "ਮਾਰੂ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 21,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਮਾਰੂ"
+        ],
+        "en": [
+          "Raag Maaroo",
+          "Maaroo",
+          "Maru",
+          "Maroo"
+        ]
+      },
+      "banidb": "Raag Maaroo"
+    },
+    {
+      "key": "maru_kafi",
+      "en": "Maru Kafi",
+      "pa": "ਮਾਰੂ ਕਾਫੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "maru",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਮਾਰੂ ਕਾਫੀ",
+          "ਮਾਰੂ ਕਾਫ਼ੀ"
+        ],
+        "en": [
+          "Maaroo Kaafee",
+          "Maru Kafi"
+        ]
+      }
+    },
+    {
+      "key": "maru_dakhni",
+      "en": "Maru Dakhni",
+      "pa": "ਮਾਰੂ ਦਖਣੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "maru",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਮਾਰੂ ਦਖਣੀ",
+          "ਮਾਰੂ ਦੱਖਣੀ"
+        ],
+        "en": [
+          "Maaroo Dakhnee",
+          "Maru Dakhni"
+        ]
+      }
+    },
+    {
+      "key": "tukhari",
+      "en": "Tukhari",
+      "pa": "ਤੁਖਾਰੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 22,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਤੁਖਾਰੀ"
+        ],
+        "en": [
+          "Raag Tukhaari",
+          "Tukhaari",
+          "Tukhari",
+          "Tukhaaree"
+        ]
+      },
+      "banidb": "Raag Tukhaari"
+    },
+    {
+      "key": "kedara",
+      "en": "Kedara",
+      "pa": "ਕੇਦਾਰਾ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 23,
+      "parent": null,
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਕੇਦਾਰਾ",
+          "ਕੇਦਾਰ"
+        ],
+        "en": [
+          "Raag Kaydaaraa",
+          "Kaydaaraa",
+          "Kedara",
+          "Kedar",
+          "Kaydaara"
+        ]
+      },
+      "banidb": "Raag Kaydaaraa"
+    },
+    {
+      "key": "bhairav",
+      "en": "Bhairav",
+      "pa": "ਭੈਰਉ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 24,
+      "parent": null,
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਭੈਰਉ",
+          "ਭੈਰਵ",
+          "ਭੈਰੋਂ",
+          "ਭੈਰੋ"
+        ],
+        "en": [
+          "Raag Bhairao",
+          "Bhairao",
+          "Bhairav",
+          "Bhairon",
+          "Bhairo"
+        ]
+      },
+      "banidb": "Raag Bhairao"
+    },
+    {
+      "key": "basant",
+      "en": "Basant",
+      "pa": "ਬਸੰਤ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 25,
+      "parent": null,
+      "thaat": "purvi",
+      "aliases": {
+        "pa": [
+          "ਬਸੰਤੁ",
+          "ਬਸੰਤ"
+        ],
+        "en": [
+          "Raag Basant",
+          "Basant",
+          "Vasant"
+        ]
+      },
+      "banidb": "Raag Basant"
+    },
+    {
+      "key": "basant_hindol",
+      "en": "Basant Hindol",
+      "pa": "ਬਸੰਤ ਹਿੰਡੋਲ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "basant",
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਬਸੰਤ ਹਿੰਡੋਲ",
+          "ਬਸੰਤੁ ਹਿੰਡੋਲ",
+          "ਬਸੰਤ ਹਿੰਡੋਲੁ"
+        ],
+        "en": [
+          "Basant Hindol",
+          "Basant Hindhol"
+        ]
+      }
+    },
+    {
+      "key": "sarang",
+      "en": "Sarang",
+      "pa": "ਸਾਰੰਗ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 26,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਸਾਰੰਗ",
+          "ਸਾਰਗ",
+          "ਸਾਰੰਗੁ"
+        ],
+        "en": [
+          "Raag Saarang",
+          "Saarang",
+          "Sarang"
+        ]
+      },
+      "banidb": "Raag Saarang"
+    },
+    {
+      "key": "malhar",
+      "en": "Malhar",
+      "pa": "ਮਲਾਰ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 27,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਮਲਾਰ",
+          "ਮਲ੍ਹਾਰ",
+          "ਮਲਾਰੁ"
+        ],
+        "en": [
+          "Raag Malaar",
+          "Malaar",
+          "Malhar",
+          "Malar"
+        ]
+      },
+      "banidb": "Raag Malaar"
+    },
+    {
+      "key": "kanra",
+      "en": "Kanra",
+      "pa": "ਕਾਨੜਾ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 28,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਕਾਨੜਾ",
+          "ਕਾਨਰਾ",
+          "ਕਾਨਡਾ",
+          "ਕਾਨ੍ਹੜਾ"
+        ],
+        "en": [
+          "Raag Kaanraa",
+          "Kaanraa",
+          "Kanra",
+          "Kanada",
+          "Kanhra",
+          "Kanara"
+        ]
+      },
+      "banidb": "Raag Kaanraa"
+    },
+    {
+      "key": "kalyan",
+      "en": "Kalyan",
+      "pa": "ਕਲਿਆਨ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 29,
+      "parent": null,
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਕਲਿਆਨ",
+          "ਕਲਿਆਣ",
+          "ਕਲਯਾਣ"
+        ],
+        "en": [
+          "Raag Kalyaan",
+          "Kalyaan",
+          "Kalyan",
+          "Kalian",
+          "Kalyaana"
+        ]
+      },
+      "banidb": "Raag Kalyaan"
+    },
+    {
+      "key": "kalyan_bhopali",
+      "en": "Kalyan Bhopali",
+      "pa": "ਕਲਿਆਨ ਭੋਪਾਲੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "kalyan",
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਕਲਿਆਨ ਭੋਪਾਲੀ",
+          "ਕਲਿਆਣ ਭੋਪਾਲੀ"
+        ],
+        "en": [
+          "Kalyaan Bhopaalee",
+          "Kalyan Bhopali",
+          "Kalyan Bhupali"
+        ]
+      }
+    },
+    {
+      "key": "prabhati",
+      "en": "Prabhati",
+      "pa": "ਪ੍ਰਭਾਤੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 30,
+      "parent": null,
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਪ੍ਰਭਾਤੀ",
+          "ਪਰਭਾਤੀ",
+          "ਪ੍ਰਭਾਤੀ"
+        ],
+        "en": [
+          "Raag Prabhaatee",
+          "Prabhaatee",
+          "Prabhati",
+          "Parbhati",
+          "Parbhaatee"
+        ]
+      },
+      "banidb": "Raag Prabhaatee"
+    },
+    {
+      "key": "prabhati_bibhas",
+      "en": "Prabhati Bibhas",
+      "pa": "ਪ੍ਰਭਾਤੀ ਬਿਭਾਸ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "prabhati",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਪ੍ਰਭਾਤੀ ਬਿਭਾਸ",
+          "ਬਿਭਾਸ ਪ੍ਰਭਾਤੀ"
+        ],
+        "en": [
+          "Prabhaatee Bibhaas",
+          "Prabhati Bibhas",
+          "Bibhaas Prabhaatee",
+          "Bibhas Prabhati"
+        ]
+      }
+    },
+    {
+      "key": "prabhati_dakhni",
+      "en": "Prabhati Dakhni",
+      "pa": "ਪ੍ਰਭਾਤੀ ਦਖਣੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "parent": "prabhati",
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਪ੍ਰਭਾਤੀ ਦਖਣੀ",
+          "ਪ੍ਰਭਾਤੀ ਦੱਖਣੀ"
+        ],
+        "en": [
+          "Prabhaatee Dakhnee",
+          "Prabhati Dakhni"
+        ]
+      }
+    },
+    {
+      "key": "jaijaivanti",
+      "en": "Jaijaivanti",
+      "pa": "ਜੈਜਾਵੰਤੀ",
+      "kind": "raag",
+      "in_ggs": true,
+      "ggs_order": 31,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਜੈਜਾਵੰਤੀ",
+          "ਜੈਜੈਵੰਤੀ",
+          "ਜੈ ਜੈ ਵੰਤੀ"
+        ],
+        "en": [
+          "Raag Jaijaavantee",
+          "Jaijaavantee",
+          "Jaijaivanti",
+          "Jaijaiwanti",
+          "Jaijawanti"
+        ]
+      },
+      "banidb": "Raag Jaijaavantee"
+    },
+    {
+      "key": "jap",
+      "en": "Jap",
+      "pa": "ਜਪੁ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਜਪੁ",
+          "ਜਪੁਜੀ",
+          "ਜਪੁ ਜੀ"
+        ],
+        "en": [
+          "Jap",
+          "Jaap",
+          "Japji",
+          "Japuji"
+        ]
+      },
+      "banidb": "Jap"
+    },
+    {
+      "key": "so_dar",
+      "en": "So Dar",
+      "pa": "ਸੋ ਦਰੁ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸੋ ਦਰੁ",
+          "ਸੋਦਰੁ",
+          "ਸੋ ਦਰ"
+        ],
+        "en": [
+          "So Dar",
+          "Sodar"
+        ]
+      },
+      "banidb": "So Dar"
+    },
+    {
+      "key": "so_purakh",
+      "en": "So Purakh",
+      "pa": "ਸੋ ਪੁਰਖੁ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸੋ ਪੁਰਖੁ",
+          "ਸੋ ਪੁਰਖ"
+        ],
+        "en": [
+          "So Purakh"
+        ]
+      },
+      "banidb": "So Purakh"
+    },
+    {
+      "key": "sohila",
+      "en": "Sohila",
+      "pa": "ਸੋਹਿਲਾ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸੋਹਿਲਾ",
+          "ਕੀਰਤਨ ਸੋਹਿਲਾ"
+        ],
+        "en": [
+          "Sohila",
+          "Kirtan Sohila"
+        ]
+      },
+      "banidb": "Sohila"
+    },
+    {
+      "key": "salok_sahaskriti",
+      "en": "Salok Sahaskriti",
+      "pa": "ਸਲੋਕ ਸਹਸਕ੍ਰਿਤੀ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸਲੋਕ ਸਹਸਕ੍ਰਿਤੀ",
+          "ਸਹਸਕ੍ਰਿਤੀ"
+        ],
+        "en": [
+          "Salok Sehskritee",
+          "Salok Sahaskriti",
+          "Sahaskriti"
+        ]
+      },
+      "banidb": "Salok Sehskritee"
+    },
+    {
+      "key": "gatha",
+      "en": "Gatha",
+      "pa": "ਗਾਥਾ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਗਾਥਾ",
+          "ਮਹਲਾ ੫ ਗਾਥਾ"
+        ],
+        "en": [
+          "Fifth Mehl, Gaathaa",
+          "Gaathaa",
+          "Gatha"
+        ]
+      },
+      "banidb": "Fifth Mehl, Gaathaa"
+    },
+    {
+      "key": "phunhe",
+      "en": "Phunhe",
+      "pa": "ਫੁਨਹੇ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਫੁਨਹੇ",
+          "ਫੁਨਹੇ ਮਹਲਾ ੫"
+        ],
+        "en": [
+          "Phunhay Fifth Mehl",
+          "Phunhay",
+          "Phunhe"
+        ]
+      },
+      "banidb": "Phunhay Fifth Mehl"
+    },
+    {
+      "key": "chaubole",
+      "en": "Chaubole",
+      "pa": "ਚਉਬੋਲੇ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਚਉਬੋਲੇ",
+          "ਚਉਬੋਲੇ ਮਹਲਾ ੫"
+        ],
+        "en": [
+          "Chaubolas Fifth Mehl",
+          "Chaubolas",
+          "Chaubole"
+        ]
+      },
+      "banidb": "Chaubolas Fifth Mehl"
+    },
+    {
+      "key": "salok_kabir",
+      "en": "Salok Kabir",
+      "pa": "ਸਲੋਕ ਭਗਤ ਕਬੀਰ ਜੀਉ ਕੇ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸਲੋਕ ਭਗਤ ਕਬੀਰ ਜੀਉ ਕੇ",
+          "ਸਲੋਕ ਕਬੀਰ"
+        ],
+        "en": [
+          "Salok Kabeer Jee",
+          "Salok Kabir"
+        ]
+      },
+      "banidb": "Salok Kabeer Jee"
+    },
+    {
+      "key": "salok_farid",
+      "en": "Salok Farid",
+      "pa": "ਸਲੋਕ ਸੇਖ ਫਰੀਦ ਕੇ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸਲੋਕ ਸੇਖ ਫਰੀਦ ਕੇ",
+          "ਸਲੋਕ ਸੇਖ ਫਰੀਦ ਕ",
+          "ਸਲੋਕ ਫਰੀਦ"
+        ],
+        "en": [
+          "Salok Fareed Jee",
+          "Salok Farid"
+        ]
+      },
+      "banidb": "Salok Fareed Jee"
+    },
+    {
+      "key": "savaiye",
+      "en": "Savaiye",
+      "pa": "ਸਵਯੇ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸਵਯੇ",
+          "ਸਵੱਯੇ",
+          "ਸਵਯੇ ਸ੍ਰੀ ਮੁਖ ਬਾਕ ਮਹਲਾ ੫"
+        ],
+        "en": [
+          "Svaiyay Mehl 5",
+          "Svaiyay",
+          "Savaiye",
+          "Swaiyay"
+        ]
+      },
+      "banidb": "Svaiyay Mehl 5"
+    },
+    {
+      "key": "salok_varan_te_vadhik",
+      "en": "Salok Varan Te Vadhik",
+      "pa": "ਸਲੋਕ ਵਾਰਾਂ ਤੇ ਵਧੀਕ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸਲੋਕ ਵਾਰਾਂ ਤੇ ਵਧੀਕ"
+        ],
+        "en": [
+          "Salok Vaaraan Thay Vadheek",
+          "Salok Varan Te Vadhik"
+        ]
+      },
+      "banidb": "Salok Vaaraan Thay Vadheek"
+    },
+    {
+      "key": "salok_mahala_9",
+      "en": "Salok Mahala 9",
+      "pa": "ਸਲੋਕ ਮਹਲਾ ੯",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਸਲੋਕ ਮਹਲਾ ੯",
+          "ਸਲੋਕ ਮਃ ੯"
+        ],
+        "en": [
+          "Salok Mehl 9",
+          "Salok Mahala 9",
+          "Salok Mahalla 9"
+        ]
+      },
+      "banidb": "Salok Mehl 9"
+    },
+    {
+      "key": "mundavani",
+      "en": "Mundavani",
+      "pa": "ਮੁੰਦਾਵਣੀ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਮੁੰਦਾਵਣੀ",
+          "ਮੁੰਦਾਵਣੀ ਮਹਲਾ ੫"
+        ],
+        "en": [
+          "Mundhaavanee Fifth Mehl",
+          "Mundhaavanee",
+          "Mundavani"
+        ]
+      },
+      "banidb": "Mundhaavanee Fifth Mehl"
+    },
+    {
+      "key": "raag_mala",
+      "en": "Raag Mala",
+      "pa": "ਰਾਗ ਮਾਲਾ",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਰਾਗ ਮਾਲਾ",
+          "ਰਾਗਮਾਲਾ"
+        ],
+        "en": [
+          "Raag Maalaa",
+          "Raag Mala",
+          "Ragmala"
+        ]
+      },
+      "banidb": "Raag Maalaa"
+    },
+    {
+      "key": "vaaran",
+      "en": "Vaaran Bhai Gurdas",
+      "pa": "ਵਾਰਾਂ ਭਾਈ ਗੁਰਦਾਸ",
+      "kind": "section",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਵਾਰਾਂ ਭਾਈ ਗੁਰਦਾਸ",
+          "ਵਾਰ ਭਾਈ ਗੁਰਦਾਸ"
+        ],
+        "en": [
+          "Vaaran",
+          "Vaaran Bhai Gurdas"
+        ]
+      },
+      "banidb": "Vaaran"
+    },
+    {
+      "key": "dasam_granth",
+      "en": "Dasam Granth",
+      "pa": "ਦਸਮ ਗ੍ਰੰਥ",
+      "kind": "section",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਦਸਮ ਗ੍ਰੰਥ"
+        ],
+        "en": [
+          "Dasam Granth"
+        ]
+      },
+      "banidb": "Dasam Granth"
+    },
+    {
+      "key": "no_raag",
+      "en": "No Raag",
+      "pa": "",
+      "kind": "section",
+      "in_ggs": true,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [],
+        "en": [
+          "No Raag",
+          "None"
+        ]
+      },
+      "banidb": "No Raag"
+    },
+    {
+      "key": "jaunpuri",
+      "en": "Jaunpuri",
+      "pa": "ਜੌਨਪੁਰੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "asavari",
+      "aliases": {
+        "pa": [
+          "ਜੌਨਪੁਰੀ",
+          "ਜੋਨਪੁਰੀ",
+          "ਜੈਨਪੁਰੀ"
+        ],
+        "en": [
+          "Jaunpuri",
+          "Jaunpoori",
+          "Jonpuri"
+        ]
+      }
+    },
+    {
+      "key": "bhimpalasi",
+      "en": "Bhimpalasi",
+      "pa": "ਭੀਮਪਲਾਸੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਭੀਮਪਲਾਸੀ",
+          "ਭੀਮ ਪਲਾਸੀ",
+          "ਭੀਮਪਲਾਸ"
+        ],
+        "en": [
+          "Bhimpalasi",
+          "Bhimpalaasi",
+          "Bheempalasi",
+          "Bhimpalas"
+        ]
+      }
+    },
+    {
+      "key": "pahadi",
+      "en": "Pahadi",
+      "pa": "ਪਹਾੜੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਪਹਾੜੀ"
+        ],
+        "en": [
+          "Pahadi",
+          "Pahari",
+          "Pahaadi"
+        ]
+      }
+    },
+    {
+      "key": "ahir_bhairav",
+      "en": "Ahir Bhairav",
+      "pa": "ਅਹੀਰ ਭੈਰਵ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਅਹੀਰ ਭੈਰਵ",
+          "ਅਹੀਰ ਭੈਰਉ"
+        ],
+        "en": [
+          "Ahir Bhairav",
+          "Aheer Bhairav"
+        ]
+      }
+    },
+    {
+      "key": "khamaj",
+      "en": "Khamaj",
+      "pa": "ਖਮਾਜ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਖਮਾਜ",
+          "ਖਮਾਚ"
+        ],
+        "en": [
+          "Khamaj",
+          "Khamaaj",
+          "Khamach"
+        ]
+      }
+    },
+    {
+      "key": "miyan_ki_todi",
+      "en": "Miyan ki Todi",
+      "pa": "ਮੀਆਂ ਕੀ ਤੋੜੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "todi",
+      "thaat": "todi",
+      "aliases": {
+        "pa": [
+          "ਮੀਆਂ ਕੀ ਤੋੜੀ",
+          "ਮੀਆਂ ਕੀ ਟੋਡੀ",
+          "ਮੀਆ ਕੀ ਤੋੜੀ"
+        ],
+        "en": [
+          "Miyan ki Todi",
+          "Mian ki Todi",
+          "Miyan Ki Todi"
+        ]
+      }
+    },
+    {
+      "key": "miyan_ki_malhar",
+      "en": "Miyan ki Malhar",
+      "pa": "ਮੀਆਂ ਕੀ ਮਲਾਰ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "malhar",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਮੀਆਂ ਕੀ ਮਲਾਰ",
+          "ਮੀਆਂ ਮਲਾਰ",
+          "ਮੀਆਂ ਕੀ ਮਲ੍ਹਾਰ"
+        ],
+        "en": [
+          "Miyan ki Malhar",
+          "Mian ki Malhar",
+          "Miyan Malhar"
+        ]
+      }
+    },
+    {
+      "key": "brindavani_sarang",
+      "en": "Brindavani Sarang",
+      "pa": "ਬਿੰਦ੍ਰਾਬਨੀ ਸਾਰੰਗ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "sarang",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਬਿੰਦ੍ਰਾਬਨੀ ਸਾਰੰਗ",
+          "ਬ੍ਰਿੰਦਾਬਨੀ ਸਾਰੰਗ",
+          "ਬਿੰਦਰਾਬਨੀ ਸਾਰੰਗ",
+          "ਬ੍ਰਿੰਦਾਵਨੀ ਸਾਰੰਗ"
+        ],
+        "en": [
+          "Brindavani Sarang",
+          "Vrindavani Sarang",
+          "Bindrabani Sarang"
+        ]
+      }
+    },
+    {
+      "key": "shuddh_sarang",
+      "en": "Shuddh Sarang",
+      "pa": "ਸ਼ੁੱਧ ਸਾਰੰਗ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "sarang",
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਸ਼ੁੱਧ ਸਾਰੰਗ",
+          "ਸੁਧ ਸਾਰੰਗ"
+        ],
+        "en": [
+          "Shuddh Sarang",
+          "Sudh Sarang"
+        ]
+      }
+    },
+    {
+      "key": "madhmad_sarang",
+      "en": "Madhmad Sarang",
+      "pa": "ਮਧਮਾਦ ਸਾਰੰਗ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "sarang",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਮਧਮਾਦ ਸਾਰੰਗ",
+          "ਮਧਮਾਦਿ ਸਾਰੰਗ"
+        ],
+        "en": [
+          "Madhmad Sarang",
+          "Madhumad Sarang"
+        ]
+      }
+    },
+    {
+      "key": "lankadahan_sarang",
+      "en": "Lankadahan Sarang",
+      "pa": "ਲੰਕ ਦਹਨ ਸਾਰੰਗ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "sarang",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਲੰਕ ਦਹਨ ਸਾਰੰਗ",
+          "ਲੰਕਾ ਦਹਨ ਸਾਰੰਗ"
+        ],
+        "en": [
+          "Lankadahan Sarang",
+          "Lanka Dahan Sarang"
+        ]
+      }
+    },
+    {
+      "key": "shuddh_bilaval",
+      "en": "Shuddh Bilaval",
+      "pa": "ਸ਼ੁੱਧ ਬਿਲਾਵਲ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "bilaval",
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਸ਼ੁੱਧ ਬਿਲਾਵਲ",
+          "ਸੁਧ ਬਿਲਾਵਲ"
+        ],
+        "en": [
+          "Shuddh Bilaval",
+          "Sudh Bilawal"
+        ]
+      }
+    },
+    {
+      "key": "alhaiya_bilaval",
+      "en": "Alhaiya Bilaval",
+      "pa": "ਅਲ੍ਹੱਈਆ ਬਿਲਾਵਲ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "bilaval",
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਅਲ੍ਹੱਈਆ ਬਿਲਾਵਲ",
+          "ਅਲਹੱਈਆ ਬਿਲਾਵਲ",
+          "ਅਲਹਈਆ ਬਿਲਾਵਲ"
+        ],
+        "en": [
+          "Alhaiya Bilaval",
+          "Alhaiya Bilawal"
+        ]
+      }
+    },
+    {
+      "key": "yaman",
+      "en": "Yaman",
+      "pa": "ਯਮਨ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਯਮਨ",
+          "ਯਮਨ ਕਲਿਆਣ",
+          "ਈਮਨ",
+          "ਜਮਨ",
+          "ਯਮਨ ਕਲਿਆਨ",
+          "ਈਮਨ ਕਲਿਆਣ"
+        ],
+        "en": [
+          "Yaman",
+          "Yaman Kalyan",
+          "Iman",
+          "Aiman",
+          "Eman"
+        ]
+      }
+    },
+    {
+      "key": "darbari",
+      "en": "Darbari",
+      "pa": "ਦਰਬਾਰੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "kanra",
+      "thaat": "asavari",
+      "aliases": {
+        "pa": [
+          "ਦਰਬਾਰੀ",
+          "ਦਰਬਾਰੀ ਕਾਨੜਾ"
+        ],
+        "en": [
+          "Darbari",
+          "Darbari Kanada",
+          "Darbaari"
+        ]
+      }
+    },
+    {
+      "key": "nayaki_kanra",
+      "en": "Nayaki Kanra",
+      "pa": "ਨਾਇਕੀ ਕਾਨੜਾ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "kanra",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਨਾਇਕੀ ਕਾਨੜਾ",
+          "ਨਾਇਕੀ"
+        ],
+        "en": [
+          "Nayaki Kanra",
+          "Nayaki Kanada"
+        ]
+      }
+    },
+    {
+      "key": "adana",
+      "en": "Adana",
+      "pa": "ਅੜਾਨਾ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "kanra",
+      "thaat": "asavari",
+      "aliases": {
+        "pa": [
+          "ਅੜਾਨਾ",
+          "ਅਡਾਨਾ"
+        ],
+        "en": [
+          "Adana",
+          "Adaana"
+        ]
+      }
+    },
+    {
+      "key": "bageshri",
+      "en": "Bageshri",
+      "pa": "ਬਾਗੇਸ਼੍ਰੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਬਾਗੇਸ਼੍ਰੀ",
+          "ਬਾਗੇਸ੍ਰੀ",
+          "ਬਾਗੇਸਰੀ"
+        ],
+        "en": [
+          "Bageshri",
+          "Bageshree",
+          "Bagesri"
+        ]
+      }
+    },
+    {
+      "key": "bihag",
+      "en": "Bihag",
+      "pa": "ਬਿਹਾਗ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਬਿਹਾਗ"
+        ],
+        "en": [
+          "Bihag",
+          "Behag"
+        ]
+      }
+    },
+    {
+      "key": "des",
+      "en": "Des",
+      "pa": "ਦੇਸ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਦੇਸ",
+          "ਦੇਸ਼"
+        ],
+        "en": [
+          "Des",
+          "Desh"
+        ]
+      }
+    },
+    {
+      "key": "kafi",
+      "en": "Kafi",
+      "pa": "ਕਾਫੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਕਾਫੀ",
+          "ਕਾਫ਼ੀ"
+        ],
+        "en": [
+          "Kafi",
+          "Kaafee",
+          "Kaafi"
+        ]
+      }
+    },
+    {
+      "key": "pilu",
+      "en": "Pilu",
+      "pa": "ਪੀਲੂ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਪੀਲੂ"
+        ],
+        "en": [
+          "Pilu",
+          "Peelu"
+        ]
+      }
+    },
+    {
+      "key": "bhairavi",
+      "en": "Bhairavi",
+      "pa": "ਭੈਰਵੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bhairavi",
+      "aliases": {
+        "pa": [
+          "ਭੈਰਵੀ"
+        ],
+        "en": [
+          "Bhairavi",
+          "Bhairvi"
+        ]
+      }
+    },
+    {
+      "key": "sindh_bhairavi",
+      "en": "Sindh Bhairavi",
+      "pa": "ਸਿੰਧ ਭੈਰਵੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "bhairavi",
+      "thaat": "bhairavi",
+      "aliases": {
+        "pa": [
+          "ਸਿੰਧ ਭੈਰਵੀ",
+          "ਸਿੰਧੀ ਭੈਰਵੀ"
+        ],
+        "en": [
+          "Sindh Bhairavi",
+          "Sindhi Bhairavi"
+        ]
+      }
+    },
+    {
+      "key": "shivranjani",
+      "en": "Shivranjani",
+      "pa": "ਸ਼ਿਵਰੰਜਨੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਸ਼ਿਵਰੰਜਨੀ",
+          "ਸਿਵਰੰਜਨੀ",
+          "ਸ਼ਿਵ ਰੰਜਨੀ"
+        ],
+        "en": [
+          "Shivranjani",
+          "Shivaranjani",
+          "Sivranjani"
+        ]
+      }
+    },
+    {
+      "key": "puriya_dhanashri",
+      "en": "Puriya Dhanashri",
+      "pa": "ਪੂਰੀਆ ਧਨਾਸਰੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "dhanasri",
+      "thaat": "purvi",
+      "aliases": {
+        "pa": [
+          "ਪੂਰੀਆ ਧਨਾਸਰੀ",
+          "ਪੂਰੀਆ ਧਨਾਸ੍ਰੀ",
+          "ਪੂਰਬੀਆ ਧਨਾਸਰੀ"
+        ],
+        "en": [
+          "Puriya Dhanashri",
+          "Puriya Dhanasri",
+          "Pooriya Dhanashree"
+        ]
+      }
+    },
+    {
+      "key": "puriya",
+      "en": "Puriya",
+      "pa": "ਪੂਰੀਆ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "marva",
+      "aliases": {
+        "pa": [
+          "ਪੂਰੀਆ",
+          "ਪੂਰੀਯਾ"
+        ],
+        "en": [
+          "Puriya",
+          "Pooriya"
+        ]
+      }
+    },
+    {
+      "key": "marva",
+      "en": "Marva",
+      "pa": "ਮਾਰਵਾ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "marva",
+      "aliases": {
+        "pa": [
+          "ਮਾਰਵਾ"
+        ],
+        "en": [
+          "Marva",
+          "Marwa"
+        ]
+      }
+    },
+    {
+      "key": "hansadhvani",
+      "en": "Hansadhvani",
+      "pa": "ਹੰਸਧੁਨੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਹੰਸਧੁਨੀ",
+          "ਹੰਸ ਧੁਨੀ",
+          "ਹੰਸਧ੍ਵਨੀ"
+        ],
+        "en": [
+          "Hansadhvani",
+          "Hansadhwani",
+          "Hamsadhwani"
+        ]
+      }
+    },
+    {
+      "key": "charukeshi",
+      "en": "Charukeshi",
+      "pa": "ਚਾਰੂਕੇਸ਼ੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਚਾਰੂਕੇਸ਼ੀ",
+          "ਚਾਰੁਕੇਸ਼ੀ",
+          "ਚਾਰੂਕੇਸੀ"
+        ],
+        "en": [
+          "Charukeshi",
+          "Charukesi"
+        ]
+      }
+    },
+    {
+      "key": "malkauns",
+      "en": "Malkauns",
+      "pa": "ਮਾਲਕੌਂਸ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bhairavi",
+      "aliases": {
+        "pa": [
+          "ਮਾਲਕੌਂਸ",
+          "ਮਾਲਕੋਂਸ",
+          "ਮਾਲਕੌਸ"
+        ],
+        "en": [
+          "Malkauns",
+          "Malkosh",
+          "Malkaus"
+        ]
+      }
+    },
+    {
+      "key": "chandrakauns",
+      "en": "Chandrakauns",
+      "pa": "ਚੰਦਰਕੌਂਸ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਚੰਦਰਕੌਂਸ",
+          "ਚੰਦ੍ਰਕੌਂਸ"
+        ],
+        "en": [
+          "Chandrakauns",
+          "Chandrakosh"
+        ]
+      }
+    },
+    {
+      "key": "durga",
+      "en": "Durga",
+      "pa": "ਦੁਰਗਾ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਦੁਰਗਾ"
+        ],
+        "en": [
+          "Durga"
+        ]
+      }
+    },
+    {
+      "key": "hamir",
+      "en": "Hamir",
+      "pa": "ਹਮੀਰ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਹਮੀਰ"
+        ],
+        "en": [
+          "Hamir",
+          "Hameer"
+        ]
+      }
+    },
+    {
+      "key": "kamod",
+      "en": "Kamod",
+      "pa": "ਕਾਮੋਦ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਕਾਮੋਦ"
+        ],
+        "en": [
+          "Kamod"
+        ]
+      }
+    },
+    {
+      "key": "chhayanat",
+      "en": "Chhayanat",
+      "pa": "ਛਾਇਆਨਟ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਛਾਇਆਨਟ",
+          "ਛਾਇਆ ਨਟ",
+          "ਛਾਯਾਨਟ"
+        ],
+        "en": [
+          "Chhayanat",
+          "Chhaya Nat"
+        ]
+      }
+    },
+    {
+      "key": "shankara",
+      "en": "Shankara",
+      "pa": "ਸ਼ੰਕਰਾ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਸ਼ੰਕਰਾ",
+          "ਸੰਕਰਾ"
+        ],
+        "en": [
+          "Shankara",
+          "Shankra"
+        ]
+      }
+    },
+    {
+      "key": "bhupali",
+      "en": "Bhupali",
+      "pa": "ਭੂਪਾਲੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਭੂਪਾਲੀ",
+          "ਭੋਪਾਲੀ"
+        ],
+        "en": [
+          "Bhupali",
+          "Bhopali"
+        ]
+      }
+    },
+    {
+      "key": "deshkar",
+      "en": "Deshkar",
+      "pa": "ਦੇਸ਼ਕਾਰ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਦੇਸ਼ਕਾਰ",
+          "ਦੇਸਕਾਰ"
+        ],
+        "en": [
+          "Deshkar",
+          "Deskar"
+        ]
+      }
+    },
+    {
+      "key": "tilak_kamod",
+      "en": "Tilak Kamod",
+      "pa": "ਤਿਲਕ ਕਾਮੋਦ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਤਿਲਕ ਕਾਮੋਦ"
+        ],
+        "en": [
+          "Tilak Kamod"
+        ]
+      }
+    },
+    {
+      "key": "jog",
+      "en": "Jog",
+      "pa": "ਜੋਗ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਜੋਗ"
+        ],
+        "en": [
+          "Jog"
+        ]
+      }
+    },
+    {
+      "key": "madhuvanti",
+      "en": "Madhuvanti",
+      "pa": "ਮਧੁਵੰਤੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "todi",
+      "aliases": {
+        "pa": [
+          "ਮਧੁਵੰਤੀ",
+          "ਮਧੂਵੰਤੀ"
+        ],
+        "en": [
+          "Madhuvanti",
+          "Madhuwanti"
+        ]
+      }
+    },
+    {
+      "key": "kirwani",
+      "en": "Kirwani",
+      "pa": "ਕੀਰਵਾਣੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਕੀਰਵਾਣੀ",
+          "ਕੀਰਵਾਨੀ"
+        ],
+        "en": [
+          "Kirwani",
+          "Keerwani",
+          "Kirvani"
+        ]
+      }
+    },
+    {
+      "key": "patdeep",
+      "en": "Patdeep",
+      "pa": "ਪਟਦੀਪ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਪਟਦੀਪ",
+          "ਪਟਦੀਪਕ"
+        ],
+        "en": [
+          "Patdeep",
+          "Patdip"
+        ]
+      }
+    },
+    {
+      "key": "multani",
+      "en": "Multani",
+      "pa": "ਮੁਲਤਾਨੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "todi",
+      "aliases": {
+        "pa": [
+          "ਮੁਲਤਾਨੀ"
+        ],
+        "en": [
+          "Multani"
+        ]
+      }
+    },
+    {
+      "key": "megh",
+      "en": "Megh",
+      "pa": "ਮੇਘ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "malhar",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਮੇਘ",
+          "ਮੇਘ ਮਲਾਰ"
+        ],
+        "en": [
+          "Megh",
+          "Megh Malhar"
+        ]
+      }
+    },
+    {
+      "key": "gaud_malhar",
+      "en": "Gaud Malhar",
+      "pa": "ਗੌੜ ਮਲਾਰ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "malhar",
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਗੌੜ ਮਲਾਰ",
+          "ਗਉੜ ਮਲਾਰ",
+          "ਗੌਡ ਮਲਾਰ"
+        ],
+        "en": [
+          "Gaud Malhar",
+          "Gaur Malhar"
+        ]
+      }
+    },
+    {
+      "key": "gaud_sarang",
+      "en": "Gaud Sarang",
+      "pa": "ਗੌੜ ਸਾਰੰਗ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "sarang",
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਗੌੜ ਸਾਰੰਗ",
+          "ਗਉੜ ਸਾਰੰਗ",
+          "ਗੌਡ ਸਾਰੰਗ"
+        ],
+        "en": [
+          "Gaud Sarang",
+          "Gaur Sarang"
+        ]
+      }
+    },
+    {
+      "key": "jhinjhoti",
+      "en": "Jhinjhoti",
+      "pa": "ਝਿੰਝੋਟੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਝਿੰਝੋਟੀ",
+          "ਝਿੰਜੋਟੀ"
+        ],
+        "en": [
+          "Jhinjhoti",
+          "Jhinjoti"
+        ]
+      }
+    },
+    {
+      "key": "rageshri",
+      "en": "Rageshri",
+      "pa": "ਰਾਗੇਸ਼੍ਰੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਰਾਗੇਸ਼੍ਰੀ",
+          "ਰਾਗੇਸਰੀ",
+          "ਰਾਗੇਸ੍ਰੀ"
+        ],
+        "en": [
+          "Rageshri",
+          "Rageshree"
+        ]
+      }
+    },
+    {
+      "key": "lalit",
+      "en": "Lalit",
+      "pa": "ਲਲਿਤ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "marva",
+      "aliases": {
+        "pa": [
+          "ਲਲਿਤ",
+          "ਲਲਤ"
+        ],
+        "en": [
+          "Lalit"
+        ]
+      }
+    },
+    {
+      "key": "gunkali",
+      "en": "Gunkali",
+      "pa": "ਗੁਣਕਲੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਗੁਣਕਲੀ",
+          "ਗੁਨਕਲੀ"
+        ],
+        "en": [
+          "Gunkali",
+          "Gunakali"
+        ]
+      }
+    },
+    {
+      "key": "bibhas",
+      "en": "Bibhas",
+      "pa": "ਬਿਭਾਸ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bhairav",
+      "aliases": {
+        "pa": [
+          "ਬਿਭਾਸ",
+          "ਵਿਭਾਸ"
+        ],
+        "en": [
+          "Bibhas",
+          "Vibhas"
+        ]
+      }
+    },
+    {
+      "key": "hindol",
+      "en": "Hindol",
+      "pa": "ਹਿੰਡੋਲ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਹਿੰਡੋਲ",
+          "ਹਿੰਡੋਲੁ"
+        ],
+        "en": [
+          "Hindol"
+        ]
+      }
+    },
+    {
+      "key": "sohni",
+      "en": "Sohni",
+      "pa": "ਸੋਹਣੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "marva",
+      "aliases": {
+        "pa": [
+          "ਸੋਹਣੀ",
+          "ਸੋਹਨੀ"
+        ],
+        "en": [
+          "Sohni",
+          "Sohini"
+        ]
+      }
+    },
+    {
+      "key": "paraj",
+      "en": "Paraj",
+      "pa": "ਪਰਜ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "purvi",
+      "aliases": {
+        "pa": [
+          "ਪਰਜ"
+        ],
+        "en": [
+          "Paraj"
+        ]
+      }
+    },
+    {
+      "key": "bahar",
+      "en": "Bahar",
+      "pa": "ਬਹਾਰ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "kafi",
+      "aliases": {
+        "pa": [
+          "ਬਹਾਰ"
+        ],
+        "en": [
+          "Bahar"
+        ]
+      }
+    },
+    {
+      "key": "basant_bahar",
+      "en": "Basant Bahar",
+      "pa": "ਬਸੰਤ ਬਹਾਰ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "basant",
+      "thaat": "purvi",
+      "aliases": {
+        "pa": [
+          "ਬਸੰਤ ਬਹਾਰ"
+        ],
+        "en": [
+          "Basant Bahar"
+        ]
+      }
+    },
+    {
+      "key": "mand",
+      "en": "Mand",
+      "pa": "ਮਾਂਡ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "bilaval",
+      "aliases": {
+        "pa": [
+          "ਮਾਂਡ",
+          "ਮਾਂਡ"
+        ],
+        "en": [
+          "Mand",
+          "Maand"
+        ]
+      }
+    },
+    {
+      "key": "kalavati",
+      "en": "Kalavati",
+      "pa": "ਕਲਾਵਤੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "khamaj",
+      "aliases": {
+        "pa": [
+          "ਕਲਾਵਤੀ"
+        ],
+        "en": [
+          "Kalavati",
+          "Kalawati"
+        ]
+      }
+    },
+    {
+      "key": "desi",
+      "en": "Desi",
+      "pa": "ਦੇਸੀ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": "asavari",
+      "aliases": {
+        "pa": [
+          "ਦੇਸੀ",
+          "ਦੇਸੀ ਤੋੜੀ"
+        ],
+        "en": [
+          "Desi",
+          "Desi Todi"
+        ]
+      }
+    },
+    {
+      "key": "khwaja_kalyan",
+      "en": "Khwaja Kalyan",
+      "pa": "ਖਵਾਜਾ ਕਲਿਆਣ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": "kalyan",
+      "thaat": "kalyan",
+      "aliases": {
+        "pa": [
+          "ਖਵਾਜਾ ਕਲਿਆਣ",
+          "ਖ਼ਵਾਜਾ ਕਲਿਆਣ"
+        ],
+        "en": [
+          "Khwaja Kalyan"
+        ]
+      },
+      "uncertain": "identity of the raag unverified; printed in Sur Simran Sangeet"
+    },
+    {
+      "key": "nupur",
+      "en": "Nupur",
+      "pa": "ਨੂਪੁਰ",
+      "kind": "raag",
+      "in_ggs": false,
+      "parent": null,
+      "thaat": null,
+      "aliases": {
+        "pa": [
+          "ਨੂਪੁਰ"
+        ],
+        "en": [
+          "Nupur",
+          "Noopur"
+        ]
+      },
+      "uncertain": "identity of the raag unverified; printed in Sur Simran Sangeet"
+    }
+  ],
+  "taals": [
+    {
+      "key": "teentaal",
+      "en": "Teentaal",
+      "pa": "ਤਿੰਨ ਤਾਲ",
+      "matras": 16,
+      "vibhag": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "sam": 1,
+      "tali": [
+        5,
+        13
+      ],
+      "khali": [
+        9
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਤਿੰਨ ਤਾਲ",
+          "ਤੀਨ ਤਾਲ",
+          "ਤਿੰਨਤਾਲ",
+          "ਤੀਨਤਾਲ",
+          "ਤ੍ਰਿਤਾਲ",
+          "ਤ੍ਰਿਤਾਲੁ",
+          "ਛੋਟਾ ਤਿੰਨ ਤਾਲ",
+          "ਤੀਨ",
+          "ਤਿੰਨ"
+        ],
+        "en": [
+          "Teentaal",
+          "Teen Taal",
+          "Tintal",
+          "Trital",
+          "Teental",
+          "Tintaal"
+        ]
+      }
+    },
+    {
+      "key": "tilwada",
+      "en": "Tilwada",
+      "pa": "ਤਿਲਵਾੜਾ",
+      "matras": 16,
+      "vibhag": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "sam": 1,
+      "tali": [
+        5,
+        13
+      ],
+      "khali": [
+        9
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਤਿਲਵਾੜਾ",
+          "ਤਿਲਵਾਡਾ"
+        ],
+        "en": [
+          "Tilwada",
+          "Tilvada"
+        ]
+      }
+    },
+    {
+      "key": "punjabi_theka",
+      "en": "Punjabi Theka",
+      "pa": "ਪੰਜਾਬੀ ਠੇਕਾ",
+      "matras": 16,
+      "vibhag": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "sam": 1,
+      "tali": [
+        5,
+        13
+      ],
+      "khali": [
+        9
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਪੰਜਾਬੀ ਠੇਕਾ",
+          "ਪੰਜਾਬੀ ਤਾਲ",
+          "ਪੰਜਾਬੀ"
+        ],
+        "en": [
+          "Punjabi Theka",
+          "Punjabi Taal",
+          "Sitarkhani"
+        ]
+      },
+      "uncertain": "structure taken as teentaal's; some books count it differently"
+    },
+    {
+      "key": "jhaptaal",
+      "en": "Jhaptaal",
+      "pa": "ਝਪਤਾਲ",
+      "matras": 10,
+      "vibhag": [
+        2,
+        3,
+        2,
+        3
+      ],
+      "sam": 1,
+      "tali": [
+        3,
+        8
+      ],
+      "khali": [
+        6
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਝਪਤਾਲ",
+          "ਝਪ ਤਾਲ",
+          "ਝੱਪਤਾਲ",
+          "ਝਪਤਾਲਾ"
+        ],
+        "en": [
+          "Jhaptaal",
+          "Jhaptal",
+          "Jhap Taal"
+        ]
+      }
+    },
+    {
+      "key": "sooltaal",
+      "en": "Sooltaal",
+      "pa": "ਸੂਲ ਤਾਲ",
+      "matras": 10,
+      "vibhag": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "sam": 1,
+      "tali": [
+        5,
+        7
+      ],
+      "khali": [
+        3,
+        9
+      ],
+      "markers": [
+        "×",
+        "0",
+        "2",
+        "3",
+        "0"
+      ],
+      "aliases": {
+        "pa": [
+          "ਸੂਲ ਤਾਲ",
+          "ਸੂਲਤਾਲ",
+          "ਸੂਲ"
+        ],
+        "en": [
+          "Sooltaal",
+          "Sool Taal",
+          "Sultal"
+        ]
+      }
+    },
+    {
+      "key": "ektaal",
+      "en": "Ektaal",
+      "pa": "ਏਕ ਤਾਲ",
+      "matras": 12,
+      "vibhag": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "sam": 1,
+      "tali": [
+        5,
+        9,
+        11
+      ],
+      "khali": [
+        3,
+        7
+      ],
+      "markers": [
+        "×",
+        "0",
+        "2",
+        "0",
+        "3",
+        "4"
+      ],
+      "aliases": {
+        "pa": [
+          "ਏਕ ਤਾਲ",
+          "ਏਕਤਾਲ",
+          "ਇੱਕ ਤਾਲਾ",
+          "ਇਕਤਾਲਾ",
+          "ਇੱਕਤਾਲਾ",
+          "ਇਕ ਤਾਲ",
+          "ਏਕ ਤਾਲਾ"
+        ],
+        "en": [
+          "Ektaal",
+          "Ektal",
+          "Ek Taal",
+          "Iktala"
+        ]
+      }
+    },
+    {
+      "key": "chautaal",
+      "en": "Chautaal",
+      "pa": "ਚੌਤਾਲ",
+      "matras": 12,
+      "vibhag": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "sam": 1,
+      "tali": [
+        5,
+        9,
+        11
+      ],
+      "khali": [
+        3,
+        7
+      ],
+      "markers": [
+        "×",
+        "0",
+        "2",
+        "0",
+        "3",
+        "4"
+      ],
+      "aliases": {
+        "pa": [
+          "ਚੌਤਾਲ",
+          "ਚਾਰ ਤਾਲ",
+          "ਚਾਰਤਾਲ",
+          "ਚੌਤਾਲਾ",
+          "ਚਉਤਾਲ"
+        ],
+        "en": [
+          "Chautaal",
+          "Chautal",
+          "Char Taal",
+          "Chartal"
+        ]
+      }
+    },
+    {
+      "key": "ada_chautaal",
+      "en": "Ada Chautaal",
+      "pa": "ਆੜਾ ਚੌਤਾਲ",
+      "matras": 14,
+      "vibhag": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "sam": 1,
+      "tali": [
+        3,
+        7,
+        11
+      ],
+      "khali": [
+        5,
+        9,
+        13
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3",
+        "0",
+        "4",
+        "0"
+      ],
+      "aliases": {
+        "pa": [
+          "ਆੜਾ ਚੌਤਾਲ",
+          "ਆੜਾ ਚਾਰ ਤਾਲ",
+          "ਆੜਾ ਚਾਰਤਾਲ"
+        ],
+        "en": [
+          "Ada Chautaal",
+          "Ara Chautal",
+          "Adachautal"
+        ]
+      }
+    },
+    {
+      "key": "keharwa",
+      "en": "Keharwa",
+      "pa": "ਕਹਿਰਵਾ",
+      "matras": 8,
+      "vibhag": [
+        4,
+        4
+      ],
+      "sam": 1,
+      "tali": [],
+      "khali": [
+        5
+      ],
+      "markers": [
+        "×",
+        "0"
+      ],
+      "aliases": {
+        "pa": [
+          "ਕਹਿਰਵਾ",
+          "ਕਹਰਵਾ",
+          "ਕਹਿਰਵਾਂ",
+          "ਕੈਹਰਵਾ",
+          "ਕਹਿਰਬਾ"
+        ],
+        "en": [
+          "Keharwa",
+          "Kaharva",
+          "Kehrwa",
+          "Kaherva",
+          "Keherwa"
+        ]
+      }
+    },
+    {
+      "key": "dadra",
+      "en": "Dadra",
+      "pa": "ਦਾਦਰਾ",
+      "matras": 6,
+      "vibhag": [
+        3,
+        3
+      ],
+      "sam": 1,
+      "tali": [],
+      "khali": [
+        4
+      ],
+      "markers": [
+        "×",
+        "0"
+      ],
+      "aliases": {
+        "pa": [
+          "ਦਾਦਰਾ",
+          "ਦਾਦਰਾ ਤਾਲ"
+        ],
+        "en": [
+          "Dadra",
+          "Daadra"
+        ]
+      }
+    },
+    {
+      "key": "khemta",
+      "en": "Khemta",
+      "pa": "ਖੇਮਟਾ",
+      "matras": 6,
+      "vibhag": [
+        3,
+        3
+      ],
+      "sam": 1,
+      "tali": [],
+      "khali": [
+        4
+      ],
+      "markers": [
+        "×",
+        "0"
+      ],
+      "aliases": {
+        "pa": [
+          "ਖੇਮਟਾ",
+          "ਖਿਮਟਾ"
+        ],
+        "en": [
+          "Khemta",
+          "Khemta Taal"
+        ]
+      }
+    },
+    {
+      "key": "rupak",
+      "en": "Rupak",
+      "pa": "ਰੂਪਕ",
+      "matras": 7,
+      "vibhag": [
+        3,
+        2,
+        2
+      ],
+      "sam": 1,
+      "tali": [
+        4,
+        6
+      ],
+      "khali": [
+        1
+      ],
+      "markers": [
+        "0",
+        "2",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਰੂਪਕ",
+          "ਰੂਪਕ ਤਾਲ",
+          "ਰੂਪਕਤਾਲ"
+        ],
+        "en": [
+          "Rupak",
+          "Roopak",
+          "Rupak Taal"
+        ]
+      }
+    },
+    {
+      "key": "tivra",
+      "en": "Tivra",
+      "pa": "ਤੀਵਰਾ",
+      "matras": 7,
+      "vibhag": [
+        3,
+        2,
+        2
+      ],
+      "sam": 1,
+      "tali": [
+        4,
+        6
+      ],
+      "khali": [],
+      "markers": [
+        "×",
+        "2",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਤੀਵਰਾ",
+          "ਤੀਵ੍ਰਾ",
+          "ਤੀਬਰਾ"
+        ],
+        "en": [
+          "Tivra",
+          "Teevra"
+        ]
+      }
+    },
+    {
+      "key": "pashto",
+      "en": "Pashto",
+      "pa": "ਪਸ਼ਤੋ",
+      "matras": 7,
+      "vibhag": [
+        3,
+        2,
+        2
+      ],
+      "sam": 1,
+      "tali": [
+        4
+      ],
+      "khali": [
+        6
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0"
+      ],
+      "aliases": {
+        "pa": [
+          "ਪਸ਼ਤੋ",
+          "ਪਸਤੋ"
+        ],
+        "en": [
+          "Pashto"
+        ]
+      },
+      "uncertain": "vibhag division varies between schools"
+    },
+    {
+      "key": "deepchandi",
+      "en": "Deepchandi",
+      "pa": "ਦੀਪਚੰਦੀ",
+      "matras": 14,
+      "vibhag": [
+        3,
+        4,
+        3,
+        4
+      ],
+      "sam": 1,
+      "tali": [
+        4,
+        11
+      ],
+      "khali": [
+        8
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਦੀਪਚੰਦੀ",
+          "ਦੀਪ ਚੰਦੀ",
+          "ਦੀਪਚੰਡੀ"
+        ],
+        "en": [
+          "Deepchandi",
+          "Dipchandi",
+          "Deep Chandi"
+        ]
+      }
+    },
+    {
+      "key": "jhumra",
+      "en": "Jhumra",
+      "pa": "ਝੂਮਰਾ",
+      "matras": 14,
+      "vibhag": [
+        3,
+        4,
+        3,
+        4
+      ],
+      "sam": 1,
+      "tali": [
+        4,
+        11
+      ],
+      "khali": [
+        8
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਝੂਮਰਾ",
+          "ਝੂਮਰ"
+        ],
+        "en": [
+          "Jhumra",
+          "Jhoomra"
+        ]
+      }
+    },
+    {
+      "key": "chachar",
+      "en": "Chachar",
+      "pa": "ਚਾਚਰ",
+      "matras": 14,
+      "vibhag": [
+        3,
+        4,
+        3,
+        4
+      ],
+      "sam": 1,
+      "tali": [
+        4,
+        11
+      ],
+      "khali": [
+        8
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਚਾਚਰ",
+          "ਚੰਚਲ"
+        ],
+        "en": [
+          "Chachar",
+          "Chanchal"
+        ]
+      },
+      "uncertain": "ਚੰਚਲ is listed here as the same taal; unverified"
+    },
+    {
+      "key": "dhamar",
+      "en": "Dhamar",
+      "pa": "ਧਮਾਰ",
+      "matras": 14,
+      "vibhag": [
+        5,
+        2,
+        3,
+        4
+      ],
+      "sam": 1,
+      "tali": [
+        6,
+        11
+      ],
+      "khali": [
+        8
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਧਮਾਰ"
+        ],
+        "en": [
+          "Dhamar",
+          "Dhamaar"
+        ]
+      }
+    },
+    {
+      "key": "jat_taal",
+      "en": "Jat Taal",
+      "pa": "ਜਤ ਤਾਲ",
+      "matras": 16,
+      "vibhag": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "sam": 1,
+      "tali": [
+        5,
+        13
+      ],
+      "khali": [
+        9
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਜਤ ਤਾਲ",
+          "ਜੱਤ ਤਾਲ",
+          "ਜਤਤਾਲ"
+        ],
+        "en": [
+          "Jat Taal",
+          "Jattal"
+        ]
+      },
+      "uncertain": "structure taken as teentaal's"
+    },
+    {
+      "key": "beer_taal",
+      "en": "Beer Taal",
+      "pa": "ਬੀਰ ਤਾਲ",
+      "matras": null,
+      "vibhag": null,
+      "sam": null,
+      "tali": null,
+      "khali": null,
+      "markers": null,
+      "aliases": {
+        "pa": [
+          "ਬੀਰ ਤਾਲ",
+          "ਵੀਰ ਤਾਲ",
+          "ਬੀਰਤਾਲ"
+        ],
+        "en": [
+          "Beer Taal",
+          "Vir Taal",
+          "Beertaal"
+        ]
+      },
+      "uncertain": "structure unknown; no matra check"
+    },
+    {
+      "key": "matt_taal",
+      "en": "Matt Taal",
+      "pa": "ਮੱਤ ਤਾਲ",
+      "matras": 9,
+      "vibhag": [
+        2,
+        2,
+        2,
+        3
+      ],
+      "sam": 1,
+      "tali": [
+        3,
+        7
+      ],
+      "khali": [
+        5
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਮੱਤ ਤਾਲ",
+          "ਮਤ ਤਾਲ",
+          "ਮੱਤਤਾਲ"
+        ],
+        "en": [
+          "Matt Taal",
+          "Mat Taal"
+        ]
+      },
+      "uncertain": "vibhag division unverified"
+    },
+    {
+      "key": "sawari",
+      "en": "Sawari",
+      "pa": "ਸਵਾਰੀ",
+      "matras": 15,
+      "vibhag": [
+        4,
+        4,
+        4,
+        3
+      ],
+      "sam": 1,
+      "tali": [
+        5,
+        13
+      ],
+      "khali": [
+        9
+      ],
+      "markers": [
+        "×",
+        "2",
+        "0",
+        "3"
+      ],
+      "aliases": {
+        "pa": [
+          "ਸਵਾਰੀ",
+          "ਸਵਾਰੀ ਤਾਲ"
+        ],
+        "en": [
+          "Sawari",
+          "Savari"
+        ]
+      },
+      "uncertain": "vibhag division unverified"
+    },
+    {
+      "key": "rudra_taal",
+      "en": "Rudra Taal",
+      "pa": "ਰੁਦਰ ਤਾਲ",
+      "matras": 11,
+      "vibhag": [
+        3,
+        2,
+        2,
+        2,
+        2
+      ],
+      "sam": 1,
+      "tali": [
+        4,
+        6,
+        8,
+        10
+      ],
+      "khali": [],
+      "markers": [
+        "×",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "aliases": {
+        "pa": [
+          "ਰੁਦਰ ਤਾਲ",
+          "ਰੁਦ੍ਰ ਤਾਲ"
+        ],
+        "en": [
+          "Rudra Taal"
+        ]
+      },
+      "uncertain": "vibhag division unverified"
+    }
+  ],
+  "laya": [
+    {
+      "key": "vilambit",
+      "en": [
+        "vilambit",
+        "slow"
+      ],
+      "pa": [
+        "ਵਿਲੰਬਿਤ",
+        "ਵਿਲੰਬਤ",
+        "ਅਤਿ ਵਿਲੰਬਿਤ",
+        "ਵਿਲੰਬਿਤ ਲਯ",
+        "ਵਿਲੰਬਿਤ ਲੈਅ"
+      ]
+    },
+    {
+      "key": "madh",
+      "en": [
+        "madh",
+        "madhya",
+        "medium"
+      ],
+      "pa": [
+        "ਮੱਧ",
+        "ਮਧ",
+        "ਮਧਯ",
+        "ਮੱਧ ਲਯ",
+        "ਮੱਧ ਲੈਅ",
+        "ਮਧ ਲੈ",
+        "ਮਧਲੈ",
+        "ਮੱਧ ਲੈ"
+      ]
+    },
+    {
+      "key": "drut",
+      "en": [
+        "drut",
+        "fast"
+      ],
+      "pa": [
+        "ਦਰੁਤ",
+        "ਦ੍ਰੁਤ",
+        "ਅਤਿ ਦਰੁਤ",
+        "ਦਰੁਤ ਲਯ",
+        "ਦਰੁਤ ਲੈਅ"
+      ]
+    }
+  ],
+  "sections": {
+    "sthai": [
+      "ਸਥਾਈ",
+      "ਅਸਥਾਈ",
+      "ਸਥਾਯੀ",
+      "ਅਸਥਾਯੀ",
+      "ਸਥਾਈ:",
+      "ਸਥਾਈ :-"
+    ],
+    "antara": [
+      "ਅੰਤਰਾ",
+      "ਅੰਤਰਾਂ",
+      "ਅੰਤ੍ਰਾ",
+      "ਅੰਤਰਾ:"
+    ],
+    "sanchari": [
+      "ਸੰਚਾਰੀ"
+    ],
+    "abhog": [
+      "ਆਭੋਗ"
+    ],
+    "alaap": [
+      "ਅਲਾਪ",
+      "ਆਲਾਪ"
+    ],
+    "taan": [
+      "ਤਾਨ",
+      "ਤਾਨਾਂ",
+      "ਤਾਣ"
+    ],
+    "tihai": [
+      "ਤਿਹਾਈ"
+    ]
+  },
+  "swaras": {
+    "order": [
+      "S",
+      "R",
+      "G",
+      "M",
+      "P",
+      "D",
+      "N"
+    ],
+    "gurmukhi": {
+      "S": "ਸ",
+      "R": "ਰ",
+      "G": "ਗ",
+      "M": "ਮ",
+      "P": "ਪ",
+      "D": "ਧ",
+      "N": "ਨ"
+    },
+    "gurmukhi_kanna": {
+      "S": "ਸਾ",
+      "R": "ਰੇ",
+      "G": "ਗਾ",
+      "M": "ਮਾ",
+      "P": "ਪਾ",
+      "D": "ਧਾ",
+      "N": "ਨੀ"
+    },
+    "gurmukhi_read": {
+      "ਸ": "S",
+      "ਸਾ": "S",
+      "ਸਾਂ": "S",
+      "ਰ": "R",
+      "ਰੇ": "R",
+      "ਰੇਂ": "R",
+      "ਰੈ": "R",
+      "ਗ": "G",
+      "ਗਾ": "G",
+      "ਗਾਂ": "G",
+      "ਮ": "M",
+      "ਮਾ": "M",
+      "ਮਾਂ": "M",
+      "ਪ": "P",
+      "ਪਾ": "P",
+      "ਪਾਂ": "P",
+      "ਧ": "D",
+      "ਧਾ": "D",
+      "ਧਾਂ": "D",
+      "ਨ": "N",
+      "ਨੀ": "N",
+      "ਨਿ": "N",
+      "ਨੀਂ": "N"
+    },
+    "devanagari": {
+      "S": "सा",
+      "R": "रे",
+      "G": "ग",
+      "M": "म",
+      "P": "प",
+      "D": "ध",
+      "N": "नि"
+    },
+    "devanagari_read": {
+      "सा": "S",
+      "स": "S",
+      "रे": "R",
+      "र": "R",
+      "ग": "G",
+      "म": "M",
+      "प": "P",
+      "ध": "D",
+      "नि": "N",
+      "नी": "N",
+      "न": "N"
+    },
+    "latin": {
+      "S": "S",
+      "R": "R",
+      "G": "G",
+      "M": "M",
+      "P": "P",
+      "D": "D",
+      "N": "N"
+    },
+    "latin_komal": {
+      "R": "r",
+      "G": "g",
+      "D": "d",
+      "N": "n"
+    },
+    "latin_tivra": {
+      "M": "m"
+    },
+    "komal_allowed": [
+      "R",
+      "G",
+      "D",
+      "N"
+    ],
+    "tivra_allowed": [
+      "M"
+    ]
+  },
+  "symbols": {
+    "extension": [
+      "—",
+      "–",
+      "―",
+      "-",
+      "ऽ",
+      "S",
+      "ਸ",
+      "..",
+      ".",
+      "਽"
+    ],
+    "rest": [
+      "*",
+      "×",
+      "∗"
+    ],
+    "sam": [
+      "×",
+      "x",
+      "X",
+      "+",
+      "✕",
+      "⊗",
+      "ਸਮ",
+      "ੳ"
+    ],
+    "khali": [
+      "0",
+      "੦",
+      "o",
+      "O",
+      "ਖਾਲੀ"
+    ],
+    "tali": {
+      "2": [
+        "2",
+        "੨"
+      ],
+      "3": [
+        "3",
+        "੩"
+      ],
+      "4": [
+        "4",
+        "੪"
+      ],
+      "5": [
+        "5",
+        "੫"
+      ],
+      "6": [
+        "6",
+        "੬"
+      ],
+      "7": [
+        "7",
+        "੭"
+      ]
+    },
+    "bar": [
+      "|",
+      "।",
+      "॥",
+      "│",
+      "¦",
+      "┃"
+    ],
+    "group": [
+      "‿",
+      "⌣",
+      "⏝",
+      "︶"
+    ],
+    "khatka": [
+      "(",
+      ")"
+    ],
+    "octave_taar": [
+      "̇",
+      "˙",
+      "'",
+      "·",
+      "•"
+    ],
+    "octave_mandra": [
+      "̣",
+      ".",
+      ","
+    ],
+    "komal": [
+      "̲",
+      "_"
+    ],
+    "tivra": [
+      "́",
+      "'",
+      "ˈ",
+      "|",
+      "̍"
+    ]
+  },
+  "roman_map": {
+    "consonants": {
+      "ਸ": "s",
+      "ਹ": "h",
+      "ਕ": "k",
+      "ਖ": "kh",
+      "ਗ": "g",
+      "ਘ": "gh",
+      "ਙ": "ng",
+      "ਚ": "ch",
+      "ਛ": "chh",
+      "ਜ": "j",
+      "ਝ": "jh",
+      "ਞ": "ny",
+      "ਟ": "t",
+      "ਠ": "th",
+      "ਡ": "d",
+      "ਢ": "dh",
+      "ਣ": "n",
+      "ਤ": "t",
+      "ਥ": "th",
+      "ਦ": "d",
+      "ਧ": "dh",
+      "ਨ": "n",
+      "ਪ": "p",
+      "ਫ": "ph",
+      "ਬ": "b",
+      "ਭ": "bh",
+      "ਮ": "m",
+      "ਯ": "y",
+      "ਰ": "r",
+      "ਲ": "l",
+      "ਵ": "v",
+      "ੜ": "r",
+      "ਸ਼": "sh",
+      "ਖ਼": "kh",
+      "ਗ਼": "g",
+      "ਜ਼": "z",
+      "ਫ਼": "f",
+      "ਲ਼": "l"
+    },
+    "vowel_signs": {
+      "ਾ": "aa",
+      "ਿ": "i",
+      "ੀ": "ee",
+      "ੁ": "u",
+      "ੂ": "oo",
+      "ੇ": "ay",
+      "ੈ": "ai",
+      "ੋ": "o",
+      "ੌ": "au"
+    },
+    "independent": {
+      "ਅ": "a",
+      "ਆ": "aa",
+      "ਇ": "i",
+      "ਈ": "ee",
+      "ਉ": "u",
+      "ਊ": "oo",
+      "ਏ": "ay",
+      "ਐ": "ai",
+      "ਓ": "o",
+      "ਔ": "au",
+      "ੳ": "u",
+      "ੲ": "i"
+    },
+    "nasal": {
+      "ੰ": "n",
+      "ਂ": "n"
+    },
+    "subjoined": {
+      "੍ਹ": "h",
+      "੍ਰ": "r",
+      "੍ਵ": "v",
+      "੍ਯ": "y"
+    },
+    "inherent": "a"
+  },
+  "stopwords": {
+    "pa_raag": [
+      "ਰਾਗ",
+      "ਰਾਗੁ",
+      "ਰਾਗਨੀ",
+      "ਰਾਗਿਨੀ",
+      "ਰਾਗਣੀ",
+      "ਮਹਲਾ",
+      "ਮਃ",
+      "ਮ",
+      "ਘਰੁ",
+      "ਘਰ",
+      "ਮਿਸ਼ਰਤ",
+      "ਮਿਸ਼੍ਰਤ",
+      "ਮਿਸਰਤ",
+      "ਮਿਸ਼ਰ",
+      "ਵਿਚ",
+      "ਵਿੱਚ",
+      "ਅੰਗ",
+      "ਥਾਟ"
+    ],
+    "en_raag": [
+      "raag",
+      "raga",
+      "rag",
+      "ragu",
+      "raagu",
+      "ragini",
+      "raagini",
+      "mishrit",
+      "mishra",
+      "misra",
+      "in",
+      "thaat"
+    ],
+    "pa_taal": [
+      "ਤਾਲ",
+      "ਤਾਲਾ",
+      "ਤਾਲੁ",
+      "ਠੇਕਾ",
+      "ਲਯ",
+      "ਲੈ",
+      "ਲੇ",
+      "ਲੈਅ",
+      "ਮਾਤਰਾ",
+      "ਮਾਤਰੇ",
+      "ਮਾਤਰਾਂ",
+      "ਮਾਤ੍ਰਾ",
+      "ਵਿਚ",
+      "ਵਿੱਚ"
+    ],
+    "en_taal": [
+      "taal",
+      "tal",
+      "tala",
+      "theka",
+      "laya",
+      "lay",
+      "beats",
+      "matra",
+      "matras",
+      "in"
+    ]
+  }
+}

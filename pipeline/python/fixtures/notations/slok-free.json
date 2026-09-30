@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "notation_id": "example-book:0043:2",
+  "book_key": "example-book",
+  "page": 43,
+  "seq": 2,
+  "pages": [43, 44],
+  "kind": "notation",
+  "script": "gurmukhi",
+  "heading": {
+    "raw": "ਸਲੋਕ — ਰਾਗ ਆਸਾ",
+    "number": null,
+    "raag": {"printed": "ਰਾਗ ਆਸਾ", "key": "asa", "parent_key": null, "confidence": 1.0},
+    "taal": null,
+    "reet_of": null
+  },
+  "shabad": {
+    "shabad_id": 9998,
+    "source": "G",
+    "confidence": 0.9,
+    "method": "stream",
+    "line_ids": [77700],
+    "ang": 1,
+    "writer": "Guru Nanak Dev",
+    "first_line": "ਸਤਿ ਨਾਮੁ ਕਰਤਾ ਪੁਰਖੁ",
+    "printed": ["ਸਤਿ ਨਾਮੁ ਕਰਤਾ ਪੁਰਖੁ"],
+    "ref": null,
+    "verified": false
+  },
+  "raag_shabad": "jap",
+  "raag_differs": true,
+  "sections": [
+    {
+      "kind": "other", "n": 1, "label": "ਸਲੋਕ", "line_ids": [77700],
+      "lines": [
+        {
+          "kind": "free", "line_id": 77700, "page": 43, "bbox": [130, 1400, 2200, 1530],
+          "beats": [
+            {"notes": [{"s": "P"}], "bol": {"g": "ਸ", "span": [0, 1]}},
+            {"div": 2, "notes": [{"s": "D", "k": true}, {"s": "P"}], "bol": {"g": "ਤਿ", "span": [1, 3]}},
+            {"ext": true, "bol": {"g": "", "h": 2}},
+            {"notes": [{"s": "M"}], "bol": {"g": "ਨਾਮੁ", "span": [4, 8]}},
+            {"notes": [{"s": "S", "o": -1}], "bol": {"g": "ਕਰ", "span": [9, 11]}},
+            {"notes": [{"s": "S", "o": -2}], "bol": {"g": "ਤਾ", "span": [11, 13]}}
+          ],
+          "raw": {"swar": "ਪ ਧਪ — ਮ ਸ. ਸ:", "bol": "ਸ ਤਿ ऽऽ ਨਾਮੁ ਕਰ ਤਾ", "marks": null, "conf": 0.7}
+        },
+        {
+          "kind": "free", "continues": true, "page": 44, "bbox": [130, 300, 2200, 430],
+          "beats": [
+            {"notes": [{"s": "S", "o": 2}]},
+            {"notes": [{"s": "N", "k": true, "o": 1, "kan": {"s": "S", "o": 1}}]}
+          ],
+          "raw": {"swar": "ਸ: ਨ", "bol": "", "marks": null, "conf": 0.8}
+        }
+      ]
+    }
+  ],
+  "images": [
+    {"n": 1, "file": "images/example-book-0043-2-1.png", "role": "grid", "page": 43, "bbox": [106, 1376, 2224, 1554], "w": 2118, "h": 178, "bytes": 12000, "sha256": "0000000000000000000000000000000000000000000000000000000000000003", "thumb": null},
+    {"n": 2, "file": "images/example-book-0043-2-2.png", "role": "grid", "page": 44, "bbox": [106, 276, 2224, 454], "w": 2118, "h": 178, "bytes": 9000, "sha256": "0000000000000000000000000000000000000000000000000000000000000004", "thumb": null}
+  ],
+  "source": {
+    "book_key": "example-book", "author": "Example Author", "author_key": "example-author",
+    "title": "Example Book", "title_en": null, "part": 2, "pages": [43, 44],
+    "engines": ["tesseract-pan"], "row_engine": "tesseract pan+eng psm7",
+    "parser": {"name": "notation", "version": "0.1.0"}, "vocab_version": "2026.09.1",
+    "built": "2026-09-30T00:00:00Z", "content_hash": "", "gold": null
+  },
+  "quality": {"cells": 8, "unknown": 0, "conf_mean": 0.75, "matra_check": "n/a", "marks": {}, "watermark": 0.0},
+  "flags": ["continues-next-page", "raag-differs"],
+  "verified": false
+}

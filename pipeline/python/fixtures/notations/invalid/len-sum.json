@@ -1,0 +1,533 @@
+{
+ "error": "beat.len_sum",
+ "notation": {
+  "schema_version": 1,
+  "notation_id": "example-book:0042:1",
+  "book_key": "example-book",
+  "page": 42,
+  "seq": 1,
+  "pages": [
+   42
+  ],
+  "kind": "notation",
+  "script": "gurmukhi",
+  "heading": {
+   "raw": "ਰਾਗ ਗੂਜਰੀ  ਤਿੰਨ ਤਾਲ (ਮੱਧ ਲਯ)",
+   "number": null,
+   "raag": {
+    "printed": "ਰਾਗ ਗੂਜਰੀ",
+    "key": "gujri",
+    "parent_key": null,
+    "confidence": 1.0
+   },
+   "taal": {
+    "printed": "ਤਿੰਨ ਤਾਲ",
+    "key": "teentaal",
+    "matras": 16,
+    "laya": "madh",
+    "confidence": 1.0
+   },
+   "reet_of": null
+  },
+  "shabad": {
+   "shabad_id": 9999,
+   "source": "G",
+   "confidence": 0.94,
+   "method": "stream+ref+bol",
+   "line_ids": [
+    77777
+   ],
+   "ang": 13,
+   "writer": "Guru Ram Das",
+   "first_line": "ਮੇਰੇ ਮਾਧਉ ਜੀ ਸਤਸੰਗਤਿ ਮਿਲੇ ਸੁ ਤਰਿਆ ॥",
+   "printed": [
+    "ਗੂਜਰੀ ਮਹਲਾ ੪ ॥",
+    "ਮੇਰੇ ਮਾਧਉ ਜੀ ਸਤਸੰਗਤਿ ਮਿਲੇ ਸੁ ਤਰਿਆ ॥"
+   ],
+   "ref": {
+    "text": "(ਪੰਨਾ ੧੩)",
+    "ang_from": 13,
+    "ang_to": 13,
+    "source": "G",
+    "raag_key": null,
+    "mahala": null
+   },
+   "verified": false
+  },
+  "raag_shabad": "gujri",
+  "raag_differs": false,
+  "sections": [
+   {
+    "kind": "sthai",
+    "n": 1,
+    "label": "ਸਥਾਈ",
+    "line_ids": [
+     77777
+    ],
+    "lines": [
+     {
+      "kind": "avartan",
+      "avartan": 1,
+      "line_id": 77777,
+      "page": 42,
+      "bbox": [
+       120,
+       610,
+       2260,
+       760
+      ],
+      "beats": [
+       {
+        "m": 1,
+        "notes": [
+         {
+          "s": "S"
+         }
+        ],
+        "bol": {
+         "g": "ਮੇ",
+         "span": [
+          0,
+          2
+         ]
+        }
+       },
+       {
+        "m": 2,
+        "notes": [
+         {
+          "s": "R",
+          "k": true
+         }
+        ],
+        "bol": {
+         "g": "ਰੇ",
+         "span": [
+          2,
+          4
+         ]
+        }
+       },
+       {
+        "m": 3,
+        "notes": [
+         {
+          "s": "G"
+         }
+        ],
+        "bol": {
+         "g": "ਮਾ",
+         "span": [
+          5,
+          7
+         ]
+        }
+       },
+       {
+        "m": 4,
+        "notes": [
+         {
+          "s": "M",
+          "t": true
+         }
+        ],
+        "bol": {
+         "g": "ਧਉ",
+         "span": [
+          7,
+          9
+         ]
+        }
+       },
+       {
+        "m": 5,
+        "notes": [
+         {
+          "s": "P"
+         }
+        ],
+        "bol": {
+         "g": "ਜੀ",
+         "span": [
+          10,
+          12
+         ]
+        }
+       },
+       {
+        "m": 6,
+        "ext": true,
+        "bol": {
+         "g": "",
+         "h": 1
+        }
+       },
+       {
+        "m": 7,
+        "div": 3,
+        "notes": [
+         {
+          "s": "D"
+         },
+         {
+          "s": "N"
+         }
+        ],
+        "bol": {
+         "g": "ਸ",
+         "span": [
+          13,
+          14
+         ]
+        }
+       },
+       {
+        "m": 8,
+        "notes": [
+         {
+          "s": "S",
+          "o": 1
+         }
+        ],
+        "bol": {
+         "g": "ਤ",
+         "span": [
+          14,
+          15
+         ]
+        }
+       },
+       {
+        "m": 9,
+        "rest": true,
+        "bol": {
+         "g": ""
+        }
+       },
+       {
+        "m": 10,
+        "notes": [
+         {
+          "s": "N"
+         }
+        ],
+        "bol": {
+         "g": "ਸੰ",
+         "span": [
+          15,
+          17
+         ]
+        }
+       },
+       {
+        "m": 11,
+        "notes": [
+         {
+          "s": "D"
+         }
+        ],
+        "bol": {
+         "g": "ਗ",
+         "span": [
+          17,
+          18
+         ]
+        }
+       },
+       {
+        "m": 12,
+        "notes": [
+         {
+          "s": "P"
+         }
+        ],
+        "bol": {
+         "g": "ਤਿ",
+         "span": [
+          18,
+          20
+         ]
+        }
+       },
+       {
+        "m": 13,
+        "notes": [
+         {
+          "s": "M",
+          "kan": {
+           "s": "P"
+          }
+         }
+        ],
+        "bol": {
+         "g": "ਮਿ",
+         "span": [
+          21,
+          23
+         ]
+        }
+       },
+       {
+        "m": 14,
+        "notes": [
+         {
+          "s": "G"
+         }
+        ],
+        "bol": {
+         "g": "ਲੇ",
+         "span": [
+          23,
+          25
+         ]
+        }
+       },
+       {
+        "m": 15,
+        "div": 3,
+        "notes": [
+         {
+          "s": "R",
+          "len": 2
+         },
+         {
+          "s": "S"
+         }
+        ],
+        "bol": {
+         "g": "ਸੁ",
+         "span": [
+          26,
+          28
+         ]
+        }
+       },
+       {
+        "m": 16,
+        "notes": [
+         {
+          "s": "S"
+         }
+        ],
+        "bol": {
+         "g": "ਤਰਿਆ",
+         "span": [
+          29,
+          33
+         ]
+        }
+       }
+      ],
+      "raw": {
+       "swar": "ਸ ਰ ਗ ਮ ਪ — ਧਨ ਸ * ਨ ਧ ਪ ਮ ਗ ਰਸ ਸ",
+       "bol": "ਮੇ ਰੇ ਮਾ ਧਉ ਜੀ ऽ ਸ ਤ - ਸੰ ਗ ਤਿ ਮਿ ਲੇ ਸੁ ਤਰਿਆ",
+       "marks": "× 2 0 3",
+       "conf": 0.88
+      }
+     }
+    ]
+   },
+   {
+    "kind": "antara",
+    "n": 1,
+    "label": "ਅੰਤਰਾ",
+    "lines": [
+     {
+      "kind": "avartan",
+      "avartan": 1,
+      "matra_from": 9,
+      "page": 42,
+      "bbox": [
+       120,
+       900,
+       2260,
+       1040
+      ],
+      "beats": [
+       {
+        "m": 9,
+        "notes": [
+         {
+          "s": "M",
+          "kh": true
+         }
+        ],
+        "bol": {
+         "g": "ਹਰਿ"
+        }
+       },
+       {
+        "m": 10,
+        "notes": [
+         {
+          "s": "P"
+         }
+        ],
+        "bol": {
+         "g": "ਹਰਿ"
+        }
+       },
+       {
+        "m": 11,
+        "notes": [
+         {
+          "s": "D",
+          "o": 1
+         }
+        ],
+        "bol": {
+         "g": "ਨਾ"
+        }
+       },
+       {
+        "m": 12,
+        "notes": [
+         {
+          "s": "S",
+          "o": -1
+         }
+        ],
+        "bol": {
+         "g": "ਮੁ"
+        }
+       },
+       {
+        "m": 13,
+        "notes": null,
+        "raw": "ਗ਼?",
+        "c": 0.31,
+        "bol": {
+         "g": "ਜਪਿ"
+        }
+       },
+       {
+        "m": 14,
+        "div": 4,
+        "notes": [
+         {
+          "s": "N",
+          "k": true
+         },
+         {
+          "s": "D"
+         },
+         {
+          "s": "P"
+         },
+         {
+          "s": "M"
+         }
+        ],
+        "bol": {
+         "g": "ਜਪਿ",
+         "h": 1
+        }
+       },
+       {
+        "m": 15,
+        "ext": true,
+        "bol": null
+       },
+       {
+        "m": 16,
+        "notes": [
+         {
+          "s": "G"
+         }
+        ],
+        "bol": {
+         "g": "ਓ"
+        }
+       }
+      ],
+      "raw": {
+       "swar": "ਮ ਪ ਧ ਸ ਗ਼? ਨਧਪਮ — ਗ",
+       "bol": "ਹਰਿ ਹਰਿ ਨਾ ਮੁ ਜਪਿ ਜਪਿऽ ? ਓ",
+       "marks": "0 3",
+       "conf": 0.61
+      }
+     }
+    ]
+   }
+  ],
+  "images": [
+   {
+    "n": 1,
+    "file": "images/example-book-0042-1-1.png",
+    "role": "grid",
+    "page": 42,
+    "bbox": [
+     96,
+     586,
+     2284,
+     1064
+    ],
+    "w": 2188,
+    "h": 478,
+    "bytes": 30112,
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+    "thumb": "images/example-book-0042-1-1.thumb.png"
+   },
+   {
+    "n": 2,
+    "file": "images/example-book-0042-1-2.png",
+    "role": "shabad",
+    "page": 42,
+    "bbox": [
+     96,
+     300,
+     2284,
+     560
+    ],
+    "w": 2188,
+    "h": 260,
+    "bytes": 18020,
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000002",
+    "thumb": null
+   }
+  ],
+  "source": {
+   "book_key": "example-book",
+   "author": "Example Author",
+   "author_key": "example-author",
+   "title": "Example Book",
+   "title_en": "Example Book",
+   "part": null,
+   "pages": [
+    42
+   ],
+   "engines": [
+    "tesseract-pan",
+    "tesseract-gurmukhi"
+   ],
+   "row_engine": "tesseract pan+eng psm7",
+   "parser": {
+    "name": "notation",
+    "version": "0.1.0"
+   },
+   "vocab_version": "2026.09.1",
+   "built": "2026-09-30T00:00:00Z",
+   "content_hash": "",
+   "gold": null
+  },
+  "quality": {
+   "cells": 24,
+   "unknown": 1,
+   "conf_mean": 0.78,
+   "matra_check": "ok",
+   "marks": {
+    "dot_above": 2,
+    "dot_below": 1,
+    "underline": 2,
+    "arc": 3,
+    "tick": 1,
+    "kan": 1
+   },
+   "watermark": 0.0
+  },
+  "flags": [
+   "unread-cell"
+  ],
+  "verified": false
+ }
+}

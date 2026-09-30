@@ -31,7 +31,11 @@ from lib.writings_works import list_sources as _list_files, parse_filename
 
 MANIFEST = "manifest.json"
 DEFAULTS = {"language": "en", "reader": None, "licence": None, "original": True,
-            "quote_policy": None, "author": None, "scripture": "G"}
+            "quote_policy": None, "author": None, "scripture": "G",
+            # kind: prose (the writings pipeline, 12-15) or notation (29-32,
+            # lib/notation*.py); style: how a notation book lays its grids out
+            # (lib/notation.DEFAULT_STYLE), a work's keys over the folder's
+            "kind": "prose", "style": None}
 
 
 def _slug(s: str) -> str:
@@ -97,9 +101,15 @@ def parse_source(path: str, manifest: dict | None = None, roster: dict | None = 
         "file": name, "folder": "root", "original": bool(merged.get("original", True)),
         "book": merged.get("book") or _slug(stem),
     }
-    for k in ("language", "reader", "licence", "quote_policy", "author", "scripture", "died", "bleed"):
+    for k in ("language", "reader", "licence", "quote_policy", "author", "scripture", "died", "bleed", "kind"):
         if k in merged:
             meta[k] = merged[k]
     meta.setdefault("language", "en")
     meta.setdefault("scripture", "G")
+    meta.setdefault("kind", "prose")
+    if meta["kind"] not in ("prose", "notation"):
+        raise ValueError("%s: kind must be prose or notation, not %r" % (name, meta["kind"]))
+    if meta["kind"] == "notation":
+        from lib.notation import merge_style
+        meta["style"] = merge_style(manifest.get("style"), entry.get("style"))
     return meta
