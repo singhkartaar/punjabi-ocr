@@ -193,6 +193,11 @@ python 32_build_notations_db.py --gurbani <path to gurbani.sqlite>
 The database refuses a book whose review did not pass; `--allow-unmeasured`
 is for a pilot. `docs/output-format.md` describes what is written.
 
+To see how the reader fares across a shelf of books before committing to
+any of them, `33_notation_sample.py --library <folder of books> --books 20
+--per-book 2` reads a few pages at two random places in each and writes
+one review page for all of them (`data/ocr/_sample/review.html`).
+
 ## 6. Paid services, only through a cap
 
 Every paid call (Google Vision for OCR, Gemini through Vertex for

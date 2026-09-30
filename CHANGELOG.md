@@ -20,6 +20,9 @@ raags, taals and symbols (`lib/notation_vocab.json`) and the renderer
   `TesseractEngine.recognise_region` reads one region of a page.
 - The manifest gains `kind` and `style` (docs/manifest.md); pages.json
   carries them and the work's title.
+- `33_notation_sample.py` reads a few pages of many books at random and
+  writes one review page across them: the original page, the crops, the
+  grid as read.
 - Hindi books move to 1.3.
 
 ## 1.1.3

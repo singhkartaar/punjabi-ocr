@@ -237,9 +237,28 @@ def write_page(args, results: list[dict]) -> None:
     gt = load_script("30_notation_gt.py")
     cands = []
     parts = []
+    rows_html = []
     for b in results:
-        parts.append('<h2 class="book">%s <small>%s · %d pages · read at %s · %s · %d found</small></h2>'
-                     % (html_mod.escape(b["title"]), html_mod.escape(b["author"]), b["pages"], html_mod.escape(b["pages_arg"]),
+        recs = b["records"]
+        cells = sum(r["quality"]["cells"] for r in recs)
+        unknown = sum(r["quality"]["unknown"] for r in recs)
+        resolved = sum(1 for r in recs if r["shabad"].get("shabad_id") is not None)
+        with_grid = sum(1 for r in recs if r.get("sections"))
+        verdict = ("no notation found" if not recs else
+                   "reads" if resolved and with_grid and cells and unknown / cells <= 0.15 else
+                   "partly" if with_grid or resolved else "not a notation page")
+        rows_html.append("<tr><td><a href='#b-%s'>%s</a></td><td>%s</td><td>%d</td><td>%s</td><td>%d</td><td>%d / %d</td><td>%d / %d</td><td>%s</td><td class='v-%s'>%s</td></tr>"
+                         % (html_mod.escape(b["book"]), html_mod.escape(b["title"]), html_mod.escape(b["author"]), b["pages"], html_mod.escape(b["pages_arg"]),
+                            b["found"], resolved, len(recs), with_grid, len(recs),
+                            ("%d%%" % round(100.0 * unknown / cells)) if cells else "-", verdict.split()[0], verdict))
+    parts.append("<table class='sum'><thead><tr><th>book</th><th>author</th><th>pages</th><th>read at</th><th>found</th>"
+                 "<th>shabad named</th><th>grid read</th><th>unread cells</th><th>verdict</th></tr></thead><tbody>%s</tbody></table>"
+                 "<p class='legend'>The verdict is mechanical: <b>reads</b> = a shabad named and a grid read with at most 15%% of its cells unread; "
+                 "<b>partly</b> = one of the two; <b>not a notation page</b> = the window fell on prose, a picture or a table of another kind. "
+                 "Judge each notation below against its page; the original page is the authority.</p>" % "".join(rows_html))
+    for b in results:
+        parts.append('<h2 class="book" id="b-%s">%s <small>%s · %d pages · read at %s · %s · %d found</small></h2>'
+                     % (html_mod.escape(b["book"]), html_mod.escape(b["title"]), html_mod.escape(b["author"]), b["pages"], html_mod.escape(b["pages_arg"]),
                         html_mod.escape(b["status"]), b["found"]))
         if not b["records"]:
             parts.append('<p class="none">nothing parsed here%s</p>' % (" -- see run.log" if b["status"].startswith("failed") else ""))
@@ -263,6 +282,11 @@ def write_page(args, results: list[dict]) -> None:
 .orig figure{margin:0}.orig figcaption{font-size:11px;color:#777;text-transform:uppercase;letter-spacing:.04em}
 .orig img{width:260px;height:auto;border:1px solid #ccc;background:#fff;cursor:zoom-in}
 .orig img.zoom{width:auto;max-width:100%;cursor:zoom-out}
+table.sum{margin:14px 16px;border-collapse:collapse;font-size:13px;background:#fff}
+table.sum th,table.sum td{border:1px solid #ddd;padding:4px 8px;text-align:left}
+table.sum th{background:#f0efe9}
+td.v-reads{background:#e3f4e6}td.v-partly{background:#fff4d6}td.v-not{background:#fde2e2}td.v-no{background:#eee}
+.legend{margin:0 16px 8px;color:#555;font-size:13px}
 """
     extra_js = """
 document.addEventListener('click', e => { if (e.target.tagName === 'IMG' && e.target.closest('.orig')) e.target.classList.toggle('zoom'); });
