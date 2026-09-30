@@ -164,18 +164,17 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
     # of Bhai Gurdas matches no corpus line and reads as prose
     regions = _shabad_between(regions, body_h)
     regions = _fold_shreds(regions)
-    # a shabad block is a verse the corpus knows, or one closed with ॥, or the
-    # Granth's heading; a block of prose with single dandas is text -- unless
-    # the book set it as it sets a shabad: under a heading that names the raag
-    # or the taal, or over a reference (a Kabitt of Bhai Gurdas, Dasam Bani)
+    # a shabad block is a verse the corpus knows -- that is the link the
+    # notation needs -- or a verse the book set over a printed reference (a
+    # Kabitt of Bhai Gurdas, Dasam Bani, which the corpus does not hold).
+    # Prose that mentions a line, tabla bols under a taal heading, and OCR
+    # noise that happens to hold a danda are text.
     for i, r in enumerate(regions):
-        if r["role"] != "shabad" or _verse_block(r):
+        if r["role"] != "shabad":
             continue
-        before = regions[i - 1] if i else None
         after_ = regions[i + 1] if i + 1 < len(regions) else None
-        under_heading = bool(before and before["role"] == "heading" and ((before.get("parsed") or {}).get("raag") or (before.get("parsed") or {}).get("taal")))
-        over_ref = bool(after_ and after_["role"] == "ref")
-        if not (under_heading or over_ref) or len(r["lines"]) > 8:
+        over_ref = bool(after_ and after_["role"] == "ref" and re.search("[।॥]", r["text"]))
+        if not (_verse_block(r) or over_ref):
             r["role"] = "text"
     # a grid of one line that is really a marker row or a stray
     regions = [r for r in regions if not (r["role"] == "grid" and len(r["lines"]) == 1 and r["bbox"][3] - r["bbox"][1] < body_h * 0.6)]
@@ -259,16 +258,22 @@ def _fold_shreds(regions: list[dict]) -> list[dict]:
 
 
 def _verse_block(region: dict) -> bool:
-    """A verse the corpus matched, a line closed with ॥, or the Granth's heading of a shabad."""
-    if any(m.get("matches") for m in (region.get("merged") or [])):
-        return True
-    text = region.get("text") or ""
-    return "॥" in text or bool(_GRANTH_HEADING.search(text))
+    """
+    A verse the corpus matched: two of its lines, or a third of them (an
+    essay that quotes one line of a shabad over a page of prose is not the
+    shabad), or the Granth's own heading of a shabad with a matched line.
+    """
+    merged = region.get("merged") or []
+    matched = sum(1 for m in merged if m.get("matches"))
+    if not matched:
+        return False
+    n = max(1, len(region.get("lines") or merged))
+    return matched >= 2 or matched / n >= 0.34 or bool(_GRANTH_HEADING.search(region.get("text") or ""))
 
 
 def _is_real_grid(region: dict) -> bool:
-    """A grid region of at least three OCR lines is a grid; one or two lines between verses are verse."""
-    return region["role"] == "grid" and len(region["lines"]) >= 3
+    """A grid region of two OCR lines or more (a swar row over a bol row) is a grid; one line under a heading is a shred."""
+    return region["role"] == "grid" and (len(region["lines"]) >= 2 or region.get("from_ink"))
 
 
 def _looks_like_verse(text: str) -> bool:
@@ -494,6 +499,7 @@ def _items(layouts: list[dict]) -> list[dict]:
     return items
 
 
+_AT_NUMBER = re.compile("(?:ਸ਼ਬਦ|ਸਬਦ)\\s*ਨੰ")
 _DIGITS_RE = re.compile(r"[0-9੦-੯.:।()\-]+")
 
 
@@ -747,9 +753,14 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
             has_shabad = True
         edge_shabad = has_shabad and not has_content and (last_read in pages if not after else first_read in pages)
         edge_grid = has_content and not has_shabad and (first_read in pages if not after else last_read in pages)
-        # a notation the book numbers is one even with no shabad text under its heading
-        # ("ਇਹ ਸ਼ਬਦ ਨੰ: ੩ ਤੇ ਲਿਖਿਆ ਹੈ"): the parser borrows the shabad by that note, or reads it off the bol row
-        counted = has_content and not has_shabad and numbered and "grid" in roles
+        # a notation the book numbers, with the raag and the taal in its heading, is one
+        # even with no shabad text under it ("ਇਹ ਸ਼ਬਦ ਨੰ: ੩ ਤੇ ਲਿਖਿਆ ਹੈ"): the parser
+        # borrows the shabad by that note, or reads it off the bol row. A numbered
+        # exercise under a taal alone is not.
+        parsed = (opener or {}).get("parsed") or {}
+        at_number = any(it["role"] == "note" and _AT_NUMBER.search(it["region"].get("text") or "") for it in seg["items"])
+        counted = has_content and not has_shabad and numbered and "grid" in roles \
+            and ((parsed.get("raag") and parsed.get("taal")) or at_number)
         if not (has_shabad and has_content) and not edge_shabad and not edge_grid and not counted:
             dropped.append({"why": "no-shabad" if not has_shabad else "no-notation", "pages": pages,
                             "roles": sorted(roles), "opened_by": seg.get("opened_by")})

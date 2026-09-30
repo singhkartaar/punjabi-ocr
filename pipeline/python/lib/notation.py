@@ -28,7 +28,7 @@ import re
 from lib.notation_vocab import KOMAL_ALLOWED, RAAGS, SWARA_ORDER, TAALS, TIVRA_ALLOWED, VERSION as VOCAB_VERSION
 
 SCHEMA_VERSION = 1
-PARSER_VERSION = "0.1.0"
+PARSER_VERSION = "0.2.0"
 
 KINDS = ("notation", "partial", "reet-ref", "non-gurbani")
 SCRIPTS = ("gurmukhi", "latin", "devanagari")

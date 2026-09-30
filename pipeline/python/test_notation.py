@@ -428,10 +428,51 @@ class LayoutTests(unittest.TestCase):
                          [("sthai", 1, 1, 1), ("antara", None, 1, 0)])
         self.assertTrue(s["sections"][0].get("assumed"))       # the sthai had no printed label
         self.assertEqual(len(s["notes"]), 1)
-        # a heading opens the next span even when the previous one has no grid yet
+        # the next shabad the corpus knows ends the notation, and its heading leads it in
+        m2 = {"shabad_id": 4284, "line_id": 2000, "score": 0.95, "source": "G"}
         p3 = self._page(169, [_line(1, "੧੯. ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਦਾਦਰਾ", 200, bold=True),
-                              _line(2, "ਮਨ ਕਹਾ ਲੁਭਾਈਐ ਆਨ ਕਉ ॥", 300, kind="gurbani")])
-        self.assertEqual(len(link_pages([p1, p2, p3], merge_style(None))), 2)
+                              _line(2, "ਮਨ ਕਹਾ ਲੁਭਾਈਐ ਆਨ ਕਉ ॥", 300, kind="gurbani", matches=[m2]),
+                              _line(3, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 400),
+                              _line(4, "ਮਨ ਕਹਾ | ਲੁ ਭਾ | ਈ ऽ | ਐ ਆਨ", 480),
+                              _line(5, "ਤਾਨ", 580),
+                              _line(6, "ਸ ਰੇ ਗ ਮ | ਪ ਧ ਨੀ ਸੰ | ਸੰ ਨੀ ਧ ਪ | ਮ ਗ ਰੇ ਸ", 640)])
+        dropped = []
+        spans = link_pages([p1, p2, p3], merge_style(None), dropped)
+        self.assertEqual(len(spans), 2)
+        self.assertEqual(spans[0]["pages"], [167, 168])
+        self.assertEqual(spans[1]["heading"]["parsed"]["number"], 19)
+        # everything after the shabad to the end is in the span: the taan too
+        self.assertEqual([sec.get("label", {}) and sec["label"]["text"] for sec in spans[1]["sections"]], [None, "ਤਾਨ"])
+        self.assertEqual(spans[1]["extent"][169][3], 700)
+        self.assertEqual(dropped, [])
+        # a verse the corpus does not know, with no reference under it, anchors nothing:
+        # a tabla exercise under a numbered taal heading is dropped
+        p4 = self._page(170, [_line(1, "੨੦. ਤਾਲ ਦਾਦਰਾ", 200, bold=True),
+                              _line(2, "ਇਹ ਤਾਲ ਧੁਰਪਦ ਗਾਇਨ ਸ਼ੈਲੀ ਨਾਲ ਵਜਦਾ ਹੈ ॥", 300, kind="gurbani"),
+                              _line(3, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 400),
+                              _line(4, "ਧਾ ਧਿਨ | ਧਿਨ ਧਾ | ਧਾ ਤਿਨ | ਤਿਨ ਤਾ", 480),
+                              _line(5, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 560)])
+        self.assertEqual([r["role"] for r in p4["regions"]][:2], ["heading", "text"])
+        dropped = []
+        spans = link_pages([p1, p2, p3, p4], merge_style(None), dropped)
+        self.assertEqual(len(spans), 2)
+        self.assertEqual([d["pages"] for d in dropped], [[170]])
+        # ... but a notation the book numbers with a raag and a taal is kept, its shabad to be found
+        p4b = self._page(170, [_line(1, "੨੦. ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਦਾਦਰਾ", 200, bold=True),
+                          _line(3, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 400),
+                          _line(4, "ਮਨ ਕਹਾ | ਲੁ ਭਾ | ਈ ऽ | ਐ ਆਨ", 480),
+                          _line(5, "ਨੋਟ :--ਇਹ ਸ਼ਬਦ ਨੰ: ੩ ਤੇ ਲਿਖਿਆ ਹੈ ।", 560)])
+        spans = link_pages([p1, p2, p3, p4b], merge_style(None), dropped := [])
+        self.assertEqual((len(spans), dropped, spans[2]["shabad"]), (3, [], []))
+        # the same shabad set again under a heading with no number keeps its shabad
+        p5 = self._page(170, [_line(1, "ਤਾਲ ਝਪਤਾਲ", 200, bold=True),
+                              _line(2, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 400),
+                              _line(3, "ਮਨ ਕਹਾ | ਲੁ ਭਾ | ਈ ऽ | ਐ ਆਨ", 480),
+                              _line(4, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 560)])
+        spans = link_pages([p1, p2, p3, p5], merge_style(None))
+        self.assertEqual(len(spans), 3)
+        self.assertTrue(spans[2]["inherited"])
+        self.assertEqual(spans[2]["shabad"][0][1]["text"], spans[1]["shabad"][0][1]["text"])
 
 
 class ResolveTests(unittest.TestCase):
