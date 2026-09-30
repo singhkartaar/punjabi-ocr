@@ -1,5 +1,5 @@
 {
- "version": "2026.09.2",
+ "version": "2026.09.3",
  "_about": "Raags, taals and notation symbols the keertan books print, keyed once for both the pipeline and the web app. The mirror packages/search-core/src/notation-vocab.json must be byte-identical (tools/sync-notation-vocab.mjs). English aliases marked in `banidb` are the spellings BaniDB's /v2/raags returns; the corpus's shabads.raag is checked against them by a corpus-gated test. Sections carry Devanagari and Latin labels too; a Paluskar book (sam 1, khali +, tali as matra numbers, duration marks under the bols) is not parsed in this version.",
  "raags": [
   {
@@ -3862,7 +3862,11 @@
    "Sthayee",
    "Sthaayee",
    "Asthai",
-   "Asthayi"
+   "Asthayi",
+   "ਸਥਾਈ:-",
+   "ਅਸਥਾਈ:-",
+   "ਸਥਾਈ ੨",
+   "ਸਥਾਈ ੧"
   ],
   "antara": [
    "ਅੰਤਰਾ",
@@ -3889,7 +3893,10 @@
    "ਆਲਾਪ",
    "आलाप",
    "Alaap",
-   "Alap"
+   "Alap",
+   "ਆਲਾਪ:",
+   "ਅਲਾਪ:",
+   "ਆਕਾਰ ਅਲਾਪ"
   ],
   "taan": [
    "ਤਾਨ",
@@ -3897,12 +3904,35 @@
    "ਤਾਣ",
    "तान",
    "Taan",
-   "Tan"
+   "Tan",
+   "ਤਾਨਾ",
+   "ਤਾਨਾਂ:",
+   "ਬੋਲ ਤਾਨ",
+   "ਬੋਲਤਾਨ",
+   "ਸਰਗਮ ਤਾਨ"
   ],
   "tihai": [
    "ਤਿਹਾਈ",
    "तिहाई",
-   "Tihai"
+   "Tihai",
+   "ਤਿਹਾਇ",
+   "ਤਿਹਾਈ:",
+   "ਤਿਹਾਈਆਂ"
+  ],
+  "other": [
+   "ਮੁਖੜਾ",
+   "ਮੋਹਰਾ",
+   "ਟੁਕੜਾ",
+   "ਉਪਜ",
+   "ਦੁਗਣ",
+   "ਚੌਗਣ",
+   "ਲੜੀ",
+   "ਪਲਟਾ",
+   "ਲੜੀਦਾਰ ਤਾਨ",
+   "ਧਰੁਪਦ",
+   "ਝਾਲਾ",
+   "ਸਰਗਮ ਗੀਤ",
+   "ਤਰਾਨਾ"
   ]
  },
  "swaras": {

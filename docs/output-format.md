@@ -89,7 +89,8 @@ A work with `kind: notation` writes no passages. Its output is
 | file | |
 |---|---|
 | `notations.jsonl` | `_meta` first, then one record per notation: `notation_id` (`<book>:<page>:<seq>`), `kind`, `heading` (raag used, taal, laya as printed and as keys of `lib/notation_vocab.json`), `shabad` (`shabad_id`, `source`, `confidence`, `method`, `ang`, the printed lines and reference), `raag_shabad`, `sections` (the grid: lines of beats, each beat its notes with octave/komal/tivra/length, or an extension, a rest, or unread; and the bol syllable), `images`, `flags`, `verified`. The contract is `lib/notation.schema.json` with the cross-field rules in `lib/notation.py` |
-| `images/` | 1-bit PNG crops of every grid, shabad text and heading, and a thumbnail of the first grid; `images.json` lists them with `sha256`, size and box |
+| `images/` | 1-bit PNG crops: first the notation as printed on each of its pages (role `block`, margin to margin, so a taan or a note under the grid is inside), then every grid, shabad text and heading, and a thumbnail of the first block; `images.json` lists them with `sha256`, size and box |
+| `raags.jsonl` | what the book says about its raags: one record a description (a heading naming the raag and no taal, then prose), with its crop(s) and the OCR text |
 | `data/ocr/<book>/gt/notation-review.html`, `notation-candidates.jsonl`, `notation-gold.jsonl` | the review page, the reviewer's judgements, the promoted gold |
 | `data/raw/notation-report-<book>.json`, `notation-eval-<book>.json` | what the parse found; the fields measured against the gold and whether the book passed the bars |
 | `artifacts/notations.sqlite`, `notations-images.json` | the database a serving API reads (tables and columns pinned in `lib/notation_columns.json`), and the list of images with their hashes for an upload tool |

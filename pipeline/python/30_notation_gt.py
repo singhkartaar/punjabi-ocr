@@ -136,6 +136,14 @@ button.primary{background:#2a5db0;color:#fff;border-color:#2a5db0}
 .crops{padding:10px 12px;border-right:1px solid #eee;min-width:0}
 .crops img{max-width:100%;height:auto;border:1px solid #ccc;display:block;margin:0 0 8px;background:#fff;cursor:zoom-in}
 .crops img.zoom{max-width:none;cursor:zoom-out}
+.crops .origs{display:flex;gap:10px;flex-wrap:wrap}.crops .origs figure{margin:0}.crops .origs figcaption{font-size:11px;color:#777}
+.crops .origs img{width:220px;height:auto}.crops .origs img.zoom{width:auto;max-width:100%}
+.crops details{margin:8px 0}.crops summary,.facts summary{cursor:pointer;color:#555;font-size:13px}
+.pages-note{background:#fff4d6;border:1px solid #f0d890;border-radius:4px;padding:4px 8px;font-size:13px;margin:0 0 8px}
+.raags{margin:14px 16px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:10px 12px}
+.raags h3{margin:0 0 6px;font-size:15px}.raags .note{display:flex;gap:12px;margin:8px 0;align-items:flex-start}
+.raags .note img{max-width:60%;height:auto;border:1px solid #ccc;cursor:zoom-in}.raags .note img.zoom{max-width:none;cursor:zoom-out}
+.raags .note .txt{font-size:13px;color:#333;white-space:pre-wrap;max-height:16em;overflow:auto}
 .crops .role{font-size:11px;color:#777;text-transform:uppercase;letter-spacing:.04em}
 .facts{padding:10px 12px;min-width:0}
 table.f{border-collapse:collapse;width:100%}
@@ -260,7 +268,8 @@ def describe_sections(secs: list[dict]) -> str:
     return "; ".join(out) or "none"
 
 
-def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict) -> str:
+def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: str | None = None, page_files: dict | None = None) -> str:
+    page_files = page_files or {}
     cid = rec["notation_id"]
     h = rec.get("heading") or {}
     sh = rec.get("shabad") or {}
@@ -271,9 +280,27 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict) -> str:
                  '<span style="flex:1"></span><button data-allok="%s">all right, verified</button></h2>'
                  % (esc(cid), esc(",".join(map(str, rec["pages"]))), esc(rec["kind"]), rec["seq"], esc(cid)))
     parts.append('<div class="crops">')
-    for im in rec.get("images", []):
-        parts.append('<div class="role">%s · p.%d</div><img src="%s" loading="lazy" alt="%s">'
-                     % (esc(im["role"]), im["page"], esc(img_base + "/" + im["file"]), esc(im["role"])))
+    blocks = [im for im in rec.get("images", []) if im["role"] == "block"]
+    others = [im for im in rec.get("images", []) if im["role"] != "block"]
+    if len(rec["pages"]) > 1:
+        parts.append('<div class="pages-note">runs over pages %s: each page is shown whole below, in order</div>' % esc(", ".join(map(str, rec["pages"]))))
+    for im in blocks:
+        parts.append('<div class="role">as printed · page %d</div><img src="%s" loading="lazy" alt="notation, page %d">'
+                     % (im["page"], esc(img_base + "/" + im["file"]), im["page"]))
+    if pages_base:
+        parts.append('<div class="role">original page%s</div><div class="origs">' % ("s" if len(rec["pages"]) > 1 else ""))
+        for p in rec["pages"]:
+            f = page_files.get(p)
+            if f:
+                parts.append('<figure><figcaption>page %d</figcaption><img src="%s" loading="lazy" alt="page %d"></figure>'
+                             % (p, esc(pages_base + "/" + f), p))
+        parts.append("</div>")
+    if others:
+        parts.append('<details><summary>the parser\'s finer cuts (%d)</summary>' % len(others))
+        for im in others:
+            parts.append('<div class="role">%s · p.%d</div><img src="%s" loading="lazy" alt="%s">'
+                         % (esc(im["role"]), im["page"], esc(img_base + "/" + im["file"]), esc(im["role"])))
+        parts.append("</details>")
     if not rec.get("images"):
         parts.append("<p><i>no crops</i></p>")
     parts.append("</div>")
@@ -308,8 +335,10 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict) -> str:
                            for f in rec.get("flags", [])))
     parts.append("</table>")
     if rec.get("sections"):
+        parts.append('<details class="grids"><summary>the grid as the machine read it (not under review yet)</summary>')
         parts.append('<div class="ntn-wrap">%s</div>' % render_html(rec, "gurmukhi", corpus_lines))
         parts.append('<div class="ntn-wrap">%s</div>' % render_html(rec, "english", corpus_lines))
+        parts.append('</details>')
     parts.append(judge(cid, "shabad", sh.get("shabad_id"), "correct shabad_id, or empty for none"))
     parts.append(judge(cid, "raag_used", raag.get("key"), "raag key, e.g. bhairavi"))
     parts.append(judge(cid, "taal", taal.get("key"), "taal key, e.g. teentaal"))
@@ -323,11 +352,49 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict) -> str:
     return "".join(parts)
 
 
+def raag_notes_html(notes: list[dict], img_base: str, pages: set | None = None) -> str:
+    """The book's raag descriptions, cut from the page, each under its raag."""
+    shown = [n for n in notes if pages is None or any(p in pages for p in n["pages"])]
+    if not shown:
+        return ""
+    parts = ['<section class="raags"><h3>What the book says about the raags (%d)</h3>' % len(shown)]
+    for n in shown:
+        raag = n.get("raag") or {}
+        parts.append('<div class="note">')
+        for im in n.get("images") or ([n["image"]] if n.get("image") else []):
+            parts.append('<img src="%s" loading="lazy" alt="raag description">' % esc(img_base + "/" + im["file"]))
+        parts.append('<div><b>%s</b> → %s%s · pages %s<div class="txt gur">%s</div></div></div>'
+                     % (esc(n.get("heading")), esc(raag.get("key") or "?"),
+                        (" (parent %s)" % esc(raag["parent_key"])) if raag.get("parent_key") else "",
+                        esc(", ".join(map(str, n["pages"]))), esc((n.get("text") or "")[:1200])))
+    parts.append("</section>")
+    return "".join(parts)
+
+
+def load_raag_notes(book_dir: str) -> list[dict]:
+    p = os.path.join(book_dir, "raags.jsonl")
+    if not os.path.exists(p):
+        return []
+    with open(p, encoding="utf-8") as fh:
+        return [json.loads(l) for l in fh if l.strip() and "_meta" not in json.loads(l)]
+
+
+def page_files_of(book: str) -> dict[int, str]:
+    p = os.path.join(OCR_DIR, book, "pages.json")
+    if not os.path.exists(p):
+        return {}
+    with open(p, encoding="utf-8") as fh:
+        return {r["page"]: r["file"] for r in json.load(fh).get("pages", [])}
+
+
 def review_page(book: str, meta: dict, records: list[dict], cands: list[dict], path: str, img_base: str,
-                window: tuple[int, int] | None, warn: str | None) -> None:
+                window: tuple[int, int] | None, warn: str | None, raag_notes: list[dict] | None = None,
+                pages_base: str | None = None, page_files: dict | None = None) -> None:
     corpus_lines: dict = {}
     by_id = {r["notation_id"]: r for r in records}
-    body = [card(by_id[c["notation_id"]], c, img_base, corpus_lines) for c in cands]
+    body = [card(by_id[c["notation_id"]], c, img_base, corpus_lines, pages_base, page_files) for c in cands]
+    shown_pages = {p for c in cands for p in (c.get("pages") or [])}
+    body.insert(0, raag_notes_html(raag_notes or [], img_base, shown_pages if window else None))
     data = json.dumps({"book": book, "reviewer": os.environ.get("USER") or os.environ.get("USERNAME") or "",
                        "candidates": cands}, ensure_ascii=False).replace("</", "<\\/")
     title = "%s · notation review" % book
@@ -466,7 +533,8 @@ def main() -> None:
             fh.write(json.dumps(c, ensure_ascii=False) + "\n")
     img_base = os.path.relpath(book_dir, gt_dir).replace("\\", "/")
     review = os.path.join(gt_dir, "notation-review.html")
-    review_page(args.book, meta, records, cands, review, img_base, window, warn)
+    review_page(args.book, meta, records, cands, review, img_base, window, warn,
+                raag_notes=load_raag_notes(book_dir), pages_base="../pages", page_files=page_files_of(args.book))
     n_res = sum(1 for r in chosen if resolved(r))
     print("%s: %d notation(s)%s, %d with a shabad -> %s" % (args.book, len(chosen), (" on pages %d-%d" % window) if window else "",
                                                              n_res, review))

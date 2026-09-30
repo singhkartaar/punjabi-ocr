@@ -264,16 +264,15 @@ def write_page(args, results: list[dict]) -> None:
             parts.append('<p class="none">nothing parsed here%s</p>' % (" -- see run.log" if b["status"].startswith("failed") else ""))
             continue
         files = page_files(b["book"])
+        img_base = os.path.relpath(os.path.join(NOTATIONS_DIR, b["book"]), args.out).replace("\\", "/")
+        pages_base = os.path.relpath(os.path.join(OCR_DIR, b["book"], "pages"), args.out).replace("\\", "/")
+        shown_pages = {p for r in b["records"] for p in r["pages"]}
+        parts.append(gt.raag_notes_html(gt.load_raag_notes(os.path.join(NOTATIONS_DIR, b["book"])), img_base, shown_pages))
         for rec in b["records"]:
             cand = gt.candidate(rec)
             cand["book"] = b["book"]
             cands.append(cand)
-            img_base = os.path.relpath(os.path.join(NOTATIONS_DIR, b["book"]), args.out).replace("\\", "/")
-            pages_html = "".join('<figure><figcaption>original page %d</figcaption><img src="%s" loading="lazy"></figure>'
-                                 % (p, html_mod.escape(os.path.relpath(os.path.join(OCR_DIR, b["book"], "pages", files.get(p, "")), args.out).replace("\\", "/")))
-                                 for p in rec["pages"] if files.get(p))
-            parts.append('<div class="orig">%s</div>' % pages_html)
-            parts.append(gt.card(rec, cand, img_base, {}))
+            parts.append(gt.card(rec, cand, img_base, {}, pages_base, files))
     data = json.dumps({"book": "_sample", "reviewer": os.environ.get("USER") or "", "candidates": cands}, ensure_ascii=False).replace("</", "<\\/")
     extra_css = """
 .book{margin:26px 16px 6px;font-size:18px}.book small{color:#666;font-weight:normal;font-size:13px}

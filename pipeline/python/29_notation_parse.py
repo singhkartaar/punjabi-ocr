@@ -34,7 +34,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib import notation
 from lib.notation import PARSER_VERSION, SCHEMA_VERSION, image_name, make_id, merge_style, notation_slug, validate
 from lib.notation_grid import read_region
-from lib.notation_layout import link_pages, page_layout
+from lib.notation_layout import link_pages, page_layout, raag_descriptions
 from lib.notation_resolve import resolve_shabad
 from lib.notation_text import parse_heading
 from lib import notation_vocab
@@ -150,6 +150,43 @@ def borrow_shabads(records: list[dict]) -> int:
         rec["source"]["content_hash"] = notation.content_hash(rec)
         filled += 1
     return filled
+
+
+def raag_records(descriptions: list[dict], book: str, book_dir: str, images_dir: str, page_files: dict[int, str]) -> list[dict]:
+    """
+    What a book says about a raag, cut from the page: one record a description,
+    with the crop of every page it runs over and the OCR text as it came.
+    """
+    import cv2
+    from lib.ocr_grid import crop_bilevel
+    out = []
+    for n, d in enumerate(descriptions, 1):
+        images = []
+        text_parts = [d["heading"]["text"]]
+        for k, p in enumerate(d["pages"], 1):
+            boxes = [r["bbox"] for pg, r in d["regions"] if pg == p]
+            if d["page"] == p:
+                boxes.append(d["heading"]["bbox"])
+            if not boxes:
+                continue
+            img = cv2.imread(os.path.join(book_dir, "pages", page_files[p]), cv2.IMREAD_GRAYSCALE)
+            if img is None:
+                continue
+            ph, pw = img.shape[:2]
+            margin = int(pw * 0.03)
+            bbox = [margin, min(b[1] for b in boxes), pw - margin, max(b[3] for b in boxes)]
+            fname = "%s-raag-%04d-%d-%d.png" % (book, d["page"], n, k)
+            dst = os.path.join(images_dir, fname)
+            w, h = crop_bilevel(img, bbox, CROP_PAD, dst)
+            images.append({"n": k, "file": "images/" + fname, "role": "block", "page": p, "bbox": [int(v) for v in bbox],
+                           "w": w, "h": h, "bytes": os.path.getsize(dst), "sha256": sha256_of(dst)})
+        text_parts += [r.get("text") or "" for _, r in d["regions"]]
+        raag = d["raag"]
+        out.append({"n": n, "book_key": book, "raag": {"printed": raag.get("printed"), "key": raag.get("key"),
+                                                        "parent_key": raag.get("parent_key"), "confidence": raag.get("confidence")},
+                    "heading": d["heading"]["text"], "page": d["page"], "pages": d["pages"],
+                    "text": "\n".join(t for t in text_parts if t), "image": images[0] if images else None, "images": images})
+    return out
 
 
 def matra_check(sections: list[dict], taal_key: str | None) -> str:
@@ -287,10 +324,30 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
     if raag_differs:
         flags.append("raag-differs")
 
-    # crops: each section's grids (one per page), the shabad text, the heading
+    # crops: first the notation as printed on each of its pages -- every region
+    # of the span on that page, and whatever the book set between them (a
+    # taan, a tihai, a note) -- then each section's grids, the shabad text, the heading
     images = []
     n = 0
     targets: list[tuple[str, int, list[int]]] = []
+    for p in sorted(set(span["pages"])):
+        boxes = [r["bbox"] for pg, r in span["shabad"] if pg == p]
+        boxes += [r["bbox"] for sec in span["sections"] for pg, r in sec["grids"] + sec["markers"] if pg == p]
+        boxes += [sec["label"]["bbox"] for sec in span["sections"] if sec.get("label") and sec["page"] == p]
+        boxes += [r["bbox"] for pg, r in span["notes"] if pg == p]
+        if span["heading"] and span["heading_page"] == p:
+            boxes.append(span["heading"]["bbox"])
+        if span["ref"] and any(pg == p for pg, _ in span["shabad"] + [(span["heading_page"], None)]):
+            boxes.append(span["ref"]["bbox"])
+        boxes += [ext for (si_, pg), ext in extents.items() if pg == p]
+        if not boxes:
+            continue
+        img = page_image(p)
+        if img is None:
+            continue
+        ph, pw = img.shape[:2]
+        margin = int(pw * 0.03)
+        targets.append(("block", p, [margin, min(b[1] for b in boxes), pw - margin, max(b[3] for b in boxes)]))
     for si, sec in enumerate(span["sections"]):
         by_page: dict[int, list[list[int]]] = {}
         for p, r in sec["grids"]:
@@ -316,7 +373,7 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
         w, h = crop_bilevel(img, bbox, CROP_PAD, dst)
         entry = {"n": n, "file": "images/" + fname, "role": role, "page": p, "bbox": [int(v) for v in bbox],
                  "w": w, "h": h, "bytes": os.path.getsize(dst), "sha256": sha256_of(dst), "thumb": None}
-        if role == "grid" and n == 1:
+        if role == "block" and n == 1:
             tname = image_name(nid, n, thumb=True)
             thumbnail(img, [max(0, bbox[0] - CROP_PAD), max(0, bbox[1] - CROP_PAD), bbox[2] + CROP_PAD, bbox[3] + CROP_PAD],
                       os.path.join(images_dir, tname))
@@ -423,6 +480,11 @@ def main():
         all_images.extend({**im, "notation_id": rec["notation_id"]} for im in images)
 
     borrowed = borrow_shabads(records)
+    raag_notes = raag_records(raag_descriptions(layouts), args.book, book_dir, images_dir, page_files)
+    with open(os.path.join(out_dir, "raags.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(json.dumps({"_meta": {"book": args.book, "raag_notes": len(raag_notes)}}, ensure_ascii=False) + "\n")
+        for note in raag_notes:
+            fh.write(json.dumps(note, ensure_ascii=False) + "\n")
     kinds = {}
     for r in records:
         kinds[r["kind"]] = kinds.get(r["kind"], 0) + 1

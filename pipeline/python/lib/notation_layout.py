@@ -345,6 +345,45 @@ def _shabad_heading(region: dict) -> bool:
     return bool(re.search("ਮਹਲਾ|ਮਹੱਲਾ|ਮਃ|ਮ[:ਃ]\s*[੧-੯1-9]", t)) and not re.search("ਤਾਲ", t)
 
 
+def raag_descriptions(layouts: list[dict]) -> list[dict]:
+    """
+    The prose a book prints about a raag -- its heading names the raag and
+    no taal, and what follows is text until the next heading, section label
+    or grid. [{"raag": parsed raag, "heading": region, "page", "pages",
+    "regions": [(page, region)]}]. A description may run over a page turn;
+    it ends at the first notation signal.
+    """
+    out: list[dict] = []
+    cur: dict | None = None
+    prev_page = None
+    for lay in layouts:
+        page = lay["page"]
+        if prev_page is not None and page != prev_page + 1 and cur:
+            out.append(cur); cur = None
+        prev_page = page
+        for r in lay["regions"]:
+            role = r["role"]
+            p = r.get("parsed") or {}
+            if role == "heading" and p.get("raag") and not p.get("taal") and not p.get("section") and not _running_header(r, lay.get("page_h") or 0) \
+                    and not _shabad_heading(r):
+                if cur:
+                    out.append(cur)
+                cur = {"raag": p["raag"], "heading": r, "page": page, "pages": [page], "regions": []}
+                continue
+            if cur is None:
+                continue
+            if role in ("text", "shabad", "note", "ref"):
+                if page not in cur["pages"]:
+                    cur["pages"].append(page)
+                cur["regions"].append((page, r))
+            else:
+                out.append(cur); cur = None
+    if cur:
+        out.append(cur)
+    # a heading with nothing under it is a running header of another kind, not a description
+    return [d for d in out if sum(len(r.get("lines") or []) for _, r in d["regions"]) >= 2]
+
+
 def _label_sections(span: dict) -> None:
     """
     A section with no printed label: the first of a span is the sthai (a

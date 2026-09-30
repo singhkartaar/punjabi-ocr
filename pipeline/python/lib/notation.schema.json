@@ -149,7 +149,7 @@
       "required": ["n", "file", "role", "page", "sha256", "bytes"],
       "properties": {
         "n": {"type": "integer", "minimum": 1}, "file": {"type": "string"},
-        "role": {"enum": ["grid", "shabad", "heading"]}, "page": {"type": "integer"},
+        "role": {"enum": ["block", "grid", "shabad", "heading"]}, "page": {"type": "integer"},
         "bbox": {"type": "array", "items": {"type": "integer"}}, "w": {"type": "integer"}, "h": {"type": "integer"},
         "bytes": {"type": "integer"}, "sha256": {"type": "string"}, "thumb": {"type": ["string", "null"]}
       }

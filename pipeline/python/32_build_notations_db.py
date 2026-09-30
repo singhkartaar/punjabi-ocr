@@ -70,6 +70,11 @@ CREATE TABLE images  (notation_id TEXT NOT NULL, n INTEGER NOT NULL, kind TEXT N
                       bbox TEXT, w INTEGER, h INTEGER, bytes INTEGER NOT NULL, sha256 TEXT NOT NULL,
                       PRIMARY KEY (notation_id, n, kind));
 CREATE TABLE shabad_counts (shabad_id INTEGER PRIMARY KEY, n INTEGER NOT NULL);
+CREATE TABLE raag_notes (book_key TEXT NOT NULL, n INTEGER NOT NULL, raag_key TEXT, raag_printed TEXT,
+                         page_start INTEGER NOT NULL, page_end INTEGER NOT NULL, pages TEXT NOT NULL, heading TEXT,
+                         text TEXT, image_path TEXT, image_url TEXT, sha256 TEXT, bytes INTEGER,
+                         PRIMARY KEY (book_key, n));
+CREATE INDEX idx_raag_notes_raag ON raag_notes(raag_key);
 CREATE INDEX idx_not_shabad ON notations(shabad_id);
 CREATE INDEX idx_not_raag_used ON notations(raag_used_key, ang);
 CREATE INDEX idx_not_raag_shabad ON notations(raag_shabad_key, ang);
@@ -77,7 +82,7 @@ CREATE INDEX idx_not_taal ON notations(taal_key, ang);
 CREATE INDEX idx_not_book ON notations(book_key, ordinal);
 CREATE INDEX idx_not_author ON notations(author_key, book_key, ordinal);
 """
-TABLES = ("meta", "raags", "taals", "authors", "books", "notations", "images", "shabad_counts")
+TABLES = ("meta", "raags", "taals", "authors", "books", "notations", "images", "shabad_counts", "raag_notes")
 
 
 def j(v) -> str | None:
@@ -296,6 +301,28 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
                 n_res += 1
             if rec.get("verified"):
                 n_ver += 1
+        # what the book says about its raags, beside the notations
+        rp = os.path.join(d, "raags.jsonl")
+        if os.path.exists(rp):
+            with open(rp, encoding="utf-8") as fh:
+                for line in fh:
+                    if not line.strip():
+                        continue
+                    note = json.loads(line)
+                    if "_meta" in note:
+                        continue
+                    im = note.get("image") or {}
+                    insert("raag_notes", {"book_key": book, "n": note["n"], "raag_key": (note.get("raag") or {}).get("key"),
+                                          "raag_printed": (note.get("raag") or {}).get("printed"),
+                                          "page_start": min(note["pages"]), "page_end": max(note["pages"]), "pages": j(note["pages"]),
+                                          "heading": note.get("heading"), "text": note.get("text"),
+                                          "image_path": (book + "/" + im["file"]) if im.get("file") else None,
+                                          "image_url": book_urls.get(im.get("sha256")) if im.get("sha256") else None,
+                                          "sha256": im.get("sha256"), "bytes": im.get("bytes")})
+                    if im.get("file"):
+                        images_manifest.append({"notation_id": None, "raag_note": [book, note["n"]], "n": 1, "kind": "full",
+                                                "path": book + "/" + im["file"], "sha256": im.get("sha256"), "bytes": im.get("bytes"),
+                                                "url": book_urls.get(im.get("sha256"))})
         insert("books", {"book_key": book, "title": meta.get("title") or book, "title_en": meta.get("title_en"),
                          "author_key": author_key, "part": meta.get("part"), "publisher": meta.get("publisher"),
                          "year": meta.get("year"), "source_url": meta.get("source_url"),
