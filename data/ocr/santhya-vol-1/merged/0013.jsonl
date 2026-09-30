@@ -1,0 +1,3 @@
+{"_meta": {"page": 13, "hints": {"ang_from": null, "ang_to": null, "book_page": null, "section": null}, "columns": [], "engines": ["tesseract-pan", "tesseract-gurmukhi"], "pivot": "tesseract-pan", "body_h": 865, "bold_split": null, "page_w": 2130, "page_h": 2979, "routed": {"lines": 1, "reasons": {"low-agreement": 1}}}}
+{"n": 1, "zone": "body", "bbox": [142, 777, 1387, 1642], "text": "| #ਛੁਲਿ", "col": 0, "bold": false, "stroke": 10.85, "raw": {"tesseract-pan": "| #ਛੁਲਿ", "tesseract-gurmukhi": "ਜਨ"}, "kind": "commentary", "agreement": 0.0, "conf": 0.22, "engines": 2, "oov": 1.0, "oov_words": ["#ਛੁਲਿ"], "n_words": 1, "corrections": [], "route": "low-agreement"}
+{"n": 2, "zone": "stamp", "bbox": [904, 2869, 1242, 2914], "text": "2੩0੪੯ 13 0 530", "dropped": true}

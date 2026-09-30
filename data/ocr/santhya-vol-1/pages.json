@@ -1,0 +1,13816 @@
+{
+ "pdf": "/Users/rsingh/books/sample/Santhya Sri Guru Granth Sahib Ji Vol.-1.pdf",
+ "book": "santhya-vol-1",
+ "dpi": 300,
+ "language": "pa",
+ "author": "Bhai Vir Singh",
+ "work": "santhya",
+ "part": 1,
+ "scripture": "G",
+ "quote_policy": "verbatim",
+ "probe": {
+  "shape": "image",
+  "pages": 530,
+  "bilevel": true,
+  "tiled": false,
+  "dpi": 361,
+  "fonts": [
+   "Helvetica"
+  ],
+  "text_chars_per_page": 0,
+  "images_per_page": 1.0,
+  "image_dims": [
+   [
+    2560,
+    3300
+   ]
+  ]
+ },
+ "options": {
+  "crop": true,
+  "deskew": true,
+  "bleed": false
+ },
+ "pages": [
+  {
+   "page": 1,
+   "file": "0001.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 1 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 2,
+   "file": "0002.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 2 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 3,
+   "file": "0003.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 3 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 4,
+   "file": "0004.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 4 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 5,
+   "file": "0005.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 5 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 6,
+   "file": "0006.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 6 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 7,
+   "file": "0007.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 7 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 8,
+   "file": "0008.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 8 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 9,
+   "file": "0009.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      909,
+      2855,
+      1220,
+      2923
+     ],
+     "text": "Page 9 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 10,
+   "file": "0010.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 10 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.9,
+   "bleed": false
+  },
+  {
+   "page": 11,
+   "file": "0011.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 11 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 12,
+   "file": "0012.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 12 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 13,
+   "file": "0013.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 13 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 14,
+   "file": "0014.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 14 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 15,
+   "file": "0015.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 15 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.0,
+   "bleed": false
+  },
+  {
+   "page": 16,
+   "file": "0016.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 16 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 17,
+   "file": "0017.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 17 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 18,
+   "file": "0018.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 18 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 19,
+   "file": "0019.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 19 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 20,
+   "file": "0020.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 20 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 21,
+   "file": "0021.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 21 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 22,
+   "file": "0022.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 22 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 23,
+   "file": "0023.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 23 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 24,
+   "file": "0024.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 24 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 25,
+   "file": "0025.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 25 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 26,
+   "file": "0026.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 26 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 27,
+   "file": "0027.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 27 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 28,
+   "file": "0028.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 28 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 29,
+   "file": "0029.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 29 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 30,
+   "file": "0030.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 30 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 31,
+   "file": "0031.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 31 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 32,
+   "file": "0032.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 32 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 33,
+   "file": "0033.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 33 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.85,
+   "bleed": false
+  },
+  {
+   "page": 34,
+   "file": "0034.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 34 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.75,
+   "bleed": false
+  },
+  {
+   "page": 35,
+   "file": "0035.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 35 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.0,
+   "bleed": false
+  },
+  {
+   "page": 36,
+   "file": "0036.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 36 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.95,
+   "bleed": false
+  },
+  {
+   "page": 37,
+   "file": "0037.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 37 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 38,
+   "file": "0038.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 38 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 39,
+   "file": "0039.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 39 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 40,
+   "file": "0040.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 40 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 41,
+   "file": "0041.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 41 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 42,
+   "file": "0042.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 42 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 43,
+   "file": "0043.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 43 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.45,
+   "bleed": false
+  },
+  {
+   "page": 44,
+   "file": "0044.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 44 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 45,
+   "file": "0045.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 45 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 46,
+   "file": "0046.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 46 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 47,
+   "file": "0047.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 47 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 48,
+   "file": "0048.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 48 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 49,
+   "file": "0049.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 49 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 50,
+   "file": "0050.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 50 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 51,
+   "file": "0051.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 51 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 52,
+   "file": "0052.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 52 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 53,
+   "file": "0053.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 53 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.7,
+   "bleed": false
+  },
+  {
+   "page": 54,
+   "file": "0054.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 54 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.95,
+   "bleed": false
+  },
+  {
+   "page": 55,
+   "file": "0055.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 55 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 56,
+   "file": "0056.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 56 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 57,
+   "file": "0057.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 57 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 58,
+   "file": "0058.png",
+   "w": 2130,
+   "h": 2976,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 58 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    3,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 59,
+   "file": "0059.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 59 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 60,
+   "file": "0060.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 60 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 61,
+   "file": "0061.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 61 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.65,
+   "bleed": false
+  },
+  {
+   "page": 62,
+   "file": "0062.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 62 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.65,
+   "bleed": false
+  },
+  {
+   "page": 63,
+   "file": "0063.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 63 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 64,
+   "file": "0064.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 64 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 65,
+   "file": "0065.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 65 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.65,
+   "bleed": false
+  },
+  {
+   "page": 66,
+   "file": "0066.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 66 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.7,
+   "bleed": false
+  },
+  {
+   "page": 67,
+   "file": "0067.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 67 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 68,
+   "file": "0068.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 68 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.55,
+   "bleed": false
+  },
+  {
+   "page": 69,
+   "file": "0069.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 69 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 70,
+   "file": "0070.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 70 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.55,
+   "bleed": false
+  },
+  {
+   "page": 71,
+   "file": "0071.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 71 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 72,
+   "file": "0072.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 72 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 73,
+   "file": "0073.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 73 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.7,
+   "bleed": false
+  },
+  {
+   "page": 74,
+   "file": "0074.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 74 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.65,
+   "bleed": false
+  },
+  {
+   "page": 75,
+   "file": "0075.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 75 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 76,
+   "file": "0076.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 76 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.45,
+   "bleed": false
+  },
+  {
+   "page": 77,
+   "file": "0077.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 77 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.45,
+   "bleed": false
+  },
+  {
+   "page": 78,
+   "file": "0078.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 78 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.5,
+   "bleed": false
+  },
+  {
+   "page": 79,
+   "file": "0079.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 79 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.7,
+   "bleed": false
+  },
+  {
+   "page": 80,
+   "file": "0080.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 80 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.45,
+   "bleed": false
+  },
+  {
+   "page": 81,
+   "file": "0081.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 81 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 82,
+   "file": "0082.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 82 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 83,
+   "file": "0083.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 83 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 84,
+   "file": "0084.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 84 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 85,
+   "file": "0085.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 85 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 86,
+   "file": "0086.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 86 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 87,
+   "file": "0087.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 87 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 88,
+   "file": "0088.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 88 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 89,
+   "file": "0089.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 89 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 90,
+   "file": "0090.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 90 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.6,
+   "bleed": false
+  },
+  {
+   "page": 91,
+   "file": "0091.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 91 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 92,
+   "file": "0092.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 92 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 93,
+   "file": "0093.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 93 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 94,
+   "file": "0094.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 94 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 95,
+   "file": "0095.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 95 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 96,
+   "file": "0096.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 96 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 97,
+   "file": "0097.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 97 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 98,
+   "file": "0098.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 98 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 99,
+   "file": "0099.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      895,
+      2855,
+      1234,
+      2923
+     ],
+     "text": "Page 99 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 100,
+   "file": "0100.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 100 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 101,
+   "file": "0101.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 101 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 102,
+   "file": "0102.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 102 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 103,
+   "file": "0103.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 103 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 104,
+   "file": "0104.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 104 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 105,
+   "file": "0105.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 105 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 106,
+   "file": "0106.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 106 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 107,
+   "file": "0107.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 107 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 108,
+   "file": "0108.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 108 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 109,
+   "file": "0109.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 109 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 110,
+   "file": "0110.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 110 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.5,
+   "bleed": false
+  },
+  {
+   "page": 111,
+   "file": "0111.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 111 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 112,
+   "file": "0112.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 112 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 113,
+   "file": "0113.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 113 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 114,
+   "file": "0114.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 114 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 115,
+   "file": "0115.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 115 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 116,
+   "file": "0116.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 116 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 117,
+   "file": "0117.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 117 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 118,
+   "file": "0118.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 118 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 119,
+   "file": "0119.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 119 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 120,
+   "file": "0120.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 120 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 121,
+   "file": "0121.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 121 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.85,
+   "bleed": false
+  },
+  {
+   "page": 122,
+   "file": "0122.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 122 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.65,
+   "bleed": false
+  },
+  {
+   "page": 123,
+   "file": "0123.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 123 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.8,
+   "bleed": false
+  },
+  {
+   "page": 124,
+   "file": "0124.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 124 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.9,
+   "bleed": false
+  },
+  {
+   "page": 125,
+   "file": "0125.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 125 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.65,
+   "bleed": false
+  },
+  {
+   "page": 126,
+   "file": "0126.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 126 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.6,
+   "bleed": false
+  },
+  {
+   "page": 127,
+   "file": "0127.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 127 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 128,
+   "file": "0128.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 128 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 129,
+   "file": "0129.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 129 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 130,
+   "file": "0130.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 130 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 131,
+   "file": "0131.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 131 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 132,
+   "file": "0132.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 132 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 133,
+   "file": "0133.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 133 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.45,
+   "bleed": false
+  },
+  {
+   "page": 134,
+   "file": "0134.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 134 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 135,
+   "file": "0135.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 135 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 136,
+   "file": "0136.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 136 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 137,
+   "file": "0137.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 137 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 138,
+   "file": "0138.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 138 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 139,
+   "file": "0139.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 139 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 140,
+   "file": "0140.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 140 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 141,
+   "file": "0141.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 141 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 142,
+   "file": "0142.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 142 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 143,
+   "file": "0143.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 143 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 144,
+   "file": "0144.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 144 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 145,
+   "file": "0145.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 145 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.6,
+   "bleed": false
+  },
+  {
+   "page": 146,
+   "file": "0146.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 146 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.7,
+   "bleed": false
+  },
+  {
+   "page": 147,
+   "file": "0147.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 147 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.6,
+   "bleed": false
+  },
+  {
+   "page": 148,
+   "file": "0148.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 148 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 149,
+   "file": "0149.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 149 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.65,
+   "bleed": false
+  },
+  {
+   "page": 150,
+   "file": "0150.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 150 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 151,
+   "file": "0151.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 151 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.5,
+   "bleed": false
+  },
+  {
+   "page": 152,
+   "file": "0152.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 152 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 153,
+   "file": "0153.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 153 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 154,
+   "file": "0154.png",
+   "w": 2130,
+   "h": 2976,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 154 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    3,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 155,
+   "file": "0155.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 155 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 156,
+   "file": "0156.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 156 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 157,
+   "file": "0157.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 157 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.45,
+   "bleed": false
+  },
+  {
+   "page": 158,
+   "file": "0158.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 158 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 159,
+   "file": "0159.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 159 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.45,
+   "bleed": false
+  },
+  {
+   "page": 160,
+   "file": "0160.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 160 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 161,
+   "file": "0161.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 161 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 162,
+   "file": "0162.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 162 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 163,
+   "file": "0163.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 163 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.8,
+   "bleed": false
+  },
+  {
+   "page": 164,
+   "file": "0164.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 164 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.75,
+   "bleed": false
+  },
+  {
+   "page": 165,
+   "file": "0165.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 165 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 166,
+   "file": "0166.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 166 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.6,
+   "bleed": false
+  },
+  {
+   "page": 167,
+   "file": "0167.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 167 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 168,
+   "file": "0168.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 168 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 169,
+   "file": "0169.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 169 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 170,
+   "file": "0170.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 170 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 171,
+   "file": "0171.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 171 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 172,
+   "file": "0172.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 172 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 173,
+   "file": "0173.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 173 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 174,
+   "file": "0174.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 174 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 175,
+   "file": "0175.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 175 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 176,
+   "file": "0176.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 176 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.55,
+   "bleed": false
+  },
+  {
+   "page": 177,
+   "file": "0177.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 177 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 178,
+   "file": "0178.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 178 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.75,
+   "bleed": false
+  },
+  {
+   "page": 179,
+   "file": "0179.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 179 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.5,
+   "bleed": false
+  },
+  {
+   "page": 180,
+   "file": "0180.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 180 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.8,
+   "bleed": false
+  },
+  {
+   "page": 181,
+   "file": "0181.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 181 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.65,
+   "bleed": false
+  },
+  {
+   "page": 182,
+   "file": "0182.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 182 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.8,
+   "bleed": false
+  },
+  {
+   "page": 183,
+   "file": "0183.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 183 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.75,
+   "bleed": false
+  },
+  {
+   "page": 184,
+   "file": "0184.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 184 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.8,
+   "bleed": false
+  },
+  {
+   "page": 185,
+   "file": "0185.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 185 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 186,
+   "file": "0186.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 186 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 187,
+   "file": "0187.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 187 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 188,
+   "file": "0188.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 188 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 189,
+   "file": "0189.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 189 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 190,
+   "file": "0190.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 190 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 191,
+   "file": "0191.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 191 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 192,
+   "file": "0192.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 192 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 193,
+   "file": "0193.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 193 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 194,
+   "file": "0194.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 194 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 195,
+   "file": "0195.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 195 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.95,
+   "bleed": false
+  },
+  {
+   "page": 196,
+   "file": "0196.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 196 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 197,
+   "file": "0197.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 197 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.55,
+   "bleed": false
+  },
+  {
+   "page": 198,
+   "file": "0198.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 198 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.4,
+   "bleed": false
+  },
+  {
+   "page": 199,
+   "file": "0199.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 199 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.35,
+   "bleed": false
+  },
+  {
+   "page": 200,
+   "file": "0200.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 200 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.2,
+   "bleed": false
+  },
+  {
+   "page": 201,
+   "file": "0201.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 201 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.1,
+   "bleed": false
+  },
+  {
+   "page": 202,
+   "file": "0202.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 202 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 203,
+   "file": "0203.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 203 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 204,
+   "file": "0204.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 204 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 205,
+   "file": "0205.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 205 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.25,
+   "bleed": false
+  },
+  {
+   "page": 206,
+   "file": "0206.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 206 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.2,
+   "bleed": false
+  },
+  {
+   "page": 207,
+   "file": "0207.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 207 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 208,
+   "file": "0208.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 208 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.6,
+   "bleed": false
+  },
+  {
+   "page": 209,
+   "file": "0209.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 209 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 210,
+   "file": "0210.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 210 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 211,
+   "file": "0211.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 211 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.45,
+   "bleed": false
+  },
+  {
+   "page": 212,
+   "file": "0212.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 212 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 213,
+   "file": "0213.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 213 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 214,
+   "file": "0214.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 214 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 215,
+   "file": "0215.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 215 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 216,
+   "file": "0216.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 216 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 217,
+   "file": "0217.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 217 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 218,
+   "file": "0218.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 218 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 219,
+   "file": "0219.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 219 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 220,
+   "file": "0220.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 220 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 221,
+   "file": "0221.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 221 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.65,
+   "bleed": false
+  },
+  {
+   "page": 222,
+   "file": "0222.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 222 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 223,
+   "file": "0223.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 223 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 224,
+   "file": "0224.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 224 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 225,
+   "file": "0225.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 225 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.15,
+   "bleed": false
+  },
+  {
+   "page": 226,
+   "file": "0226.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 226 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 227,
+   "file": "0227.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 227 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.95,
+   "bleed": false
+  },
+  {
+   "page": 228,
+   "file": "0228.png",
+   "w": 2130,
+   "h": 2976,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 228 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    3,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.0,
+   "bleed": false
+  },
+  {
+   "page": 229,
+   "file": "0229.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 229 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.7,
+   "bleed": false
+  },
+  {
+   "page": 230,
+   "file": "0230.png",
+   "w": 2130,
+   "h": 2976,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 230 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    3,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.7,
+   "bleed": false
+  },
+  {
+   "page": 231,
+   "file": "0231.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 231 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.85,
+   "bleed": false
+  },
+  {
+   "page": 232,
+   "file": "0232.png",
+   "w": 2130,
+   "h": 2976,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 232 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    3,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.0,
+   "bleed": false
+  },
+  {
+   "page": 233,
+   "file": "0233.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 233 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 234,
+   "file": "0234.png",
+   "w": 2130,
+   "h": 2976,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 234 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    3,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.55,
+   "bleed": false
+  },
+  {
+   "page": 235,
+   "file": "0235.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 235 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.65,
+   "bleed": false
+  },
+  {
+   "page": 236,
+   "file": "0236.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 236 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.75,
+   "bleed": false
+  },
+  {
+   "page": 237,
+   "file": "0237.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 237 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 238,
+   "file": "0238.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 238 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 239,
+   "file": "0239.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 239 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.75,
+   "bleed": false
+  },
+  {
+   "page": 240,
+   "file": "0240.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 240 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 241,
+   "file": "0241.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 241 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 242,
+   "file": "0242.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 242 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 243,
+   "file": "0243.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 243 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.95,
+   "bleed": false
+  },
+  {
+   "page": 244,
+   "file": "0244.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 244 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 245,
+   "file": "0245.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 245 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.85,
+   "bleed": false
+  },
+  {
+   "page": 246,
+   "file": "0246.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 246 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 247,
+   "file": "0247.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 247 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 248,
+   "file": "0248.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 248 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.6,
+   "bleed": false
+  },
+  {
+   "page": 249,
+   "file": "0249.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 249 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.9,
+   "bleed": false
+  },
+  {
+   "page": 250,
+   "file": "0250.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 250 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.9,
+   "bleed": false
+  },
+  {
+   "page": 251,
+   "file": "0251.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 251 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.9,
+   "bleed": false
+  },
+  {
+   "page": 252,
+   "file": "0252.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 252 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.8,
+   "bleed": false
+  },
+  {
+   "page": 253,
+   "file": "0253.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 253 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.95,
+   "bleed": false
+  },
+  {
+   "page": 254,
+   "file": "0254.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 254 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.85,
+   "bleed": false
+  },
+  {
+   "page": 255,
+   "file": "0255.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 255 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 256,
+   "file": "0256.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 256 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.8,
+   "bleed": false
+  },
+  {
+   "page": 257,
+   "file": "0257.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 257 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.75,
+   "bleed": false
+  },
+  {
+   "page": 258,
+   "file": "0258.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 258 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 259,
+   "file": "0259.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 259 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.6,
+   "bleed": false
+  },
+  {
+   "page": 260,
+   "file": "0260.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 260 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.45,
+   "bleed": false
+  },
+  {
+   "page": 261,
+   "file": "0261.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 261 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.5,
+   "bleed": false
+  },
+  {
+   "page": 262,
+   "file": "0262.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 262 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.65,
+   "bleed": false
+  },
+  {
+   "page": 263,
+   "file": "0263.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 263 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.45,
+   "bleed": false
+  },
+  {
+   "page": 264,
+   "file": "0264.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 264 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 265,
+   "file": "0265.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 265 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 266,
+   "file": "0266.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 266 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 267,
+   "file": "0267.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 267 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 268,
+   "file": "0268.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 268 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 269,
+   "file": "0269.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 269 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.7,
+   "bleed": false
+  },
+  {
+   "page": 270,
+   "file": "0270.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 270 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.8,
+   "bleed": false
+  },
+  {
+   "page": 271,
+   "file": "0271.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 271 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 272,
+   "file": "0272.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 272 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 273,
+   "file": "0273.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 273 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 2.25,
+   "bleed": false
+  },
+  {
+   "page": 274,
+   "file": "0274.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 274 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -2.25,
+   "bleed": false
+  },
+  {
+   "page": 275,
+   "file": "0275.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 275 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.6,
+   "bleed": false
+  },
+  {
+   "page": 276,
+   "file": "0276.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 276 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.65,
+   "bleed": false
+  },
+  {
+   "page": 277,
+   "file": "0277.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 277 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.7,
+   "bleed": false
+  },
+  {
+   "page": 278,
+   "file": "0278.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 278 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.65,
+   "bleed": false
+  },
+  {
+   "page": 279,
+   "file": "0279.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 279 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 280,
+   "file": "0280.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 280 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 281,
+   "file": "0281.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 281 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.6,
+   "bleed": false
+  },
+  {
+   "page": 282,
+   "file": "0282.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 282 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.55,
+   "bleed": false
+  },
+  {
+   "page": 283,
+   "file": "0283.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 283 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 284,
+   "file": "0284.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 284 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 285,
+   "file": "0285.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 285 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.05,
+   "bleed": false
+  },
+  {
+   "page": 286,
+   "file": "0286.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 286 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.05,
+   "bleed": false
+  },
+  {
+   "page": 287,
+   "file": "0287.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 287 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 288,
+   "file": "0288.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 288 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 289,
+   "file": "0289.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 289 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.1,
+   "bleed": false
+  },
+  {
+   "page": 290,
+   "file": "0290.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 290 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.1,
+   "bleed": false
+  },
+  {
+   "page": 291,
+   "file": "0291.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 291 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.35,
+   "bleed": false
+  },
+  {
+   "page": 292,
+   "file": "0292.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 292 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.35,
+   "bleed": false
+  },
+  {
+   "page": 293,
+   "file": "0293.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 293 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 294,
+   "file": "0294.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 294 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 295,
+   "file": "0295.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 295 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 296,
+   "file": "0296.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 296 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 297,
+   "file": "0297.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 297 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.55,
+   "bleed": false
+  },
+  {
+   "page": 298,
+   "file": "0298.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 298 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 299,
+   "file": "0299.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 299 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 300,
+   "file": "0300.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 300 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 301,
+   "file": "0301.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 301 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.45,
+   "bleed": false
+  },
+  {
+   "page": 302,
+   "file": "0302.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 302 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 303,
+   "file": "0303.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 303 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.45,
+   "bleed": false
+  },
+  {
+   "page": 304,
+   "file": "0304.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 304 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 305,
+   "file": "0305.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 305 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 306,
+   "file": "0306.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 306 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.55,
+   "bleed": false
+  },
+  {
+   "page": 307,
+   "file": "0307.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 307 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.5,
+   "bleed": false
+  },
+  {
+   "page": 308,
+   "file": "0308.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 308 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.65,
+   "bleed": false
+  },
+  {
+   "page": 309,
+   "file": "0309.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 309 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.0,
+   "bleed": false
+  },
+  {
+   "page": 310,
+   "file": "0310.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 310 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.9,
+   "bleed": false
+  },
+  {
+   "page": 311,
+   "file": "0311.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 311 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 312,
+   "file": "0312.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 312 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 313,
+   "file": "0313.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 313 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 314,
+   "file": "0314.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 314 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 315,
+   "file": "0315.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 315 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 316,
+   "file": "0316.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 316 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 317,
+   "file": "0317.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 317 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 318,
+   "file": "0318.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 318 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 319,
+   "file": "0319.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 319 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.7,
+   "bleed": false
+  },
+  {
+   "page": 320,
+   "file": "0320.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 320 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.6,
+   "bleed": false
+  },
+  {
+   "page": 321,
+   "file": "0321.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 321 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.55,
+   "bleed": false
+  },
+  {
+   "page": 322,
+   "file": "0322.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 322 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 323,
+   "file": "0323.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 323 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 324,
+   "file": "0324.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 324 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 325,
+   "file": "0325.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 325 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 326,
+   "file": "0326.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 326 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 327,
+   "file": "0327.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 327 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.85,
+   "bleed": false
+  },
+  {
+   "page": 328,
+   "file": "0328.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 328 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 329,
+   "file": "0329.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 329 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.6,
+   "bleed": false
+  },
+  {
+   "page": 330,
+   "file": "0330.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 330 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 331,
+   "file": "0331.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 331 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.7,
+   "bleed": false
+  },
+  {
+   "page": 332,
+   "file": "0332.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 332 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 333,
+   "file": "0333.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 333 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 334,
+   "file": "0334.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 334 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 335,
+   "file": "0335.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 335 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.7,
+   "bleed": false
+  },
+  {
+   "page": 336,
+   "file": "0336.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 336 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.15,
+   "bleed": false
+  },
+  {
+   "page": 337,
+   "file": "0337.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 337 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 2.25,
+   "bleed": false
+  },
+  {
+   "page": 338,
+   "file": "0338.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 338 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -2.7,
+   "bleed": false
+  },
+  {
+   "page": 339,
+   "file": "0339.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 339 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 340,
+   "file": "0340.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 340 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 341,
+   "file": "0341.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 341 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 342,
+   "file": "0342.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 342 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.65,
+   "bleed": false
+  },
+  {
+   "page": 343,
+   "file": "0343.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 343 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.7,
+   "bleed": false
+  },
+  {
+   "page": 344,
+   "file": "0344.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 344 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 345,
+   "file": "0345.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 345 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.6,
+   "bleed": false
+  },
+  {
+   "page": 346,
+   "file": "0346.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 346 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.55,
+   "bleed": false
+  },
+  {
+   "page": 347,
+   "file": "0347.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 347 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 348,
+   "file": "0348.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 348 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 349,
+   "file": "0349.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 349 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 350,
+   "file": "0350.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 350 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 351,
+   "file": "0351.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 351 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 352,
+   "file": "0352.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 352 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 353,
+   "file": "0353.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 353 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 354,
+   "file": "0354.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 354 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 355,
+   "file": "0355.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 355 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 356,
+   "file": "0356.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 356 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 357,
+   "file": "0357.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 357 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.15,
+   "bleed": false
+  },
+  {
+   "page": 358,
+   "file": "0358.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 358 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.35,
+   "bleed": false
+  },
+  {
+   "page": 359,
+   "file": "0359.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 359 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 360,
+   "file": "0360.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 360 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 361,
+   "file": "0361.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 361 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 362,
+   "file": "0362.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 362 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 363,
+   "file": "0363.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 363 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 364,
+   "file": "0364.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 364 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 365,
+   "file": "0365.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 365 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 366,
+   "file": "0366.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 366 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 367,
+   "file": "0367.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 367 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 368,
+   "file": "0368.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 368 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 369,
+   "file": "0369.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 369 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 370,
+   "file": "0370.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 370 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 371,
+   "file": "0371.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 371 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 372,
+   "file": "0372.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 372 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 373,
+   "file": "0373.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 373 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.2,
+   "bleed": false
+  },
+  {
+   "page": 374,
+   "file": "0374.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 374 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.2,
+   "bleed": false
+  },
+  {
+   "page": 375,
+   "file": "0375.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 375 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 376,
+   "file": "0376.png",
+   "w": 2130,
+   "h": 2977,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 376 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    2,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 377,
+   "file": "0377.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 377 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 378,
+   "file": "0378.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 378 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 379,
+   "file": "0379.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 379 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 380,
+   "file": "0380.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 380 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 381,
+   "file": "0381.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 381 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 382,
+   "file": "0382.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 382 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 383,
+   "file": "0383.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 383 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 384,
+   "file": "0384.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 384 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 385,
+   "file": "0385.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 385 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 386,
+   "file": "0386.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 386 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 387,
+   "file": "0387.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 387 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 388,
+   "file": "0388.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 388 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 389,
+   "file": "0389.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 389 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 390,
+   "file": "0390.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 390 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 391,
+   "file": "0391.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 391 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 392,
+   "file": "0392.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 392 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 393,
+   "file": "0393.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 393 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 394,
+   "file": "0394.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 394 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 395,
+   "file": "0395.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 395 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.05,
+   "bleed": false
+  },
+  {
+   "page": 396,
+   "file": "0396.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 396 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 397,
+   "file": "0397.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 397 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 398,
+   "file": "0398.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 398 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 399,
+   "file": "0399.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 399 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.45,
+   "bleed": false
+  },
+  {
+   "page": 400,
+   "file": "0400.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 400 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 401,
+   "file": "0401.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 401 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 402,
+   "file": "0402.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 402 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 403,
+   "file": "0403.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 403 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 404,
+   "file": "0404.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 404 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 405,
+   "file": "0405.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 405 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 406,
+   "file": "0406.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 406 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 407,
+   "file": "0407.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 407 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 408,
+   "file": "0408.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 408 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 409,
+   "file": "0409.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 409 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 410,
+   "file": "0410.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 410 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 411,
+   "file": "0411.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 411 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 412,
+   "file": "0412.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 412 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 413,
+   "file": "0413.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 413 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 414,
+   "file": "0414.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 414 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 415,
+   "file": "0415.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 415 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 416,
+   "file": "0416.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 416 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 417,
+   "file": "0417.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 417 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 418,
+   "file": "0418.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 418 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 419,
+   "file": "0419.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 419 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 420,
+   "file": "0420.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 420 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 421,
+   "file": "0421.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 421 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 422,
+   "file": "0422.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 422 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 423,
+   "file": "0423.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 423 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 424,
+   "file": "0424.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 424 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 425,
+   "file": "0425.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 425 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 426,
+   "file": "0426.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 426 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 427,
+   "file": "0427.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 427 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 428,
+   "file": "0428.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 428 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 429,
+   "file": "0429.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 429 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 430,
+   "file": "0430.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 430 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 431,
+   "file": "0431.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 431 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 432,
+   "file": "0432.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 432 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 433,
+   "file": "0433.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 433 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 434,
+   "file": "0434.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 434 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 435,
+   "file": "0435.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 435 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 436,
+   "file": "0436.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 436 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 437,
+   "file": "0437.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 437 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 438,
+   "file": "0438.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 438 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 439,
+   "file": "0439.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 439 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.5,
+   "bleed": false
+  },
+  {
+   "page": 440,
+   "file": "0440.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 440 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 441,
+   "file": "0441.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 441 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 442,
+   "file": "0442.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 442 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 443,
+   "file": "0443.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 443 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 444,
+   "file": "0444.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 444 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 445,
+   "file": "0445.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 445 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 446,
+   "file": "0446.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 446 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 447,
+   "file": "0447.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 447 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.25,
+   "bleed": false
+  },
+  {
+   "page": 448,
+   "file": "0448.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 448 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 449,
+   "file": "0449.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 449 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 450,
+   "file": "0450.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 450 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 451,
+   "file": "0451.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 451 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 452,
+   "file": "0452.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 452 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 453,
+   "file": "0453.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 453 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 454,
+   "file": "0454.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 454 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 455,
+   "file": "0455.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 455 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 456,
+   "file": "0456.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 456 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 457,
+   "file": "0457.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 457 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 458,
+   "file": "0458.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 458 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 459,
+   "file": "0459.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 459 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 460,
+   "file": "0460.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 460 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 461,
+   "file": "0461.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 461 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 462,
+   "file": "0462.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 462 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 463,
+   "file": "0463.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 463 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 464,
+   "file": "0464.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 464 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 465,
+   "file": "0465.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 465 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 466,
+   "file": "0466.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 466 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 467,
+   "file": "0467.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 467 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.15,
+   "bleed": false
+  },
+  {
+   "page": 468,
+   "file": "0468.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 468 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 469,
+   "file": "0469.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 469 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 470,
+   "file": "0470.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 470 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 471,
+   "file": "0471.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 471 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 472,
+   "file": "0472.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 472 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 473,
+   "file": "0473.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 473 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 474,
+   "file": "0474.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 474 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 475,
+   "file": "0475.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 475 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 476,
+   "file": "0476.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 476 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 477,
+   "file": "0477.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 477 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 478,
+   "file": "0478.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 478 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 479,
+   "file": "0479.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 479 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 480,
+   "file": "0480.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 480 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 481,
+   "file": "0481.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 481 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 482,
+   "file": "0482.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 482 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 483,
+   "file": "0483.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 483 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 484,
+   "file": "0484.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 484 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 485,
+   "file": "0485.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 485 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.6,
+   "bleed": false
+  },
+  {
+   "page": 486,
+   "file": "0486.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 486 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.75,
+   "bleed": false
+  },
+  {
+   "page": 487,
+   "file": "0487.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 487 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 488,
+   "file": "0488.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 488 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 489,
+   "file": "0489.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 489 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 490,
+   "file": "0490.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 490 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 491,
+   "file": "0491.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 491 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.2,
+   "bleed": false
+  },
+  {
+   "page": 492,
+   "file": "0492.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 492 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.2,
+   "bleed": false
+  },
+  {
+   "page": 493,
+   "file": "0493.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 493 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.25,
+   "bleed": false
+  },
+  {
+   "page": 494,
+   "file": "0494.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 494 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 495,
+   "file": "0495.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 495 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 496,
+   "file": "0496.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 496 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 497,
+   "file": "0497.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 497 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.35,
+   "bleed": false
+  },
+  {
+   "page": 498,
+   "file": "0498.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 498 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.4,
+   "bleed": false
+  },
+  {
+   "page": 499,
+   "file": "0499.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 499 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 500,
+   "file": "0500.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 500 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 501,
+   "file": "0501.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 501 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.4,
+   "bleed": false
+  },
+  {
+   "page": 502,
+   "file": "0502.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 502 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.35,
+   "bleed": false
+  },
+  {
+   "page": 503,
+   "file": "0503.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 503 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.2,
+   "bleed": false
+  },
+  {
+   "page": 504,
+   "file": "0504.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 504 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 505,
+   "file": "0505.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 505 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 506,
+   "file": "0506.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 506 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 507,
+   "file": "0507.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 507 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 508,
+   "file": "0508.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 508 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 509,
+   "file": "0509.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 509 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 510,
+   "file": "0510.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 510 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 511,
+   "file": "0511.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 511 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 512,
+   "file": "0512.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 512 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.05,
+   "bleed": false
+  },
+  {
+   "page": 513,
+   "file": "0513.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 513 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 1.85,
+   "bleed": false
+  },
+  {
+   "page": 514,
+   "file": "0514.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 514 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -1.85,
+   "bleed": false
+  },
+  {
+   "page": 515,
+   "file": "0515.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 515 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.5,
+   "bleed": false
+  },
+  {
+   "page": 516,
+   "file": "0516.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 516 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.6,
+   "bleed": false
+  },
+  {
+   "page": 517,
+   "file": "0517.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 517 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.5,
+   "bleed": false
+  },
+  {
+   "page": 518,
+   "file": "0518.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 518 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.45,
+   "bleed": false
+  },
+  {
+   "page": 519,
+   "file": "0519.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 519 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.3,
+   "bleed": false
+  },
+  {
+   "page": 520,
+   "file": "0520.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 520 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.15,
+   "bleed": false
+  },
+  {
+   "page": 521,
+   "file": "0521.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 521 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.05,
+   "bleed": false
+  },
+  {
+   "page": 522,
+   "file": "0522.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 522 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 523,
+   "file": "0523.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 523 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 524,
+   "file": "0524.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 524 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 525,
+   "file": "0525.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 525 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.2,
+   "bleed": false
+  },
+  {
+   "page": 526,
+   "file": "0526.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 526 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.3,
+   "bleed": false
+  },
+  {
+   "page": 527,
+   "file": "0527.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 527 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.1,
+   "bleed": false
+  },
+  {
+   "page": 528,
+   "file": "0528.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 528 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": -0.1,
+   "bleed": false
+  },
+  {
+   "page": 529,
+   "file": "0529.png",
+   "w": 2130,
+   "h": 2979,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 529 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  },
+  {
+   "page": 530,
+   "file": "0530.png",
+   "w": 2130,
+   "h": 2978,
+   "stamps": [
+    {
+     "bbox": [
+      881,
+      2855,
+      1248,
+      2923
+     ],
+     "text": "Page 530 of 530"
+    }
+   ],
+   "text_layer": [],
+   "cropped": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "angle": 0.0,
+   "bleed": false
+  }
+ ]
+}

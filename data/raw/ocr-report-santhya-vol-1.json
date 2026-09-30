@@ -1,0 +1,37 @@
+{
+ "book": "santhya-vol-1",
+ "language": "pa",
+ "engines": [
+  "tesseract-pan",
+  "tesseract-gurmukhi"
+ ],
+ "pivot": "tesseract-pan",
+ "weights": {
+  "tesseract-pan": 0.403,
+  "tesseract-gurmukhi": 0.368
+ },
+ "pages": 530,
+ "counts": {
+  "zone:body": 20788,
+  "kind:commentary": 16250,
+  "corrections": 0,
+  "routed-lines": 20222,
+  "route:low-agreement": 2215,
+  "zone:stamp": 524,
+  "zone:pageno": 25,
+  "route:oov": 15213,
+  "zone:header": 641,
+  "zone:footnote": 246,
+  "kind:heading": 2051,
+  "route:low-conf": 61,
+  "kind:gurbani-unmatched": 2733,
+  "route:unmatched-bold": 2733
+ },
+ "agreement_mean": 0.916,
+ "agreement_p10": 0.812,
+ "oov_mean": 0.98,
+ "routed_pages": 527,
+ "correct": true,
+ "lexicon": {},
+ "seconds": 28.4
+}

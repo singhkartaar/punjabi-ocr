@@ -1,0 +1,55 @@
+{
+  "kind": "documents",
+  "index": "writings-pa",
+  "db": "../../writings-pa.sqlite",
+  "label": "Writings · Punjabi",
+  "label_pa": "ਲਿਖਤਾਂ · ਪੰਜਾਬੀ",
+  "roles": [
+    "text"
+  ],
+  "order": 202,
+  "corpus": "writings-pa",
+  "author": "Bhai Vir Singh",
+  "authors": [
+    "Bhai Vir Singh"
+  ],
+  "licences": {
+    "public-domain": 1
+  },
+  "model": "Xenova/multilingual-e5-small (onnx/model_quantized.onnx)",
+  "model_dir": "multilingual-e5-small",
+  "tokenizer": "unigram",
+  "pooling": "mean",
+  "query_prefix": "query: ",
+  "doc_prefix": "passage: ",
+  "pad_token": "<pad>",
+  "pad_id": 1,
+  "lowercase": false,
+  "strip_accents": false,
+  "max_len": 256,
+  "embed_dim": 384,
+  "index_dim": 256,
+  "units": 3131,
+  "works": 1,
+  "chunked_units": 11,
+  "citations": 0,
+  "text_lang": "pa",
+  "query_scripts": [
+    "gurmukhi",
+    "latin"
+  ],
+  "explained_variance": 0.9294634461402893,
+  "quantization": {
+    "type": "int8",
+    "scale": "per-vector float32",
+    "min_cosine": 0.9995788335800171,
+    "mean_cosine": 0.9999281167984009
+  },
+  "files": {
+    "units.i8": 801536,
+    "units.scale.f32": 12524,
+    "units.mask.u8": 3131,
+    "pca.components.f32": 393216,
+    "pca.mean.f32": 1536
+  }
+}

@@ -171,11 +171,136 @@ class TesseractEngine(Engine):
 
     def recognise(self, png_path: str, lang: str) -> list[dict]:
         from PIL import Image
-        config = "--oem %d --psm %d" % (self.oem, self.psm)
+        import numpy as np
+        from lib.ocr_zones import find_vertical_rule
+
         with Image.open(png_path) as im:
+            im_gray = im.convert("L")
+            arr = np.array(im_gray)
+            rule_x = find_vertical_rule(arr)
+            if rule_x is not None:
+                lines = self.recognise_columns(im, arr, rule_x, lang)
+            else:
+                lines = self.recognise_single(im, arr, lang)
+            if lines:
+                return number(lines)
+            config = "--oem %d --psm %d" % (self.oem, self.psm)
             d = self.pt.image_to_data(im, lang=self.tess_lang or self.LANGS[lang], config=config,
                                       output_type=self.pt.Output.DICT)
-        return self.lines_from_data(d, lang)
+            return self.lines_from_data(d, lang)
+
+    def recognise_single(self, im, arr: np.ndarray, lang: str) -> list[dict]:
+        w, h = im.size
+        ink = (arr < 180)
+        body_y0 = int(h * 0.08)
+        body_y1 = int(h * 0.92)
+        x_left = int(w * 0.03)
+        x_right = int(w * 0.97)
+
+        head_boxes = self.extract_line_boxes(ink[:body_y0, x_left:x_right], x_left, 0, min_h=20)
+        body_boxes = self.extract_line_boxes(ink[body_y0:body_y1, x_left:x_right], x_left, body_y0)
+        foot_boxes = self.extract_line_boxes(ink[body_y1:, x_left:x_right], x_left, body_y1, min_h=16)
+
+        lang_arg = self.tess_lang or self.LANGS[lang]
+        records = []
+        records.extend(self._ocr_boxes(im, head_boxes, lang_arg, block_id=1, lang=lang))
+        records.extend(self._ocr_boxes(im, body_boxes, lang_arg, block_id=2, lang=lang))
+        records.extend(self._ocr_boxes(im, foot_boxes, lang_arg, block_id=3, lang=lang))
+        return records
+
+    @staticmethod
+    def extract_line_boxes(sub_ink: np.ndarray, x_off: int, y_off: int, min_h: int = 16, min_ink: int = 8) -> list[list[int]]:
+        import numpy as np
+        proj = sub_ink.sum(axis=1)
+        lines = []
+        in_line = False
+        start = 0
+        for y, val in enumerate(proj):
+            if val > min_ink and not in_line:
+                in_line = True
+                start = y
+            elif val <= min_ink and in_line:
+                in_line = False
+                if y - start >= min_h:
+                    lines.append((y_off + start, y_off + y))
+        if in_line and (len(proj) - start) >= min_h:
+            lines.append((y_off + start, y_off + len(proj)))
+        box_lines = []
+        for y0, y1 in lines:
+            line_ink = sub_ink[y0 - y_off:y1 - y_off]
+            col_proj = line_ink.sum(axis=0)
+            nz = np.where(col_proj > 0)[0]
+            if len(nz) > 10:
+                box_lines.append([int(x_off + nz[0]), int(y0), int(x_off + nz[-1] + 1), int(y1)])
+        return box_lines
+
+    def recognise_columns(self, im, arr: np.ndarray, rule_x: int, lang: str) -> list[dict]:
+        w, h = im.size
+        ink = (arr < 180)
+        body_y0 = int(h * 0.08)
+        body_y1 = int(h * 0.92)
+        x_left = int(w * 0.03)
+        x_right = int(w * 0.97)
+
+        head_boxes = self.extract_line_boxes(ink[:body_y0, x_left:x_right], x_left, 0, min_h=20)
+        c0_boxes = self.extract_line_boxes(ink[body_y0:body_y1, x_left:rule_x - 10], x_left, body_y0)
+        c1_boxes = self.extract_line_boxes(ink[body_y0:body_y1, rule_x + 10:x_right], rule_x + 10, body_y0)
+        foot_boxes = self.extract_line_boxes(ink[body_y1:, x_left:x_right], x_left, body_y1, min_h=16)
+
+        lang_arg = self.tess_lang or self.LANGS[lang]
+        records = []
+        records.extend(self._ocr_boxes(im, head_boxes, lang_arg, block_id=1, lang=lang))
+        records.extend(self._ocr_boxes(im, c0_boxes, lang_arg, block_id=2, lang=lang))
+        records.extend(self._ocr_boxes(im, c1_boxes, lang_arg, block_id=3, lang=lang))
+        records.extend(self._ocr_boxes(im, foot_boxes, lang_arg, block_id=4, lang=lang))
+        return records
+
+    def _ocr_boxes(self, im, boxes: list[list[int]], lang_arg: str, block_id: int, lang: str) -> list[dict]:
+        records = []
+        config = "--oem %d --psm 13" % self.oem
+        w, h = im.size
+        for b in boxes:
+            cx0 = max(0, b[0] - 6)
+            cy0 = max(0, b[1] - 3)
+            cx1 = min(w, b[2] + 6)
+            cy1 = min(h, b[3] + 3)
+            crop = im.crop((cx0, cy0, cx1, cy1))
+            d = self.pt.image_to_data(crop, lang=lang_arg, config=config, output_type=self.pt.Output.DICT)
+            ws = []
+            for i in range(len(d["text"])):
+                txt = (d["text"][i] or "").strip()
+                conf = float(d["conf"][i])
+                if not txt or conf < 0:
+                    continue
+                txt = txt.strip("_ \t\r\n")
+                if not txt:
+                    continue
+                x, y, bw, bh = d["left"][i], d["top"][i], d["width"][i], d["height"][i]
+                ws.append({
+                    "bbox": [cx0 + x, cy0 + y, cx0 + x + bw, cy0 + y + bh],
+                    "text": txt,
+                    "conf": round(conf / 100.0, 3)
+                })
+            if not ws:
+                continue
+            line_text = " ".join(w["text"] for w in ws)
+            clean_chars = [c for c in line_text if not c.isspace()]
+            alpha_chars = [c for c in clean_chars if c.isalpha() or "\u0a00" <= c <= "\u0a7f" or "\u0900" <= c <= "\u097f" or c.isdigit()]
+            if not alpha_chars or (len(alpha_chars) / max(1, len(clean_chars)) < 0.25 and len(clean_chars) > 10):
+                continue
+            if lang == "pa":
+                line_text = gurmukhi_fix(line_text)
+            records.append({
+                "bbox": [min(w["bbox"][0] for w in ws), min(w["bbox"][1] for w in ws),
+                         max(w["bbox"][2] for w in ws), max(w["bbox"][3] for w in ws)],
+                "text": line_text,
+                "conf": round(statistics.mean(w["conf"] for w in ws), 3),
+                "words": ws,
+                "block": block_id,
+                "par": 1,
+                "zone": None
+            })
+        return records
 
     @staticmethod
     def lines_from_data(d: dict, lang: str) -> list[dict]:

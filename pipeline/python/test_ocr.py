@@ -131,6 +131,18 @@ class ZoneTests(unittest.TestCase):
         wide = [{"bbox": [100 + i * 20, 0, 0, 0], "text": "word"} for i in range(100)]
         self.assertEqual(page_columns(wide, 2560), [])
 
+    def test_find_vertical_rule(self):
+        import numpy as np
+        from lib.ocr_zones import find_vertical_rule
+        # Synthetic 1000x1000 white page (255)
+        img = np.full((1000, 1000), 255, dtype=np.uint8)
+        # Add hairline rule at x=400 down the body (y from 100 to 900)
+        img[100:900, 399:402] = 0
+        rule = find_vertical_rule(img)
+        self.assertEqual(rule, 400)
+        # Clear image has no rule
+        self.assertIsNone(find_vertical_rule(np.full((1000, 1000), 255, dtype=np.uint8)))
+
 
 CORPUS = [
     (1, 1, 22, "ਨਿਰਭਉ ਜਪੈ ਸਗਲ ਭਉ ਮਿਟੈ ॥"),
@@ -728,6 +740,48 @@ class MergeStageTests(unittest.TestCase):
             self.assertEqual((quote["line_ids"], quote["ang"], quote["match_method"]), ([7], 22, "ocr-corpus-match"))
             self.assertTrue(all(k in doc for k in ("path", "body_size", "pages")))
 
+    def test_ocr_pairs_alignment(self):
+        from lib.ocr_pairs import is_danda_ending, is_sentence_ending, segment_column_paragraphs, align_page_pairs
+
+        self.assertTrue(is_danda_ending("ਵਾਜੇ ਤੇਰੇ ਨਾਦ ਅਨੇਕ ਅਸੰਖਾ ਕੇਤੇ ਤੇਰੇ ਵਾਵਣਹਾਰੇ॥"))
+        self.assertTrue(is_danda_ending("ਸਚੁ ਪੁਰਾਣਾ ਨਾ ਥੀਐ ਨਾਮੁ ਨ ਮੈਲਾ ਹੋਇ ॥੧॥"))
+        self.assertTrue(is_danda_ending("ਸੋਈ ਸੋਈ ਦੇਵੈ ਹਰੇ ॥੧॥ ਰਹਾਉ ॥"))
+        self.assertFalse(is_danda_ending("ਇਹ ਸਾਧਾਰਨ ਵਾਕ ਹੈ"))
+
+        self.assertTrue(is_sentence_ending("ਵਜਾਉਣ ਵਾਲੇ ਹਨ ।"))
+        self.assertTrue(is_sentence_ending("ਕਿੰਨੇ ਹੀ ਤੈਨੂੰ ਗਾਉਣ ਵਾਲੇ ਹਨ।"))
+        self.assertFalse(is_sentence_ending("ਦਰ ਤੇ ਖੜੇ ਦੇਵਤਿਆਂ"))
+
+        # Test two-column pair alignment
+        sample_lines = [
+            {"n": 1, "col": None, "zone": "header", "bbox": [200, 100, 1800, 150], "text": "ਸ੍ਰੀ ਰਾਗੁ ਮਹਲਾ ੧"},
+            # Pair 1: Gurbani lines (col 0) & Translation (col 1)
+            {"n": 2, "col": 0, "zone": "body", "bbox": [200, 250, 800, 300], "text": "ਵਾਜੇ ਤੇਰੇ ਨਾਦ ਅਨੇਕ ਅਸੰਖਾ"},
+            {"n": 3, "col": 0, "zone": "body", "bbox": [200, 310, 800, 360], "text": "ਕੇਤੇ ਤੇਰੇ ਵਾਵਣਹਾਰੇ॥"},
+            {"n": 4, "col": 1, "zone": "body", "bbox": [850, 250, 1800, 300], "text": "ਹੈਂ,. (ਜਿਥੇ) ਤੇਰੇ ਅਨੇਕ ਵਾਜੇ,"},
+            {"n": 5, "col": 1, "zone": "body", "bbox": [850, 310, 1800, 360], "text": "ਵਾਵਣ ਵਾਲੇ ਹਨ।"},
+            # Pair 2: Gurbani lines & Translation
+            {"n": 6, "col": 0, "zone": "body", "bbox": [200, 450, 800, 500], "text": "ਕੇਤੇ ਤੇਰੇ ਰਾਗ ਪਰੀ ਸਿਉ ਕਹੀਅਹਿ॥"},
+            {"n": 7, "col": 1, "zone": "body", "bbox": [850, 450, 1800, 500], "text": "ਕਿੰਨੇ ਹੀ ਤੇਰੇ ਰਾਗ ਰਾਗਣੀਆਂ ਸਣੇ ਦੱਸੀਦੇ ਹਨ।"},
+            # Footer
+            {"n": 8, "col": None, "zone": "footer", "bbox": [800, 2800, 1200, 2850], "text": "[ਪੰਨਾ 201]"}
+        ]
+        res = align_page_pairs(sample_lines, page_h=3000, page_w=2000)
+        self.assertTrue(res["is_two_col"])
+        self.assertEqual(len(res["pairs"]), 2)
+        p1 = res["pairs"][0]
+        self.assertEqual(p1["pair_id"], 1)
+        self.assertEqual(len(p1["gurbani"]["lines"]), 2)
+        self.assertEqual(len(p1["translation"]["lines"]), 2)
+        self.assertIn("ਵਾਵਣਹਾਰੇ॥", p1["gurbani"]["text"])
+        self.assertIn("ਵਾਵਣ ਵਾਲੇ ਹਨ।", p1["translation"]["text"])
+
+        p2 = res["pairs"][1]
+        self.assertEqual(p2["pair_id"], 2)
+        self.assertEqual(len(p2["gurbani"]["lines"]), 1)
+        self.assertEqual(len(p2["translation"]["lines"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
+

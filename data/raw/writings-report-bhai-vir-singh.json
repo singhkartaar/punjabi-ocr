@@ -1,0 +1,53 @@
+{
+  "src": "/Users/rsingh/books/sample",
+  "author": "Bhai Vir Singh",
+  "files": 7,
+  "works": 1,
+  "failures": [
+    {
+      "file": "Santhya Sri Guru Granth Sahib Ji Vol.-2.pdf",
+      "error": "FileNotFoundError: [Errno 2] No such file or directory: '/Users/rsingh/Code/Personal/punjabi-ocr/data/ocr/santhya-vol-2/pages.json'"
+    },
+    {
+      "file": "Santhya Sri Guru Granth Sahib Ji Vol.-3.pdf",
+      "error": "FileNotFoundError: [Errno 2] No such file or directory: '/Users/rsingh/Code/Personal/punjabi-ocr/data/ocr/santhya-vol-3/pages.json'"
+    },
+    {
+      "file": "Santhya Sri Guru Granth Sahib Ji Vol.-4.pdf",
+      "error": "FileNotFoundError: [Errno 2] No such file or directory: '/Users/rsingh/Code/Personal/punjabi-ocr/data/ocr/santhya-vol-4/pages.json'"
+    },
+    {
+      "file": "Santhya Sri Guru Granth Sahib Ji Vol.-5.pdf",
+      "error": "FileNotFoundError: [Errno 2] No such file or directory: '/Users/rsingh/Code/Personal/punjabi-ocr/data/ocr/santhya-vol-5/pages.json'"
+    },
+    {
+      "file": "Santhya Sri Guru Granth Sahib Ji Vol.-6.pdf",
+      "error": "FileNotFoundError: [Errno 2] No such file or directory: '/Users/rsingh/Code/Personal/punjabi-ocr/data/ocr/santhya-vol-6/pages.json'"
+    },
+    {
+      "file": "Santhya Sri Guru Granth Sahib Ji Vol.-7.pdf",
+      "error": "FileNotFoundError: [Errno 2] No such file or directory: '/Users/rsingh/Code/Personal/punjabi-ocr/data/ocr/santhya-vol-7/pages.json'"
+    }
+  ],
+  "held": [],
+  "rejoined_words": 0,
+  "essay_number_mismatch": [],
+  "pages": 530,
+  "spread_pages": 0,
+  "totals": {
+    "paragraphs": 13586,
+    "body": 8891,
+    "quotes": 3299,
+    "headings": 1200,
+    "words": 222531,
+    "glue_defects": 141,
+    "glue_pct": 0.063,
+    "body_mid_sentence": 4491,
+    "body_mid_sentence_pct": 50.51,
+    "quotes_with_ang": 3,
+    "quotes_with_ang_pct": 0.1,
+    "quotes_with_line_ids": 0,
+    "quotes_with_line_ids_pct": 0.0,
+    "routed": 12820
+  }
+}

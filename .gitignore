@@ -1,9 +1,10 @@
-# everything a run produces or downloads; the repository is the code only
-data/
-artifacts/
+# Raw scan images and intermediate engine outputs
+data/ocr/*/pages/
+data/ocr/*/ocr/
+data/vectors/
+
 vendor/
 dist/
-*.sqlite
 *.sqlite-journal
 .venv/
 .venv-*/

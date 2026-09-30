@@ -181,6 +181,31 @@ def classify_zones(lines: list[dict], page_w: int, page_h: int, stamps: list[dic
     return out
 
 
+def find_vertical_rule(img, page_w: int | None = None) -> int | None:
+    """
+    Center column of a hairline vertical divider rule down the page body,
+    with clear white margins on either side, or None.
+    """
+    h, w = img.shape[:2]
+    pw = page_w or w
+    ink = (img < 180)
+    y0, y1 = int(h * 0.15), int(h * 0.85)
+    body = ink[y0:y1]
+    col_ink = body.mean(axis=0)
+    lo, hi = int(pw * 0.20), int(pw * 0.80)
+    for x in range(lo, hi):
+        if col_ink[x] > 0.20:
+            rule_w = 1
+            while x + rule_w < hi and col_ink[x + rule_w] > 0.15:
+                rule_w += 1
+            if 1 <= rule_w <= 25:
+                left_gap = col_ink[max(0, x - 25):max(0, x - 2)].min()
+                right_gap = col_ink[min(pw - 1, x + rule_w + 2):min(pw - 1, x + rule_w + 25)].min()
+                if left_gap < 0.05 and right_gap < 0.05:
+                    return x + rule_w // 2
+    return None
+
+
 def columns_by_ink(img, words: list[dict], page_w: int, lines: list[dict] | None = None) -> list[tuple[int, int]]:
     """
     The gutter read off the page image: the widest run of (nearly) ink-free
@@ -191,6 +216,15 @@ def columns_by_ink(img, words: list[dict], page_w: int, lines: list[dict] | None
     gutter; on a single-column page every line does.
     """
     import numpy as np
+    rule = find_vertical_rule(img, page_w)
+    if rule is not None:
+        if lines:
+            body_lines = [ln for ln in lines if ln.get("text", "").strip() and ln.get("zone") in (None, "body")]
+            crossing = sum(1 for ln in body_lines if ln["bbox"][0] < rule - 20 and ln["bbox"][2] > rule + 20)
+            if body_lines and crossing > CROSSING_MAX * len(body_lines):
+                return []
+        return [(0, rule), (rule, page_w)]
+
     ys = [w["bbox"][1] for w in words if w.get("text", "").strip()] + \
          [w["bbox"][3] for w in words if w.get("text", "").strip()]
     if len(ys) < 20:
