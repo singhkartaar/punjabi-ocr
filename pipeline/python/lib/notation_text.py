@@ -52,7 +52,7 @@ _ABOVE_SIGNS = re.compile("[ੰਂ]")
 _HELD_TAIL = re.compile("[ऽ਽S5ਸ]+$")
 # a number that counts something other than a page: the vaar, the pauri, the
 # kabitt, the swaiyya, the chhand, the salok, the ashtpadi
-_NOT_ANG = re.compile("(?:ਵਾਰ|ਪਉੜੀ|ਪਉੜੀਆਂ|ਕਬਿੱਤ|ਕਬਿਤ|ਸਵੱਯੇ|ਸਵਈਏ|ਸਵੈਯੇ|ਛੰਦ|ਸਲੋਕ|ਸ਼ਲੋਕ|ਅਸ਼ਟਪਦੀ|ਅਸਟਪਦੀ|ਪਦਾ|ਪਦੇ|ਨੰ[:ਃ.]?)\s*[%s]{1,3}" % DIGITS)
+_NOT_ANG = re.compile(r"(?:ਵਾਰ|ਪਉੜੀ|ਪਉੜੀਆਂ|ਕਬਿੱਤ|ਕਬਿਤ|ਸਵੱਯੇ|ਸਵਈਏ|ਸਵੈਯੇ|ਛੰਦ|ਸਲੋਕ|ਸ਼ਲੋਕ|ਅਸ਼ਟਪਦੀ|ਅਸਟਪਦੀ|ਪਦਾ|ਪਦੇ|ਨੰ[:ਃ.]?)\s*[%s]{1,3}" % DIGITS)
 
 
 def _int(s: str) -> int:
@@ -156,7 +156,11 @@ def is_heading_like(text: str) -> bool:
         return False
     if section_label(t):
         return True
-    if _HEADING_WORDS.search(t) and len(t.split()) <= 8:      # a sentence of prose that mentions a raag is not one
+    words = len(t.split())
+    if _HEADING_WORDS.search(t) and words <= 8:      # a sentence of prose that mentions a raag is not one
+        return True
+    # "੧੬. ਰਾਗ ਭੈਰਵੀ (ਸਿੰਧ ਭੈਰਵੀ), ਤਾਲ ਕਹਿਲਵਾ (ਮੱਧਯ ਲਯ)": a number, the raag with its variant, the taal, the laya
+    if words <= 12 and re.search("ਰਾਗ", t) and re.search("ਤਾਲ", t) and (re.match(r"^\s*[੦-੯0-9]+[.)]", t) or "(" in t):
         return True
     if len(t.split()) <= 4:
         return normalise_taal(t)["method"] == "alias" or normalise_raag(t)["method"] == "alias"

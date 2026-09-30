@@ -42,6 +42,7 @@ FLAGS = frozenset([
     "taal-mismatch", "taal-unknown", "raag-unknown", "style-contradiction", "continues-next-page",
     "continued-from-prev", "empty-beat", "unread-cell", "tick-on-non-ma", "diagonal-watermark",
     "partial-grid", "unmatched-text", "taal-changes", "raag-differs", "shabad-by-book-ref",
+    "shabad-inherited", "span-capped", "shabad-by-bol",
 ])
 DEFAULT_STYLE = {"swar_row": "above", "shabad_position": "before", "matra_row": False,
                  "marker_row": "below", "table": "bars", "labels": False, "script": "gurmukhi"}

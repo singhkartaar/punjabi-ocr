@@ -189,6 +189,46 @@ def raag_records(descriptions: list[dict], book: str, book_dir: str, images_dir:
     return out
 
 
+_INDEX = {}
+
+
+def corpus_index(con):
+    """The corpus matcher's index, built once per run."""
+    if con is None:
+        return None
+    if "index" not in _INDEX:
+        from lib.ocr_match import CorpusIndex
+        _INDEX["index"] = CorpusIndex.from_sqlite(con)
+    return _INDEX["index"]
+
+
+def bol_witness(sections: list[dict], con, ref: dict | None) -> dict | None:
+    """
+    The bol rows of the sthai (or the first section read), joined and matched
+    against the corpus: {"shabad_id", "score", "line_id"} of the best line
+    found, or None. A printed reference narrows the search to its angs.
+    """
+    from lib.notation_text import bol_text
+    from lib.ocr_match import match_text
+    index = corpus_index(con)
+    if index is None or not sections:
+        return None
+    best = None
+    hints = {"ang_from": ref["ang_from"], "ang_to": ref.get("ang_to") or ref["ang_from"]} if ref and ref.get("ang_from") else None
+    for sec in sections[:2]:
+        text = " ".join(bol_text(line.get("beats") or []) for line in sec.get("lines") or [])
+        text = " ".join(w for w in text.split() if w)
+        if len(text.replace(" ", "")) < 8:
+            continue
+        try:
+            hit = match_text(text, index, hints) or match_text(text, index, None)
+        except Exception:
+            hit = None
+        if hit and (best is None or hit["score"] > best["score"]):
+            best = {"shabad_id": hit["shabad_id"], "score": float(hit["score"]), "line_id": hit.get("line_id")}
+    return best
+
+
 def matra_check(sections: list[dict], taal_key: str | None) -> str:
     """ok when every avartan row of the grid closes on the taal's last matra (or holds whole avartans); n/a without a taal."""
     info = notation_vocab.taal_info(taal_key)
@@ -309,8 +349,27 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
         if kind == "notation":
             kind = "partial"
         flags.append("partial-grid")
+    # the sung syllables under the swaras are the shabad's own words: a third witness,
+    # and the only one when the printed text was not read (or not printed)
+    bol = bol_witness(sections_out, con, ref)
+    if bol:
+        res2 = resolve_shabad(shabad_lines, ref, con, bol_match=bol)
+        if res2["shabad"].get("shabad_id") is not None and (res["shabad"].get("shabad_id") is None
+                                                            or res2["shabad"]["confidence"] > res["shabad"]["confidence"]):
+            if res["shabad"].get("shabad_id") is None:
+                flags = [f for f in flags if f not in ("unresolved-shabad", "weak-shabad")] + ["shabad-by-bol"]
+                if kind == "non-gurbani":
+                    kind = "notation"
+            res = res2
+            for f in res2["flags"]:
+                if f not in flags:
+                    flags.append(f)
     if span["continued"]:
         flags.append("continued-from-prev")
+    if span.get("inherited"):
+        flags.append("shabad-inherited")
+    if span.get("capped"):
+        flags.append("span-capped")
     if any(sec.get("assumed") for sec in span["sections"]):
         flags.append("no-section-label")
     if heading and heading.get("raag") and heading["raag"].get("key") is None:
@@ -331,14 +390,12 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
     n = 0
     targets: list[tuple[str, int, list[int]]] = []
     for p in sorted(set(span["pages"])):
-        boxes = [r["bbox"] for pg, r in span["shabad"] if pg == p]
+        # everything the linker put in the span on this page -- the shabad, the
+        # heading, the grids, a taan, a tihai, a note, a notation set as text --
+        # and the grid extents the reader measured from the ink
+        boxes = [span["extent"][p]] if span.get("extent", {}).get(p) else []
+        boxes += [r["bbox"] for pg, r in span["shabad"] if pg == p]
         boxes += [r["bbox"] for sec in span["sections"] for pg, r in sec["grids"] + sec["markers"] if pg == p]
-        boxes += [sec["label"]["bbox"] for sec in span["sections"] if sec.get("label") and sec["page"] == p]
-        boxes += [r["bbox"] for pg, r in span["notes"] if pg == p]
-        if span["heading"] and span["heading_page"] == p:
-            boxes.append(span["heading"]["bbox"])
-        if span["ref"] and any(pg == p for pg, _ in span["shabad"] + [(span["heading_page"], None)]):
-            boxes.append(span["ref"]["bbox"])
         boxes += [ext for (si_, pg), ext in extents.items() if pg == p]
         if not boxes:
             continue
@@ -394,6 +451,8 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
                                  "markers": [{"page": p, "bbox": r["bbox"], "marks": r["parsed"]["marks"]} for p, r in s["markers"]]}
                                 for s in span["sections"]],
                    "notes": [r["text"] for _, r in span["notes"]],
+                   "text": [r["text"] for _, r in span.get("text", [])],
+                   "extent": {str(p): b for p, b in (span.get("extent") or {}).items()},
                    "shabad_at_number": shabad_at_number([r["text"] for _, r in span["notes"]])},
         "images": images,
         "source": {"book_key": book["key"], "author": book["author"], "author_key": book["author_key"],
@@ -442,7 +501,8 @@ def main():
             "part": pages_meta.get("part"), "engines": []}
 
     layouts = layouts_for(book_dir, pages, style, args.force)
-    spans = link_pages(layouts, style)
+    dropped: list[dict] = []
+    spans = link_pages(layouts, style, dropped)
     body_h_of = {lay["page"]: lay.get("body_h") for lay in layouts}
     engine = None
     if not args.no_grid:
@@ -473,6 +533,15 @@ def main():
         rec, images = span_record(span, book, style, con, seq_by_page[page], book_dir, images_dir, page_files,
                                   args.no_grid, engine, body_h_of)
         errs = validate(rec)
+        if errs and rec["sections"] and all(e["path"].startswith("sections") for e in errs):
+            # the grid reading is wrong somewhere; the notation (its images, its shabad) stands without it
+            problems.append({"notation_id": rec["notation_id"], "errors": errs, "kept": "without the grid"})
+            rec["sections"] = []
+            if rec["kind"] == "notation":
+                rec["kind"] = "partial"
+            rec["flags"] = sorted(set(rec["flags"]) | {"partial-grid"})
+            rec["source"]["content_hash"] = notation.content_hash(rec)
+            errs = validate(rec)
         if errs:
             problems.append({"notation_id": rec["notation_id"], "errors": errs})
             continue
@@ -501,6 +570,7 @@ def main():
                   fh, ensure_ascii=False, indent=1)
     report = {"book": args.book, "pages": len(pages), "spans": len(spans), "notations": len(records), "kinds": kinds,
               "resolved": meta["resolved"], "problems": problems,
+              "dropped": dropped, "dropped_pages": sorted({p for d in dropped for p in d["pages"]}),
               "flags": _count([f for r in records for f in r["flags"]]),
               "raags_used": _count([((r.get("heading") or {}).get("raag") or {}).get("key") for r in records]),
               "taals": _count([((r.get("heading") or {}).get("taal") or {}).get("key") for r in records]),
@@ -512,9 +582,9 @@ def main():
     report_path = os.path.join(ROOT, "data", "raw", "notation-report-%s.json" % args.book)
     with open(report_path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=2)
-    print("%d pages -> %d spans -> %d records (%s), %d with a shabad; %d refused by the validator"
+    print("%d pages -> %d spans -> %d records (%s), %d with a shabad; %d refused by the validator; %d part(s) without a shabad dropped"
           % (len(pages), len(spans), len(records), ", ".join("%s %d" % kv for kv in kinds.items()),
-             meta["resolved"], len(problems)))
+             meta["resolved"], len(problems), len(dropped)))
     for p in problems[:5]:
         print("  refused %s: %s" % (p["notation_id"], "; ".join("%s at %s" % (e["code"], e["path"]) for e in p["errors"][:3])))
     print("  -> %s  and  %s" % (out_dir, report_path))

@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import re
 
+from lib.notation import DIVS
 from lib.notation_text import clean_bol, is_marker, swara_token
 from lib.notation_vocab import taal_from_markers, taal_info
 from lib.ocr_grid import components, erase
@@ -851,10 +852,17 @@ def read_region(ink, page_img, bbox: list[int], style: dict, taal_key: str | Non
                                         kan["o"] = int(kread[0]["octave_hint"])
                                     notes[0]["kan"] = kan
                                 break
-                        beat["notes"] = notes
                         total = sum(n_.get("len", 1) for n_ in notes)
-                        if total > 1:
-                            beat["div"] = total
+                        if total in DIVS:
+                            beat["notes"] = notes
+                            if total > 1:
+                                beat["div"] = total
+                        else:
+                            # five, ten, eleven letters in one cell: a row Tesseract ran together, unread
+                            beat["notes"] = None
+                            beat["raw"] = " ".join(raws)
+                            beat["c"] = round(min(conf, 0.3), 3)
+                            kinds.add("unknown")
                         if "unknown" in kinds:
                             beat["raw"] = " ".join(raws)
                             if "unread-cell" not in flags:
