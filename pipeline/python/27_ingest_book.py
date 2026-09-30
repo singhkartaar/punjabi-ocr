@@ -16,6 +16,11 @@ language, its key under data/ocr/ and its work name, and runs, per book:
   gt         23_ocr_gt.py          only with --gt: sample lines to verify, then STOP -- a person reads the crops
   eval       24_ocr_eval.py        only when gt/lines.jsonl exists: measures each engine so the merge can weight it
   merge      22_ocr_merge.py       corpus match + vote + lexicon + correction -> merged/
+and, for a work whose manifest says kind: notation (a keertan notation book), instead of ingest..db-en:
+  notation      29_notation_parse.py     layout, shabad, crops -> data/notations/<book>/
+  notation-gt   30_notation_gt.py --mid  only with --gt: the mid-book review window, then STOP
+  notation-eval 31_notation_eval.py      only when gt/notation-gold.jsonl exists: fields against the gold
+  notation-db   32_build_notations_db.py -> artifacts/notations.sqlite
 and then, for the folder:
   ingest     12_ingest_writings.py paragraphs -> data/writings/<work>.jsonl
   cite       13_resolve_citations.py   skipped, with a message, when there is no scripture DB
@@ -37,10 +42,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib.paths import CORPUS_DB, OCR_DIR, ROOT
+from lib.notation import mid_window
 from lib.writings_manifest import list_sources, load_manifest, parse_source
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-STEPS = ["pages", "ocr", "gt", "eval", "merge", "ingest", "cite", "embed", "db", "translate", "embed-en", "db-en"]
+STEPS = ["pages", "ocr", "gt", "eval", "merge", "notation", "notation-gt", "notation-eval", "notation-db",
+         "ingest", "cite", "embed", "db", "translate", "embed-en", "db-en"]
 
 # 21_ocr_run.py arguments for each engine name the driver knows; the Tesseract
 # variants are what the Punjabi bake-off found clearing the 90% bar
@@ -49,17 +56,36 @@ ENGINE_ARGS = {
     "tesseract": ["--engine", "tesseract"],
     "tesseract-pan": ["--engine", "tesseract", "--tess-lang", "pan"],
     "tesseract-gurmukhi": ["--engine", "tesseract", "--tess-lang", "script/Gurmukhi"],
+    # psm 4 (one column of variable-sized text) keeps the sparse rows of a
+    # notation grid that psm 3's layout analysis drops; a notation book runs both
+    "tesseract-pan-psm4": ["--engine", "tesseract", "--tess-lang", "pan", "--psm", "4"],
     "tesseract-hin": ["--engine", "tesseract", "--tess-lang", "hin"],
     "pdftext": ["--engine", "pdftext"],
     "surya": ["--engine", "surya"],
     "dotsocr": ["--engine", "dotsocr"],
     "indicocr": ["--engine", "indicocr"],
 }
-DEFAULT_ENGINES = {"pa": ["tesseract-pan", "tesseract-gurmukhi"], "en": ["tesseract"], "hi": ["tesseract"]}
+DEFAULT_ENGINES = {"pa": ["tesseract-pan", "tesseract-gurmukhi"], "en": ["tesseract"], "hi": ["tesseract"],
+                   "pa-notation": ["tesseract-pan", "tesseract-pan-psm4", "tesseract-gurmukhi"]}
+# The review window of a notation book (docs/notations.md): pages from about
+# 45% of the book, five to seven of them, covering at least two shabads.
+NOTATION_GT_PAGES = 7
 
 
 def script(name: str) -> str:
     return os.path.join(HERE, name)
+
+
+def pdf_pages(path: str) -> int:
+    """The page count of a PDF, 0 when it cannot be read (the window then covers the whole book)."""
+    if not path or not os.path.exists(path):
+        return 0
+    try:
+        import fitz
+        with fitz.open(path) as doc:
+            return doc.page_count
+    except Exception:
+        return 0
 
 
 def has_rows(path: str) -> bool:
@@ -87,7 +113,47 @@ def plan(src: str, metas: list[dict], *, engines: list[str] | None = None, gpu_e
     message printed in place of a command (a skipped step says why).
     """
     out: list[tuple[str, list[str] | str]] = []
-    ocr_books = [m for m in metas if (m.get("reader") or "ocr") == "ocr"]
+    ocr_books = [m for m in metas if (m.get("reader") or "ocr") == "ocr" and m.get("kind") != "notation"]
+    notation_books = [m for m in metas if m.get("kind") == "notation"]
+    for m in notation_books:
+        book, lang = m["book"], m.get("language", "pa")
+        window = pages
+        if gt and not window:
+            n = pdf_pages(os.path.join(src, m.get("file") or ""))
+            if n:
+                a, b = mid_window(n, NOTATION_GT_PAGES)
+                window = "%d-%d" % (a, b)
+        page_args = ["--pages", window] if window else []
+        out.append(("pages", [script("20_ocr_pages.py"), "--src", src, "--book", book, "--out", ocr_dir] + page_args
+                    + (["--bleed"] if m.get("bleed") else [])))
+        names = list(engines or DEFAULT_ENGINES.get(lang + "-notation") or DEFAULT_ENGINES.get(lang, ["tesseract"]))
+        for name in names:
+            if name not in ENGINE_ARGS:
+                sys.exit("unknown engine %r; one of %s" % (name, ", ".join(sorted(ENGINE_ARGS))))
+            out.append(("ocr", [script("21_ocr_run.py"), "--book", book, "--lang", lang, "--out", ocr_dir]
+                        + ENGINE_ARGS[name] + page_args))
+        out.append(("merge", [script("22_ocr_merge.py"), "--book", book, "--out", ocr_dir] + page_args))
+        out.append(("notation", [script("29_notation_parse.py"), "--book", book] + page_args))
+        if gt:
+            out.append(("notation-gt", [script("30_notation_gt.py"), "--book", book, "--mid"]))
+            continue
+        gold = os.path.join(ocr_dir, book, "gt", "notation-gold.jsonl")
+        if os.path.exists(gold):
+            out.append(("notation-eval", [script("31_notation_eval.py"), "--book", book]))
+        else:
+            out.append(("notation-eval", "skip: no %s; run with --gt, review gt/notation-review.html and promote "
+                                         "the gold before the whole book is built" % gold))
+    if notation_books and gt:
+        out.append(("notation-gt", "STOP: for each book, open data/ocr/<book>/gt/notation-review.html, judge every "
+                                   "notation against its crops, download the candidates, then 30_notation_gt.py "
+                                   "--book <book> --promote and 31_notation_eval.py --book <book>"))
+        if not ocr_books:
+            return out
+    elif notation_books:
+        out.append(("notation-db", [script("32_build_notations_db.py")]
+                    + (["--gurbani", corpus_db] if has_rows(corpus_db) else [])))
+    if not ocr_books:
+        return out
     for m in ocr_books:
         book, lang = m["book"], m.get("language", "en")
         page_args = ["--pages", pages] if pages else []

@@ -13,6 +13,7 @@ the byte. Regenerate the expectations from this side only:
 import json
 import os
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -317,6 +318,402 @@ def write_expected():
     with open(expected_path("teentaal-sthai", "hash.txt"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(content_hash(fixture("teentaal-sthai")) + "\n")
 
+
+
+
+# ---- the page reader: text, layout, resolution ---------------------------------
+
+from lib.notation_layout import classify_line, link_pages, page_layout  # noqa: E402
+from lib.notation_resolve import resolve_shabad  # noqa: E402
+from lib.notation_text import (bol_text, clean_bol, is_heading_like, parse_heading, parse_ref, swara_token,  # noqa: E402
+                               token_class)
+
+
+def _line(n, text, y, kind="commentary", bold=False, matches=None, x0=200, x1=1500, h=60):
+    rec = {"n": n, "text": text, "bbox": [x0, y, x1, y + h], "kind": kind, "bold": bold, "zone": "body"}
+    if matches:
+        rec["matches"] = matches
+    return rec
+
+
+class TextTests(unittest.TestCase):
+    def test_references_in_their_printed_forms(self):
+        cases = {
+            "(ਗਉੜੀ ਸੁਖਮਨੀ ਮ: ੫, ਪੰਨਾ ੨੬੯)": (269, 269, "G", 5),
+            "(ਰਾਗੁ ਆਸਾ, ਸ੍ਰੀ ਕਬੀਰ ਜੀ, ਪੰਨਾ ੪੮੪)": (484, 484, "G", None),
+            "ਪੰਨਾ ੯੫੯-੬੦": (959, 960, "G", None),
+            "(SGGS p. 1208)": (1208, 1208, "G", None),
+            "(ਦਸਮ ਗ੍ਰੰਥ, ਪੰਨਾ ੧੩)": (13, 13, "D", None),
+            "(ਭਾਈ ਗੁਰਦਾਸ ਜੀ, ਵਾਰ ੧)": (None, None, "B", None),
+        }
+        for text, (a, b, src, mahala) in cases.items():
+            ref = parse_ref(text)
+            self.assertIsNotNone(ref, text)
+            self.assertEqual((ref["ang_from"], ref["ang_to"], ref["source"], ref["mahala"]), (a, b, src, mahala), text)
+
+    def test_a_footnote_number_and_a_patshahi_are_not_angs(self):
+        self.assertIsNone(parse_ref("ਗੁਰੂ ਜੀ ਨੇ ਕਿਹਾ (੧)"))
+        ref = parse_ref("(ਪਾ: ੧੦, ਪੰਨਾ ੧੩)")
+        self.assertEqual((ref["ang_from"], ref["mahala"]), (13, 10))
+
+    def test_headings_give_number_raag_taal_and_laya(self):
+        h = parse_heading("੨੦. ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਦਾਦਰਾ (ਮੱਧ੍ਯ ਲਯ)")
+        self.assertEqual((h["number"], h["raag"]["key"], h["taal"]["key"], h["taal"]["matras"], h["laya"]),
+                         (20, "bhairavi", "dadra", 6, "madh"))
+        h = parse_heading("੨੩. ਰਾਗ ਭੈਰਵੀ, ਝਪਤਾਲ (ਲਗ-ਭਗ ਬਿਲੰਬਿਤ ਲਯ)")
+        self.assertEqual((h["taal"]["key"], h["laya"]), ("jhaptaal", "vilambit"))
+        h = parse_heading("ਰਾਗ ਬਸੰਤ (ਹਿੰਡੋਲ), ਤੀਨਤਾਲ")
+        self.assertEqual((h["raag"]["key"], h["raag"]["parent_key"], h["taal"]["key"]), ("hindol", "basant", "teentaal"))
+        self.assertTrue(is_heading_like("ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਕਹਿਰਵਾ"))
+        self.assertFalse(is_heading_like("ਬਿਰਥੀ ਸਾਕਤ ਕੀ ਆਰਜਾ ॥"))
+
+    def test_token_classes_by_row_role(self):
+        self.assertEqual(swara_token("ਸ")["swar"], "S")
+        self.assertEqual(swara_token("ਨੀ")["swar"], "N")
+        self.assertEqual((swara_token("ਧੁ")["swar"], swara_token("ਧੁ").get("octave_hint")), ("D", -1))
+        self.assertEqual((swara_token("ਸੰ")["swar"], swara_token("ਸੰ").get("octave_hint")), ("S", 1))
+        # × is a rest in a swar row and the sam in a marker row; ੩ a tali there and a matra number in a
+        # matra row: the class says what the glyph can be, the row's role decides (notation_layout)
+        self.assertEqual([token_class(t) for t in "ਸ ਰੇ ਗ — × ੦ ੩ | ਮੇਰੀ".split()],
+                         ["swara", "swara", "swara", "held", "rest", "marker", "marker", "bar", "gurmukhi"])
+        self.assertEqual(clean_bol("ਮੇਰੀऽऽ"), ("ਮੇਰੀ", 2))
+        self.assertEqual(clean_bol("S"), (None, 1))
+        # the syllables of one word sit in separate cells; the corpus matcher folds the spaces
+        self.assertEqual(bol_text([{"bol": {"g": "ਮੇ", "h": 1}}, {"bol": {"g": "ਰੀ", "h": 0}}, {"bol": {"g": "", "h": 1}}]), "ਮੇ ਰੀ")
+
+
+class LayoutTests(unittest.TestCase):
+    def test_lines_take_their_roles(self):
+        self.assertEqual(classify_line(_line(1, "੨੦. ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਦਾਦਰਾ (ਮੱਧ੍ਯ ਲਯ)", 200, bold=True)), "heading")
+        self.assertEqual(classify_line(_line(2, "ਅਸਥਾਈ", 300)), "section")
+        self.assertEqual(classify_line(_line(3, "× ੦ ੨ ੩", 400)), "marker")
+        self.assertEqual(classify_line(_line(4, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 500)), "grid")
+        self.assertEqual(classify_line(_line(5, "ਬਿਰਥੀ ਸਾਕਤ ਕੀ ਆਰਜਾ ॥", 600, kind="gurbani")), "gurbani")
+        # a bol row Tesseract read as a verse: bars and held marks make it grid
+        self.assertEqual(classify_line(_line(6, "ਤਾ $।ਮ ਨ।ਮੇਂ ਹਿ।ਆ $।5 5", 700, kind="gurbani-unmatched", bold=True)), "grid")
+        self.assertEqual(classify_line(_line(7, "ਨੋਟ :--ਇਹ ਸ਼ਬਦ ਨੰ: ੩ ਤੇ ਲਿਖਿਆ ਹੈ ।", 800)), "note")
+        self.assertEqual(classify_line(_line(8, "੧੭੦", 2600, x0=800, x1=880)), "pageno")
+
+    def _page(self, page, lines):
+        style = merge_style(None)
+        return page_layout(lines, 1760, 2650, style, page)
+
+    def test_a_page_becomes_regions_and_pages_link_into_spans(self):
+        m = [{"shabad_id": 913, "line_id": 1000 + i, "score": 0.95, "source": "G"} for i in range(3)]
+        p1 = self._page(167, [
+            _line(1, "੧੮. ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਦਾਦਰਾ (ਮੱਧਅ ਲਯ)", 200, bold=True),
+            _line(2, "ਬਿਰਥੀ ਸਾਕਤ ਕੀ ਆਰਜਾ ॥", 300, kind="gurbani", matches=[m[0]]),
+            _line(3, "ਸਾਚ ਬਿਨਾ ਕਹ ਹੋਵਤ ਸੂਚਾ ॥", 380, kind="gurbani", matches=[m[1]]),
+            _line(4, "(ਗਉੜੀ ਸੁਖਮਨੀ ਮ: ੫, ਪੰਨਾ ੨੬੯)", 460),
+        ])
+        p2 = self._page(168, [
+            _line(1, "× ੦", 200),
+            _line(2, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 280),
+            _line(3, "ਬਿਰ ਥੀ | ਸਾ ऽ | ਕਤ ਕੀ | ਆ ਰਜਾ", 360),
+            _line(4, "ਅੰਤਰਾ", 460),
+            _line(5, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 540),
+            _line(6, "ਸਾ ਚ | ਬਿ ਨਾ | ਕਹ ऽ | ਹੋ ਵਤ", 620),
+            _line(7, "ਨੋਟ :--ਸ਼ਬਦ ਦੀਆਂ ਬਾਕੀ ਤੁਕਾਂ ਅੰਤਰੇ ਤੇ ਲਾਓ ।", 720),
+        ])
+        roles1 = [r["role"] for r in p1["regions"]]
+        self.assertEqual(roles1, ["heading", "shabad", "ref"])
+        self.assertEqual([r["role"] for r in p2["regions"]], ["marker", "grid", "section", "grid", "note"])
+        spans = link_pages([p1, p2], merge_style(None))
+        self.assertEqual(len(spans), 1)
+        s = spans[0]
+        self.assertEqual(s["pages"], [167, 168])
+        self.assertEqual(s["heading"]["parsed"]["number"], 18)
+        self.assertEqual(s["ref"]["parsed"]["ang_from"], 269)
+        self.assertEqual([(sec["kind"], sec["n"], len(sec["grids"]), len(sec["markers"])) for sec in s["sections"]],
+                         [("sthai", 1, 1, 1), ("antara", None, 1, 0)])
+        self.assertTrue(s["sections"][0].get("assumed"))       # the sthai had no printed label
+        self.assertEqual(len(s["notes"]), 1)
+        # a heading opens the next span even when the previous one has no grid yet
+        p3 = self._page(169, [_line(1, "੧੯. ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਦਾਦਰਾ", 200, bold=True),
+                              _line(2, "ਮਨ ਕਹਾ ਲੁਭਾਈਐ ਆਨ ਕਉ ॥", 300, kind="gurbani")])
+        self.assertEqual(len(link_pages([p1, p2, p3], merge_style(None))), 2)
+
+
+class ResolveTests(unittest.TestCase):
+    def _corpus(self):
+        import sqlite3
+        con = sqlite3.connect(":memory:")
+        con.executescript("""
+          CREATE TABLE shabads (shabad_id INTEGER PRIMARY KEY, writer TEXT, raag TEXT, ang_start INTEGER);
+          CREATE TABLE lines (line_id INTEGER PRIMARY KEY, shabad_id INTEGER, gurmukhi_uni TEXT, kind TEXT, position_in_shabad INTEGER);
+          INSERT INTO shabads VALUES (913, 'Guru Arjan Dev Ji', 'Raag Gauri', 269);
+          INSERT INTO lines VALUES (1000, 913, 'ਬਿਰਥੀ ਸਾਕਤ ਕੀ ਆਰਜਾ ॥', 'line', 1);
+          INSERT INTO lines VALUES (1001, 913, 'ਸਾਚ ਬਿਨਾ ਕਹ ਹੋਵਤ ਸੂਚਾ ॥', 'line', 2);
+          INSERT INTO shabads VALUES (4284, 'Guru Arjan Dev Ji', 'Raag Sarang', 1208);
+          INSERT INTO lines VALUES (2000, 4284, 'ਮਨ ਕਹਾ ਲੁਭਾਈਐ ਆਨ ਕਉ ॥', 'rahao', 1);
+        """)
+        return con
+
+    def test_text_votes_and_the_reference_agree(self):
+        con = self._corpus()
+        lines = [_line(2, "ਬਿਰਥੀ ਸਾਕਤ ਕੀ ਆਰਜਾ ॥", 300, kind="gurbani",
+                       matches=[{"shabad_id": 913, "line_id": 1000, "score": 0.95, "source": "G"}]),
+                 _line(3, "ਸਾਚ ਬਿਨਾ ਕਹ ਹੋਵਤ ਸੂਚਾ ॥", 380, kind="gurbani",
+                       matches=[{"shabad_id": 913, "line_id": 1001, "score": 0.9, "source": "G"}])]
+        got = resolve_shabad(lines, parse_ref("(ਗਉੜੀ ਸੁਖਮਨੀ ਮ: ੫, ਪੰਨਾ ੨੬੯)"), con)
+        sh = got["shabad"]
+        self.assertEqual((sh["shabad_id"], sh["ang"], sh["raag_key"], sh["method"]), (913, 269, "gauri", "stream+ref"))
+        self.assertGreaterEqual(sh["confidence"], 0.8)
+        self.assertEqual(sh["line_ids"], [1000, 1001])
+        self.assertEqual(got["flags"], [])
+
+    def test_a_reference_that_disagrees_is_flagged_and_nothing_matched_is_unresolved(self):
+        con = self._corpus()
+        lines = [_line(2, "ਬਿਰਥੀ ਸਾਕਤ ਕੀ ਆਰਜਾ ॥", 300, kind="gurbani",
+                       matches=[{"shabad_id": 913, "line_id": 1000, "score": 0.95, "source": "G"}]),
+                 _line(3, "ਸਾਚ ਬਿਨਾ ਕਹ ਹੋਵਤ ਸੂਚਾ ॥", 380, kind="gurbani",
+                       matches=[{"shabad_id": 913, "line_id": 1001, "score": 0.9, "source": "G"}])]
+        got = resolve_shabad(lines, parse_ref("(ਪੰਨਾ ੧੨੦੮)"), con)
+        self.assertIn("ref-conflict", got["flags"])
+        self.assertEqual(got["shabad"]["shabad_id"], 913)     # the text still wins; the flag routes it to review
+        none = resolve_shabad([_line(2, "ਕੋਈ ਕਬਿੱਤ ਜੋ ਗ੍ਰੰਥ ਵਿਚ ਨਹੀਂ", 300)], None, con)
+        self.assertIsNone(none["shabad"]["shabad_id"])
+        self.assertIn("unresolved-shabad", none["flags"])
+        self.assertEqual(none["kind_hint"], "non-gurbani")
+        # a Bhai Gurdas reference names the source even when the corpus has no such text
+        bg = resolve_shabad([_line(2, "ਕਬਿੱਤ", 300)], parse_ref("(ਭਾਈ ਗੁਰਦਾਸ ਜੀ, ਕਬਿੱਤ ੧੨)"), con)
+        self.assertEqual(bg["shabad"]["source"], "B")
+
+
+# ---- the grid reader's pure parts -------------------------------------------------
+
+from lib.notation_grid import (cells_from_components, fit_matras, group_cells, marks_from_components,  # noqa: E402
+                               segments_from_bars)
+
+
+def _comp(x0, y0, x1, y1):
+    return {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "w": x1 - x0, "h": y1 - y0, "area": (x1 - x0) * (y1 - y0),
+            "cx": (x0 + x1) / 2.0, "cy": (y0 + y1) / 2.0}
+
+
+class GridTests(unittest.TestCase):
+    def test_components_cluster_into_cells_and_a_dot_joins_its_letter(self):
+        comps = [_comp(100, 50, 130, 90), _comp(112, 38, 118, 44),        # a letter with a dot above
+                 _comp(180, 50, 212, 90),                                # the next letter
+                 _comp(190, 96, 196, 102),                               # its dot below
+                 _comp(260, 68, 300, 74)]                                # a dash
+        cells = cells_from_components(comps, gap=12)
+        self.assertEqual(len(cells), 3)
+        self.assertEqual([len(c["comps"]) for c in cells], [2, 2, 1])
+        m0, m1, m2 = (marks_from_components(c) for c in cells)
+        self.assertEqual((m0["octave"], m1["octave"], m2["dash"]), (1, -1, True))
+        self.assertFalse(m0["komal"] or m0["tivra"])
+
+    def test_an_underline_is_komal_and_a_stroke_above_is_tivra_but_a_vowel_sign_is_neither(self):
+        komal = cells_from_components([_comp(100, 50, 130, 90), _comp(98, 94, 132, 98)], 12)[0]
+        self.assertTrue(marks_from_components(komal)["komal"])
+        tivra = cells_from_components([_comp(100, 50, 130, 90), _comp(113, 30, 117, 46)], 12)[0]
+        self.assertTrue(marks_from_components(tivra)["tivra"])
+        # the hook of ੇ above a ਰ: wider than tall, not a dot, not a stroke
+        hook = cells_from_components([_comp(100, 50, 130, 90), _comp(104, 36, 128, 46)], 12)[0]
+        m = marks_from_components(hook)
+        self.assertEqual((m["octave"], m["tivra"], m["komal"]), (0, False, False))
+        # ੁ below: a curve, wider than an underline is thin
+        aunkar = cells_from_components([_comp(100, 50, 130, 90), _comp(108, 92, 124, 104)], 12)[0]
+        m = marks_from_components(aunkar)
+        self.assertEqual((m["octave"], m["komal"]), (0, False))
+
+    def test_the_first_vibhag_of_a_row_is_found_from_the_cell_counts(self):
+        self.assertEqual(fit_matras([4, 4, 4, 4], [4, 4, 4, 4]), (0, 1))
+        self.assertEqual(fit_matras([3, 3], [3, 3]), (0, 1))
+        self.assertEqual(fit_matras([2, 3, 2, 3], [2, 3, 2, 3]), (0, 1))
+        # a mukhda: one cell before the sam, then whole vibhags of dhamar
+        self.assertEqual(fit_matras([1, 2, 3, 4], [5, 2, 3, 4]), (0, 5))
+        self.assertEqual(fit_matras([4], []), (0, 1))
+
+    def test_cells_become_beats_by_merging_the_closest_or_leaving_a_gap(self):
+        cells = [{"x0": 0, "x1": 20, "cx": 10}, {"x0": 24, "x1": 44, "cx": 34}, {"x0": 90, "x1": 110, "cx": 100},
+                 {"x0": 150, "x1": 170, "cx": 160}]
+        groups = group_cells(cells, 3, pitch=60)
+        self.assertEqual([len(g) for g in groups], [2, 1, 1])
+        groups = group_cells(cells[:3], 4, pitch=60)
+        self.assertEqual([len(g) for g in groups], [1, 1, 0, 1])       # the widest gap takes the missing beat
+        self.assertEqual(group_cells(cells, 4, pitch=60), [[c] for c in cells])
+
+    def test_bars_cut_a_row_into_segments(self):
+        self.assertEqual(segments_from_bars([300, 600, 900], 100, 1200, 40), [(100, 300), (300, 600), (600, 900), (900, 1200)])
+        self.assertEqual(segments_from_bars([110, 600], 100, 1200, 40), [(110, 600), (600, 1200)])
+
+
+# ---- the review, the evaluation and the database ---------------------------------
+
+def _script(name):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(name.replace(".py", "").replace("-", "_"), os.path.join(HERE, name))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _record(nid="test-book:0170:1", shabad_id=1248, sections=True):
+    rec = json.loads(json.dumps(fixture("teentaal-sthai")))
+    rec["notation_id"], rec["book_key"], rec["page"], rec["seq"], rec["pages"] = nid, "test-book", 170, 1, [170]
+    rec["shabad"]["shabad_id"] = shabad_id
+    if shabad_id is None:
+        rec["shabad"].update({"method": "none", "confidence": 0.0, "line_ids": []})
+        rec["flags"] = sorted(set(rec.get("flags", [])) | {"unresolved-shabad"})
+    # the fixture's one unreadable cell is a test of the contract, not of the parser's reading
+    for sec in rec["sections"]:
+        for line in sec["lines"]:
+            for beat in line["beats"]:
+                if beat.get("notes") is None and not beat.get("ext") and not beat.get("rest"):
+                    beat["notes"] = [{"s": "S"}]
+                    beat.pop("raw", None); beat.pop("c", None)
+    rec["shabad"]["ang"] = 320
+    rec["shabad"]["first_line"] = "ਓਥੈ ਅੰਮ੍ਰਿਤੁ ਵੰਡੀਐ ਸੁਖੀਆ ਹਰਿ ਕਰਣੇ ॥"
+    rec["source"]["book_key"], rec["source"]["author_key"] = "test-book", "test-author"
+    rec["images"] = [{"n": 1, "file": "images/test-book-0170-1-1.png", "role": "grid", "page": 170, "bbox": [10, 10, 500, 300],
+                      "w": 490, "h": 290, "bytes": 1234, "sha256": "ab" * 32, "thumb": None}]
+    if not sections:
+        rec["sections"] = []
+        rec["kind"] = "partial"
+        rec["flags"] = sorted(set(rec.get("flags", [])) | {"partial-grid"})
+    rec["source"]["content_hash"] = content_hash(rec)
+    return rec
+
+
+class ReviewTests(unittest.TestCase):
+    def test_candidates_carry_the_judged_fields_and_gold_settles_the_truth(self):
+        gt = _script("30_notation_gt.py")
+        rec = _record()
+        c = gt.candidate(rec)
+        self.assertEqual(c["shabad"]["value"], 1248)
+        self.assertEqual(c["raag_used"]["value"], rec["heading"]["raag"]["key"])
+        self.assertEqual(c["structure"]["value"], "sthai,antara")
+        self.assertEqual(gt.check_candidates([c]), [])            # unjudged, unverified: nothing to complain about
+        c["verified"] = True
+        errs = gt.check_candidates([c])
+        self.assertTrue(errs and all("not judged" in e for e in errs))
+        for f in gt.FIELDS:
+            c[f]["ok"] = True
+        c["taal"]["ok"], c["taal"]["correct"] = False, "no-such-taal"
+        self.assertTrue(any("not a vocabulary key" in e for e in gt.check_candidates([c])))
+        c["taal"]["correct"] = "tilwada"                        # sixteen matras too, so the lines still fit
+        self.assertEqual(gt.check_candidates([c]), [])
+        gold = gt.gold_of(c)
+        self.assertEqual((gold["shabad"]["truth"], gold["taal"]["truth"]), (1248, "tilwada"))
+        self.assertNotIn("draft", gold)
+        # applied to the record: verified, and the corrected taal
+        notation.apply_gold(rec, gold)
+        self.assertTrue(rec["verified"])
+        self.assertEqual(rec["heading"]["taal"]["key"], "tilwada")
+        self.assertEqual(validate(rec), [])
+
+    def test_the_review_page_is_written_with_every_notation_and_its_crops(self):
+        gt = _script("30_notation_gt.py")
+        rec = _record()
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "review.html")
+            gt.review_page("test-book", {"title": "Test Book"}, [rec], [gt.candidate(rec)], path, "../notations", (165, 176), None)
+            page = open(path, encoding="utf-8").read()
+        self.assertIn("test-book:0170:1", page)
+        self.assertIn("../notations/images/test-book-0170-1-1.png", page)
+        self.assertIn('class="ntn"', page)                          # the parsed grid, rendered
+        self.assertIn("download candidates.jsonl", page)
+
+    def test_the_window_covers_two_resolved_notations(self):
+        gt = _script("30_notation_gt.py")
+        recs = [_record("b:%04d:1" % p, shabad_id=(100 + p if p % 2 == 0 else None), sections=False) for p in range(160, 181)]
+        for r in recs:
+            r["pages"] = [r["page"]]
+        a, b, chosen, warn = gt.choose_window(recs, 373)
+        self.assertEqual(a, 168)
+        self.assertGreaterEqual(sum(1 for r in chosen if gt.resolved(r)), 2)
+        self.assertLessEqual(b - a + 1, 7)
+        self.assertIsNone(warn)
+        # nothing resolved: the window stretches over the parsed pages and says what to do
+        for r in recs:
+            r["shabad"]["shabad_id"] = None
+        a, b, chosen, warn = gt.choose_window(recs, 373)
+        self.assertIn("only 0 resolved", warn)
+
+
+class EvalTests(unittest.TestCase):
+    def test_fields_are_scored_against_the_truth_and_a_false_link_is_counted(self):
+        ev = _script("31_notation_eval.py")
+        r1, r2, r3 = _record("b:0001:1", 11), _record("b:0002:1", 22), _record("b:0003:1", 33)
+        gold = [
+            {"notation_id": "b:0001:1", "status": "ok", "verified": True,
+             "shabad": {"truth": 11}, "raag_used": {"truth": r1["heading"]["raag"]["key"]}, "taal": {"truth": r1["heading"]["taal"]["key"]},
+             "laya": {"truth": r1["heading"]["taal"].get("laya")}, "structure": {"truth": "sthai,antara"}, "cells": []},
+            {"notation_id": "b:0002:1", "status": "ok", "verified": True,
+             "shabad": {"truth": 99}, "raag_used": {"truth": "bhairav"}, "taal": {"truth": r2["heading"]["taal"]["key"]},
+             "laya": {"truth": r2["heading"]["taal"].get("laya")}, "structure": {"truth": "sthai"},
+             "cells": [{"s": 0, "l": 0, "b": 0, "field": "notes", "value": "R"}]},
+            {"notation_id": "b:0003:1", "status": "skip", "verified": True},
+        ]
+        res = ev.evaluate([r1, r2, r3], gold)
+        self.assertEqual(res["n"], 2)
+        self.assertEqual((res["fields"]["shabad"]["correct"], res["fields"]["raag_used"]["correct"], res["fields"]["structure"]["correct"]), (1, 1, 1))
+        self.assertEqual(res["false_link"]["ids"], ["b:0002:1"])
+        self.assertEqual(res["cells"]["wrong_swara"], 1)
+        self.assertEqual(res["cells"]["beats"], 2 * len([b for s in r1["sections"] for l in s["lines"] for b in l["beats"]]))
+        passed, fails = ev.judge(res)
+        self.assertFalse(passed)
+        self.assertTrue(any(f.startswith("shabad") for f in fails))
+        # every field right: passes
+        gold[1].update({"shabad": {"truth": 22}, "raag_used": {"truth": r2["heading"]["raag"]["key"]},
+                        "structure": {"truth": "sthai,antara"}, "cells": []})
+        passed, fails = ev.judge(ev.evaluate([r1, r2], gold[:2]))
+        self.assertTrue(passed, fails)
+
+
+class DbTests(unittest.TestCase):
+    def test_the_database_has_the_pinned_columns_and_the_records(self):
+        import sqlite3
+        build = _script("32_build_notations_db.py")
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, "notations", "test-book")
+            os.makedirs(os.path.join(src, "images"))
+            recs = [_record("test-book:0170:1", 1248), _record("test-book:0171:1", 1248, sections=False), _record("test-book:0172:1", None)]
+            for r in recs:
+                r["page"] = int(r["notation_id"].split(":")[1])
+                r["pages"] = [r["page"]] if r["page"] != 171 else [170, 171]
+            notation.write_jsonl(os.path.join(src, "notations.jsonl"),
+                                 notation.meta_for({"book": "test-book", "author": "Test Author", "title": "Test Book", "part": 1,
+                                                    "style": merge_style(None)}, pages=3),
+                                 recs)
+            gurbani = os.path.join(d, "gurbani.sqlite")
+            con = sqlite3.connect(gurbani)
+            con.execute("CREATE TABLE shabads (shabad_id INTEGER PRIMARY KEY)")
+            con.execute("INSERT INTO shabads VALUES (1248)")
+            con.commit(); con.close()
+            out = os.path.join(d, "artifacts", "notations.sqlite")
+            # an unreviewed book is refused ...
+            with self.assertRaises(SystemExit):
+                build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, False, False, None)
+            # ... and built when told so
+            got = build.build(os.path.join(d, "notations"), out, None, gurbani, {"ab" * 32: "https://example.test/x.png"},
+                              True, True, False, "https://example.test/")
+            self.assertEqual((got["books"], got["notations"], got["resolved"], got["shabads"]), (1, 3, 2, 1))
+            con = sqlite3.connect(out)
+            with open(os.path.join(HERE, "lib", "notation_columns.json"), encoding="utf-8") as fh:
+                columns = json.load(fh)["tables"]
+            for t, cols in columns.items():
+                self.assertEqual([r[1] for r in con.execute("PRAGMA table_info(%s)" % t)], cols, t)
+            rows = con.execute("SELECT notation_id, shabad_id, kind, sections, beats, grid IS NULL, sargam_en IS NULL, image_count "
+                               "FROM notations ORDER BY ordinal").fetchall()
+            self.assertEqual(rows[0][:3], ("test-book:0170:1", 1248, "notation"))
+            self.assertGreater(rows[0][4], 0)
+            self.assertEqual((rows[0][5], rows[0][6]), (0, 0))
+            self.assertEqual((rows[1][2], rows[1][5]), ("partial", 1))
+            self.assertIsNone(rows[2][1])
+            self.assertEqual(con.execute("SELECT n FROM shabad_counts WHERE shabad_id=1248").fetchone()[0], 2)
+            self.assertEqual(con.execute("SELECT url FROM images LIMIT 1").fetchone()[0], "https://example.test/x.png")
+            self.assertEqual(con.execute("SELECT COUNT(*) FROM raags WHERE in_ggs=1 AND ggs_order IS NOT NULL").fetchone()[0], 31)
+            self.assertEqual(dict(con.execute("SELECT key, value FROM meta"))["notations"], "3")
+            con.close()
+            self.assertTrue(os.path.exists(os.path.join(d, "artifacts", "notations-images.json")))
+            # a shabad the corpus does not have refuses the build
+            recs[0]["shabad"]["shabad_id"] = 999999
+            notation.write_jsonl(os.path.join(src, "notations.jsonl"), notation.meta_for({"book": "test-book", "author": "A", "title": "T"}), recs)
+            with self.assertRaises(SystemExit):
+                build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, True, False, None)
 
 if __name__ == "__main__":
     if "--write-expected" in sys.argv:

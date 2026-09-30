@@ -54,6 +54,8 @@ survives only if it can be applied there.
 ```bash
 cd pipeline/python
 python -m unittest test_ocr test_writings test_notation
+# test_notation covers the keertan notation route (lib/notation*.py, scripts 29-32);
+# its renderer expectations are regenerated only with: python test_notation.py --write-expected
 python 27_ingest_book.py --src <a folder with a manifest.json> --dry-run
 ```
 

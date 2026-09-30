@@ -26,6 +26,10 @@ OCR_COSTS = os.path.join(OCR_DIR, "costs.jsonl")
 # elevation, so the models live under vendor/ (gitignored) and are passed to
 # Tesseract with --tessdata-dir; TESSDATA_PREFIX overrides.
 TESSDATA = os.environ.get("TESSDATA_PREFIX") or os.path.join(ROOT, "vendor", "tessdata")
+# Keertan notation books (29_notation_parse.py .. 32_build_notations_db.py):
+# one directory per book with notations.jsonl, images.json and the crops.
+# Gitignored whole; the crops are published as release assets.
+NOTATIONS_DIR = os.environ.get("NOTATIONS_DIR") or os.path.join(ROOT, "data", "notations")
 
 os.makedirs(ARTIFACTS, exist_ok=True)
 os.makedirs(VECTORS, exist_ok=True)

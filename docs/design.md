@@ -291,3 +291,29 @@ case:
 
 `gcloud auth application-default login` and `GCP_PROJECT` first. Every request
 is checked against the monthly cap and written to `data/ocr/costs.jsonl`.
+
+## Keertan notations
+
+A notation book is the same OCR up to the merge, and a different reading
+after it. The merge runs in notation mode (no footnote rule, no gutter
+split, no lexicon correction: a grid's rules and gaps and its all-OOV
+swara rows would trip each of them) and keeps the corpus matching of the
+shabad's lines, which is what names the shabad. `lib/notation_layout.py`
+classifies each merged line by its tokens and its ink -- heading, section
+label, marker row, grid row, shabad text, reference, note -- and strings
+consecutive pages into spans; `lib/notation_text.py` reads the headings
+and the eight printed forms of a reference; `lib/notation_resolve.py`
+weighs three signals for the shabad (text 0.5, reference 0.3, bol row 0.2)
+and flags disagreement instead of picking; `lib/ocr_grid.py` cuts 1-bit
+crops. The record is script-neutral (`lib/notation.schema.json`), rendered
+to Gurmukhi or English by `lib/notation_render.py`, whose JavaScript twin is
+pinned to the same bytes by the fixtures.
+
+The decisions: the scan is stored and shown as the authority, the parse
+beside it with a confidence; nothing is built from a book until a person
+has judged a mid-book window of it against the crops (`30_notation_gt.py
+--mid`, `31_notation_eval.py`), and `32_build_notations_db.py` refuses a
+book under the bars; glyph ambiguity (× is the sam in a marker row and a
+rest in a swar row) is resolved by a row's role, never by the glyph; and a
+number is an ang only when nothing says it is a mahala, a patshahi, a vaar,
+a pauri or a footnote.

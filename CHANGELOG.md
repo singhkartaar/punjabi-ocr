@@ -1,5 +1,27 @@
 # Changelog -- punjabi-ocr
 
+## 1.2.0
+
+Keertan notation books. A work declared `kind: notation` (a book of
+shabads set to raag and taal in Bhatkhande notation) takes its own route
+after the OCR merge: `29_notation_parse.py` reads each page's layout,
+names the shabad from the corpus and the printed reference, and cuts 1-bit
+crops of every grid; `30_notation_gt.py --mid` writes the mid-book review
+page; `31_notation_eval.py` measures the fields against the reviewer's gold;
+`32_build_notations_db.py` builds `artifacts/notations.sqlite`. The
+contract (`lib/notation.schema.json`, `lib/notation.py`), the vocabulary of
+raags, taals and symbols (`lib/notation_vocab.json`) and the renderer
+(`lib/notation_render.py`) ship with fixtures that pin them.
+
+- `27_ingest_book.py` plans the notation steps for such a work and, with
+  `--gt`, the review window (seven pages from the middle of the book).
+- `21_ocr_run.py` names a non-default page segmentation mode in the engine
+  key (`tesseract-pan-psm4`); `22_ocr_merge.py` has a notation mode;
+  `TesseractEngine.recognise_region` reads one region of a page.
+- The manifest gains `kind` and `style` (docs/manifest.md); pages.json
+  carries them and the work's title.
+- Hindi books move to 1.3.
+
 ## 1.1.3
 
 `reader: legacy-font` works here. A PDF typed in a pre-Unicode Gurmukhi font

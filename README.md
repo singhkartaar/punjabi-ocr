@@ -154,6 +154,18 @@ A deployment serves a corpus once its `CORPORA` table names the directory and
 the database, and `GET /api/writings/search?corpus=<key>&q=...` returns whole
 passages, the nearest in meaning, with the scripture each one quotes.
 
+## Keertan notation books
+
+A book that prints shabads set to music -- the Bhatkhande grid of swaras
+over the sung syllables, a heading with the raag and the taal -- is
+declared with `kind: notation` and takes its own route: the page layout,
+the shabad named from the corpus and the printed reference, the crops of
+every grid, and the grid read into a structured record with its confidence
+(`29_notation_parse.py` .. `32_build_notations_db.py`). Every book is
+reviewed on a mid-book window against its crops before it runs whole; the
+review page is written by `30_notation_gt.py --mid`. See `docs/runbook.md`
+§5a and `docs/output-format.md`.
+
 ## Paid services, if you choose
 
 Google Cloud Vision costs $1.50 per 1,000 pages and, on the clean scans this

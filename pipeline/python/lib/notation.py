@@ -36,12 +36,12 @@ SECTION_KINDS = ("sthai", "antara", "sanchari", "abhog", "alaap", "taan", "tihai
 LINE_KINDS = ("avartan", "free")
 DIVS = (1, 2, 3, 4, 6, 8)
 SOURCES = ("G", "D", "B", "K", "N")
-RESOLVE_METHODS = ("stream+ref+bol", "stream+ref", "stream+bol", "stream", "ref-window", "ref+bol", "bol", "manual", "none")
+RESOLVE_METHODS = ("stream+ref+bol", "stream+ref", "stream+bol", "stream", "ref-window", "ref+bol", "bol", "book-ref", "manual", "none")
 FLAGS = frozenset([
     "unresolved-shabad", "weak-shabad", "ref-conflict", "no-shabad-text", "no-section-label",
     "taal-mismatch", "taal-unknown", "raag-unknown", "style-contradiction", "continues-next-page",
     "continued-from-prev", "empty-beat", "unread-cell", "tick-on-non-ma", "diagonal-watermark",
-    "partial-grid", "unmatched-text", "taal-changes", "raag-differs",
+    "partial-grid", "unmatched-text", "taal-changes", "raag-differs", "shabad-by-book-ref",
 ])
 DEFAULT_STYLE = {"swar_row": "above", "shabad_position": "before", "matra_row": False,
                  "marker_row": "below", "table": "bars", "labels": False, "script": "gurmukhi"}
@@ -58,6 +58,23 @@ LINE_DEFAULTS = {"matra_from": 1, "continues": False}
 
 
 # ---- identifiers -----------------------------------------------------------
+
+def mid_window(n_pages: int, window: int = 5, at: float = 0.45) -> tuple[int, int]:
+    """
+    The review protocol's first window: `window` consecutive pages starting
+    at about 45% of the book (1-based, inclusive). The reviewer's run
+    extends it, a page at a time, until two resolved notations are covered.
+    """
+    n = max(1, int(n_pages))
+    start = max(1, min(n, int(round(n * at))))
+    end = min(n, start + max(1, window) - 1)
+    return start, end
+
+
+def notation_slug(s: str) -> str:
+    import re
+    return re.sub(r"[^a-z0-9]+", "-", (s or "").lower()).strip("-") or "unknown"
+
 
 def make_id(book_key: str, page: int, seq: int) -> str:
     """'gurmat-sangeet-sagar-1:0042:1' -- the book, the rendered page, the grid's order on it."""
@@ -206,8 +223,11 @@ def validate(rec: dict) -> list[dict]:
         err("shabad.unresolved", "shabad", "no shabad_id but method says it was resolved")
 
     sections = rec.get("sections")
-    if rec.get("kind") in ("notation", "partial") and (not isinstance(sections, list) or not sections):
+    # a partial record (the grid not yet read, or unreadable) may have no sections
+    if rec.get("kind") == "notation" and (not isinstance(sections, list) or not sections):
         err("sections.empty", "sections")
+    if rec.get("kind") == "partial" and not sections and "partial-grid" not in (rec.get("flags") or []):
+        err("sections.empty", "sections", "a partial record without sections must say partial-grid")
     seen: dict[tuple[str, int], int] = {}
     for si, sec in enumerate(sections or []):
         sp = "sections[%d]" % si
@@ -324,6 +344,61 @@ def _validate_note(note: dict, path: str, err, allow_len: bool) -> int:
 
 
 # ---- files -----------------------------------------------------------------
+
+def apply_gold(rec: dict, gold: dict | None) -> dict:
+    """
+    The reviewer's verdict on a record (30_notation_gt.py --promote): the
+    record is marked verified, and a field the reviewer corrected takes the
+    correction -- the shabad, the raag used, the taal, the laya. Cell
+    corrections are applied to the parsed grid where it has the cell. The
+    record is changed in place and returned; no gold, no change.
+    """
+    if not gold or gold.get("status") == "skip" or not gold.get("verified", True):
+        return rec
+    def truth(field):
+        j = gold.get(field) or {}
+        if "truth" in j:
+            return j["truth"]
+        return j.get("value") if j.get("ok") else (j.get("correct") or None)
+    sh = rec.setdefault("shabad", {})
+    t = truth("shabad")
+    if (gold.get("shabad") or {}).get("ok") is False:
+        sh["shabad_id"] = int(t) if t not in (None, "") else None
+        sh["method"] = "manual"
+        sh["confidence"] = 1.0 if sh["shabad_id"] is not None else 0.0
+    sh["verified"] = (gold.get("shabad") or {}).get("ok") in (True, False)
+    heading = rec.get("heading")
+    if heading is not None:
+        if (gold.get("raag_used") or {}).get("ok") is False:
+            heading.setdefault("raag", {})["key"] = truth("raag_used")
+            heading["raag"]["confidence"] = 1.0
+        if (gold.get("taal") or {}).get("ok") is False:
+            heading.setdefault("taal", {})["key"] = truth("taal")
+            heading["taal"]["confidence"] = 1.0
+        if (gold.get("laya") or {}).get("ok") is False and heading.get("taal") is not None:
+            heading["taal"]["laya"] = truth("laya")
+    for c in gold.get("cells") or []:
+        try:
+            beat = rec["sections"][int(c["s"])]["lines"][int(c["l"])]["beats"][int(c["b"])]
+        except (KeyError, IndexError, TypeError, ValueError):
+            continue
+        f, v = c.get("field"), c.get("value")
+        if f == "bol":
+            beat["bol"] = {"g": v or "", "h": 0} if isinstance(v, str) else v
+        elif f in ("m", "div"):
+            beat[f] = int(v)
+        elif f in ("notes", "ext", "rest"):
+            from lib.notation_render import parse_cell
+            parsed = parse_cell(str(v)) if isinstance(v, str) else v
+            if isinstance(parsed, dict):
+                for k in ("notes", "ext", "rest"):
+                    beat.pop(k, None)
+                beat.update(parsed)
+    rec["verified"] = True
+    rec["source"]["gold"] = {"by": gold.get("by"), "at": gold.get("at"), "status": gold.get("status", "ok")}
+    rec["source"]["content_hash"] = content_hash(rec)
+    return rec
+
 
 def write_jsonl(path: str, meta: dict, records: list[dict]) -> None:
     """`_meta` first, one record a line, written whole then renamed into place."""

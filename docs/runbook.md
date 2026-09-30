@@ -160,6 +160,39 @@ the shape its `writings-<key>` data packs carry. Copy both into a deployment's
 database), and `GET /api/writings/search?corpus=<key>&q=...` returns whole
 passages, the nearest in meaning.
 
+## 5a. A keertan notation book
+
+A book of shabads set to music (a grid of swaras over the sung syllables,
+a heading with the raag and taal) is declared with `kind: notation` in the
+manifest (docs/manifest.md) and takes its own route. First the review
+window -- seven pages from the middle of the book, at least two shabads:
+
+```
+python 27_ingest_book.py --src ./books/dyal-singh --book gurmat-sangeet-sagar-1 --gt
+```
+
+Open `data/ocr/<book>/gt/notation-review.html`, judge every notation's
+shabad, raag, taal, laya and section structure against its crops, download
+the candidates over `gt/notation-candidates.jsonl`, then
+
+```
+python 30_notation_gt.py --book <book> --check
+python 30_notation_gt.py --book <book> --promote
+python 31_notation_eval.py --book <book>
+```
+
+Fix what the review found (the parser, or the manifest's `style`) and rerun
+`29_notation_parse.py --book <book> --pages <window> --force` until every
+field is right. Then the whole book:
+
+```
+python 27_ingest_book.py --src ./books/dyal-singh --book gurmat-sangeet-sagar-1
+python 32_build_notations_db.py --gurbani <path to gurbani.sqlite>
+```
+
+The database refuses a book whose review did not pass; `--allow-unmeasured`
+is for a pilot. `docs/output-format.md` describes what is written.
+
 ## 6. Paid services, only through a cap
 
 Every paid call (Google Vision for OCR, Gemini through Vertex for

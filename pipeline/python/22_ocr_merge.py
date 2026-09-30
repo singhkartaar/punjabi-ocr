@@ -250,6 +250,13 @@ class Merger:
         self.index, self.lexicon, self.corrector = index, lexicon, corrector
         self.lang = meta.get("language", "en")
         self.sources = ["G"] + ([meta["scripture"]] if meta.get("scripture", "G") != "G" else [])
+        # a notation book: the grid's rules would pass for the footnote rule,
+        # its column gaps for a gutter, and its swara rows are all out of
+        # vocabulary, so those three stay off; the corpus matching of the
+        # shabad text is what names the shabad (29_notation_parse.py)
+        self.notation = meta.get("kind") == "notation"
+        if self.notation:
+            self.corrector = None
 
     def read(self, engine: str, page: int):
         p = os.path.join(self.book_dir, "ocr", engine, "%04d.jsonl" % page)
@@ -351,11 +358,17 @@ class Merger:
         if pmeta is None:
             return None
         img = cv2.imread(os.path.join(self.book_dir, "pages", rec["file"]), cv2.IMREAD_GRAYSCALE)
-        rule = footnote_rule_y(img) if img is not None else None
+        rule = footnote_rule_y(img) if img is not None and not self.notation else None
         lines = classify_zones(pivot_lines, pmeta["page_w"], pmeta["page_h"], rec.get("stamps"), rule)
+        if self.notation:
+            # the shabad's first line, or a heading, may sit in the header band
+            for ln in lines:
+                t = ln.get("text") or ""
+                if ln["zone"] == "header" and (VERSE_MARK in t or len(words(t)) >= 6):
+                    ln["zone"] = "body"
         hints = header_of(lines)
         wordboxes = [w for ln in lines for w in ln.get("words", [])] or lines
-        columns = page_columns(wordboxes, pmeta["page_w"], img, lines)
+        columns = [] if self.notation else page_columns(wordboxes, pmeta["page_w"], img, lines)
         if columns:
             lines = split_at_gutter(lines, columns[0][1])
         body = [ln for ln in lines if ln["zone"] in ("body", "footnote") and ln.get("text", "").strip()]

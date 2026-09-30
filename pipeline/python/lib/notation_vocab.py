@@ -177,8 +177,8 @@ class _Index:
         if key:
             return {"key": key, "confidence": 1.0, "method": "alias"}
         sk = self.skel(folded)
-        # a skeleton of one letter says nothing: ਸ would be Asa
-        if len(sk) >= 2 and len(folded.replace(" ", "")) >= 3 and sk in self.skel_index:
+        # a skeleton of two letters says too little: ਨੋਟ would be Nat, ਸ would be Asa
+        if len(sk) >= 3 and sk in self.skel_index:
             return {"key": self.skel_index[sk], "confidence": 0.9, "method": "skeleton"}
         if fuzzy is not None and len(folded.replace(" ", "")) >= FUZZY_MIN_LEN:
             best = self._fuzzy(folded, fuzzy)
@@ -194,7 +194,7 @@ class _Index:
                     sub = " ".join(toks[i:i + n])
                     sk = self.skel(sub)
                     key = self.alias.get(sub)
-                    if not key and len(sk) >= 2 and len(sub.replace(" ", "")) >= 3:
+                    if not key and len(sk) >= 3:
                         key = self.skel_index.get(sk)
                     if key:
                         return {"key": key, "confidence": 0.8, "method": "partial"}
@@ -270,7 +270,7 @@ def split_laya(text: str, script: str = "pa") -> tuple[str | None, str]:
     rest = text
     for entry in LAYA:
         for alias in sorted(entry[script if script in ("pa", "en") else "pa"], key=len, reverse=True):
-            pattern = re.compile(r"\(?\s*" + re.escape(alias) + r"\s*\)?", re.I)
+            pattern = re.compile(r"(?<![\u0a00-\u0a7fA-Za-z])\(?\s*" + re.escape(alias) + r"\s*\)?(?![\u0a00-\u0a7fA-Za-z])", re.I)
             if pattern.search(rest):
                 found = entry["key"]
                 rest = pattern.sub(" ", rest)
@@ -348,9 +348,10 @@ def marker_kind(glyph: str) -> str | None:
 def section_label(text: str) -> tuple[str, int | None] | None:
     """('antara', 2) from 'ਅੰਤਰਾ ੨' or 'ਅੰਤਰਾ 2:'; ('sthai', None) from 'ਸਥਾਈ'; None otherwise."""
     s = (text or "").strip()
+    low = s.lower()
     for kind, labels in SECTIONS.items():
         for label in labels:
-            if s.startswith(label.rstrip(": -")):
+            if low.startswith(label.rstrip(": -").lower()):
                 tail = s[len(label.rstrip(": -")):]
                 m = re.search(r"([0-9੦-੯]+)", tail)
                 n = int(gurmukhi_digits(m.group(1))) if m else None

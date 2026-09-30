@@ -372,6 +372,39 @@ class DriverTests(unittest.TestCase):
         self.assertEqual(tr[tr.index("--src-lang") + 1], "pa")
         self.assertIn("--translations", [a for s, a in steps if s == "embed-en"][0])
 
+    def test_a_notation_book_runs_the_notation_steps_and_none_of_the_prose_ones(self):
+        manifest = {"author": "Prin. Dyal Singh", "language": "pa", "reader": "ocr", "kind": "notation",
+                    "style": {"table": "bars"},
+                    "works": [{"file": "gss1.pdf", "work": "gurmat-sangeet-sagar", "part": 1,
+                               "book": "gurmat-sangeet-sagar-1", "title": "Gurmat Sangeet Sagar"}]}
+        steps = self._plan(manifest)
+        names = [s for s, _ in steps]
+        self.assertEqual(names, ["pages", "ocr", "ocr", "ocr", "merge", "notation", "notation-eval", "notation-db"])
+        ocr = [a for s, a in steps if s == "ocr"]
+        self.assertIn("pan", ocr[0])
+        self.assertEqual(ocr[1][ocr[1].index("--psm") + 1], "4")          # the psm 4 pass keeps sparse grid rows
+        self.assertIn("script/Gurmukhi", ocr[2])
+        self.assertTrue(isinstance(dict(steps)["notation-eval"], str) and "--gt" in dict(steps)["notation-eval"])
+        self.assertTrue(dict(steps)["notation-db"][0].endswith("32_build_notations_db.py"))
+        # --gt: the mid-book window (the PDF is empty here, so no window) and a STOP after the review page
+        gt = self._plan(manifest, gt=True)
+        self.assertEqual([s for s, _ in gt], ["pages", "ocr", "ocr", "ocr", "merge", "notation", "notation-gt", "notation-gt"])
+        self.assertIn("--mid", [a for s, a in gt if s == "notation-gt"][0])
+        self.assertTrue(isinstance(gt[-1][1], str) and gt[-1][1].startswith("STOP"))
+        # a prose book in the same folder still takes the prose route
+        mixed = dict(manifest, kind="prose")
+        mixed["works"] = manifest["works"] + [{"file": "p.pdf", "work": "prose", "book": "prose-1", "title": "P", "kind": "prose"}]
+        mixed["works"][0] = dict(mixed["works"][0], kind="notation")
+        both = self._plan(mixed)
+        self.assertIn("ingest", [s for s, _ in both])
+        self.assertIn("notation", [s for s, _ in both])
+
+    def test_the_review_window_sits_at_the_middle_of_the_book(self):
+        from lib.notation import mid_window
+        self.assertEqual(mid_window(373, 7), (168, 174))
+        self.assertEqual(mid_window(10, 5), (4, 8))
+        self.assertEqual(mid_window(3, 5), (1, 3))
+
     def test_an_english_book_is_not_translated_and_a_hindi_one_is(self):
         en = self._plan({"author": "A", "language": "en", "reader": "ocr",
                          "works": [{"file": "t.pdf", "work": "ten", "book": "ten", "title": "T"}]})

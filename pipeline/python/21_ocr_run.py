@@ -86,6 +86,8 @@ def main():
     engine_key = args.engine
     if args.engine == "tesseract" and args.tess_lang:
         engine_key = "tesseract-" + args.tess_lang.replace("script/", "").replace("+", "-").lower()
+    if args.engine == "tesseract" and args.psm != 3:
+        engine_key += "-psm%d" % args.psm                 # a notation book runs pan twice: psm 3 and 4 vote
     out_dir = os.path.join(book_dir, "ocr", engine_key)
     wanted = set(n + 1 for n in parse_pages(args.pages, max((p["page"] for p in meta["pages"]), default=0)))
     if args.gt_pages:

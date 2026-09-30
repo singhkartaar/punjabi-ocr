@@ -93,6 +93,7 @@ def run_book(pdf: str, book: str, meta: dict, args) -> dict:
         by_page[r["page"]] = r
     out = {"pdf": pdf, "book": book, "dpi": args.dpi, "language": meta.get("language", "en"),
            "author": meta.get("author"), "work": meta.get("work"), "part": meta.get("part"),
+           "title": meta.get("title") or meta.get("work_title"),
            "scripture": meta.get("scripture", "G"), "quote_policy": meta.get("quote_policy"),
            "kind": meta.get("kind", "prose"), "style": meta.get("style"),
            "probe": probe, "options": {"crop": crop, "deskew": deskew, "bleed": bleed},

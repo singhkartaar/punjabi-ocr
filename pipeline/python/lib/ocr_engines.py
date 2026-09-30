@@ -177,6 +177,42 @@ class TesseractEngine(Engine):
                                       output_type=self.pt.Output.DICT)
         return self.lines_from_data(d, lang)
 
+    def recognise_region(self, img, bbox: list, lang: str, psm: int = 7, whitelist: str | None = None,
+                         pad: int = 6) -> list[dict]:
+        """
+        One region of a page image (a numpy array or a PIL image) through
+        Tesseract: lines with their boxes offset back into page coordinates.
+        psm 7 reads the region as one line, 6 as a block, 8 as one word;
+        `whitelist` limits the characters (the LSTM only partly honours it,
+        so callers still filter what comes back). The notation grid reader
+        uses it for a row strip or a single cell.
+        """
+        from PIL import Image
+        x0, y0, x1, y1 = [int(v) for v in bbox]
+        if hasattr(img, "shape"):
+            h, w = img.shape[:2]
+            x0, y0, x1, y1 = max(0, x0 - pad), max(0, y0 - pad), min(w, x1 + pad), min(h, y1 + pad)
+            if x1 <= x0 or y1 <= y0:
+                return []
+            im = Image.fromarray(img[y0:y1, x0:x1])
+        else:
+            w, h = img.size
+            x0, y0, x1, y1 = max(0, x0 - pad), max(0, y0 - pad), min(w, x1 + pad), min(h, y1 + pad)
+            if x1 <= x0 or y1 <= y0:
+                return []
+            im = img.crop((x0, y0, x1, y1))
+        config = "--oem %d --psm %d" % (self.oem, int(psm))
+        if whitelist:
+            config += " -c tessedit_char_whitelist=" + whitelist
+        d = self.pt.image_to_data(im, lang=self.tess_lang or self.LANGS[lang], config=config,
+                                  output_type=self.pt.Output.DICT)
+        lines = self.lines_from_data(d, lang)
+        for ln in lines:
+            ln["bbox"] = [ln["bbox"][0] + x0, ln["bbox"][1] + y0, ln["bbox"][2] + x0, ln["bbox"][3] + y0]
+            for wd in ln.get("words", []):
+                wd["bbox"] = [wd["bbox"][0] + x0, wd["bbox"][1] + y0, wd["bbox"][2] + x0, wd["bbox"][3] + y0]
+        return lines
+
     @staticmethod
     def lines_from_data(d: dict, lang: str) -> list[dict]:
         """image_to_data's DICT -> line records; words grouped by (block, par, line)."""

@@ -59,3 +59,12 @@ or a six-word run repeated three times (a small model looping on OCR noise)
 30-paragraph sample with each local engine and scores chrF, BLEU and the
 length ratio against the Vertex reference, caching the reference so a later
 engine is scored for free.
+
+## Notation books
+
+A notation book runs Tesseract `pan` twice, with page segmentation mode 3
+and mode 4 (`tesseract-pan-psm4`): mode 3's layout analysis drops the
+sparse rows of a grid, mode 4 (one column of variable-sized text) keeps
+them, and the merge votes between the two and `script/Gurmukhi`. The swaras
+themselves are re-read per row strip and per cell by
+`TesseractEngine.recognise_region` (psm 7 and 8) once the grid reader runs.
