@@ -36,8 +36,10 @@
  * the book): a crop is byte-identical only on the same kind of machine,
  * since the deskew rotation rounds differently on Apple silicon and on
  * x86, so every file is checked against its record's sha256 and one that
- * differs is skipped and counted, never uploaded. Only the URLs travel,
- * by git, in images.urls.json.
+ * differs is skipped and counted, never uploaded -- unless the review's
+ * fixture store (--review-dir, REVIEW_DIR) holds the accepted bytes under
+ * that hash, which are then uploaded. Only the URLs travel, by git, in
+ * images.urls.json.
  *
  * The repository is --repo, or NOTATION_ASSETS_REPO in the environment.
  * Needs the GitHub CLI (`gh`) signed in with write access, and the
@@ -76,6 +78,9 @@ const num = (name, dflt) => {
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const DB = path.resolve(opt('--db', path.join(process.env.ARTIFACTS_DIR || path.join(ROOT, 'artifacts'), 'notations.sqlite')));
 const IMAGES = path.resolve(opt('--images', process.env.NOTATIONS_DIR || path.join(ROOT, 'data', 'notations')));
+// the review's fixture store (REVIEW_DIR/fixtures/<book>/images/<sha256>.png): the exact bytes of every accepted
+// notation's images, kept when a later run re-cut the working file
+const REVIEW = path.resolve(opt('--review-dir', process.env.REVIEW_DIR || path.join(path.dirname(IMAGES), 'review')));
 const REPO = opt('--repo', process.env.NOTATION_ASSETS_REPO || null);
 const ONLY = new Set(opts('--book'));
 const ALL_ROLES = flag('--all-roles');
@@ -225,11 +230,15 @@ async function main() {
       // published already: under this name, or under the hash the machine that cut it saw (a thumbnail recorded
       // without its hash is hashed differently on each machine; its other copy is never uploaded beside it)
       if (have.has(w.name) || haveStems.has(rowStem(w.row))) { kept += 1; continue; }
-      if (!fs.existsSync(w.file)) { continue; }        // counted below: not cut on this machine, or not re-cut yet
+      // the working file, or the accepted bytes the review kept by hash when a later run re-cut the working file
+      const fixture = path.join(REVIEW, 'fixtures', book, 'images', `${w.row.sha256}.png`);
+      const candidates = [w.file, fixture].filter(f => fs.existsSync(f));
+      if (!candidates.length) { continue; }            // counted below: not cut on this machine, or not re-cut yet
       // a crop is reproducible only on the kind of machine that cut it (the deskew rotation rounds differently on
       // Apple silicon and on x86): a file whose bytes are not the record's is never uploaded under the record's name
-      if (sha256Of(w.file) !== w.row.sha256) { elsewhere += 1; continue; }
-      todo.push(w);
+      const good = candidates.find(f => sha256Of(f) === w.row.sha256);
+      if (!good) { elsewhere += 1; continue; }
+      todo.push({ ...w, file: good });
     }
     // an asset no image names: neither its name nor its notation, n and kind (never another machine's copy of a shown image)
     const stale = shards.flatMap(s => s.assets.filter(a => !shaOfName.has(a.name) && !allNames.has(a.name) && !wantStems.has(stemOf(a.name)))

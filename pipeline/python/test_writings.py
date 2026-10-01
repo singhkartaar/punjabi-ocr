@@ -1130,14 +1130,99 @@ class LineCommentaryTests(unittest.TestCase):
                    rec(2, "(ਫੇਰ ਮਾਨ ਦਾਅਵੇ ਦਾ ਤਿਆਗ ਕਰਕੇ) ਮੁੱਲ ਰਹਿਤ ਆਉਂਦੇ ਹਨ", line=243),
                    rec(3, "ਤੇ ਅਮੁਲ ਲੈ ਜਾਂਦੇ ਹਨ।", line=243),
                    rec(4, "2੭", line=244),                                   # a stray numeral, not prose
+                   rec(7, "ਸੰਤ ਜੀ ਆਏ", line=245),                             # a word is its letters, signs between
                    rec(5, "ਸ਼ਬਦ ਦਾ ਭਾਵ", style="footnote", line=244),
                    rec(6, "ਓਅੰਕਾਰ ਤੋਂ ਵੇਦ ਰਚੇ ਗਏ।", line=40000, ang=929)]    # quoted in passing
         lines, seen = lc.line_texts(records, {1: [1, 53]})
-        self.assertEqual(list(lines), [243])
+        self.assertEqual(list(lines), [243, 245])
         self.assertEqual(lines[243]["text"], "(ਫੇਰ ਮਾਨ ਦਾਅਵੇ ਦਾ ਤਿਆਗ ਕਰਕੇ) ਮੁੱਲ ਰਹਿਤ ਆਉਂਦੇ ਹਨ ਤੇ ਅਮੁਲ ਲੈ ਜਾਂਦੇ ਹਨ।")
         self.assertEqual(lines[243]["pages"], ["1:143"])
-        self.assertEqual((seen["not prose"], seen["outside the volume's angs"], seen["taken"]), (1, 1, 2))
+        self.assertEqual((seen["not prose"], seen["outside the volume's angs"], seen["taken"]), (1, 1, 3))
         self.assertIn(40000, lc.line_texts(records)[0])                        # unbounded without the manifest
+
+    # Santhya vol. 1, page 481: the explanation runs on under the lines, and
+    # the OCR's paragraphs break where the printed line wraps
+    GRANTH = {1791: "ਥਾਨੁ ਸੁਹਾਵਾ ਪਵਿਤੁ ਹੈ ਜਿਥੈ ਸੰਤ ਸਭਾ ॥",
+              1792: "ਢੋਈ ਤਿਸ ਹੀ ਨੋ ਮਿਲੈ ਜਿਨਿ ਪੂਰਾ ਗੁਰੂ ਲਭਾ ॥",
+              1793: "ਨਾਨਕ ਬਧਾ ਘਰੁ ਤਹਾਂ ਜਿਥੈ ਮਿਰਤੁ ਨ ਜਨਮੁ ਜਰਾ ॥੪॥੬॥੭੬॥"}
+
+    def page_481(self):
+        def rec(no, text, style="body", line=None, unpaired=False):
+            ex = ([{"pair": no, "shabad_id": 247, "line_from": line, "line_to": line, "ang": 44, "source": "G"}]
+                  if line else [{"pair": no, "unmatched": True}] if unpaired else [])
+            return {"part": 1, "page": 481, "para_no": no, "style": style, "text": text, "explains": ex}
+        return [rec(19, self.GRANTH[1791], style="quote"),
+                rec(20, "(ਉਹੀ) ਥਾਉਂ ਸੁਹਣਾ ਤੇ ਪਵਿੱਤਰ ਹੈ ਜਿਥੇ (ਸਦੈਵੀ) ਸੰਤਾਂ ਦੀ ਸਭਾ", line=1791),
+                rec(21, self.GRANTH[1792], style="quote"),
+                rec(22, "(ਲਗ ਰਹੀ ਹੈ)। (ਉਸ ਸਭਾ ਵਿਚ) ਉਸੇ ਨੂੰ ਆਦਰ ਮਿਲੇਗਾ ਜਿਸ", line=1792),
+                rec(23, self.GRANTH[1793], style="quote"),
+                rec(24, "ਨੂੰ ਪੂਰਾ ਗੁਰੂ ਲੱਭ ਪਿਆ ਹੇਸੀ। ਹੇ ਨਾਨਕ! (ਮੈਂ ਤਾਂ) ਓਥੇ ਘਰ ਬਨਾਇਆ ਹੈ ਜਿਥੇ ਮੌਤ ਨਹੀਂ, ਜਨਮ ਨਹੀਂ, ਬੁਢੇਪਾ", line=1793),
+                rec(25, "੪॥੬॥੭੬॥", style="quote"),
+                rec(26, "ਨਹੀਂ ॥੪॥੬॥੭੬॥ ਵ੍ਯਾਖ੍ਯਾ ਦਾ ਮੁੱਢ", unpaired=True),     # a stray number paired nothing
+                rec(27, "ਵ੍ਯਾਖ੍ਯਾ-ਇਸ ਸ਼ਬਦ ਵਿਚ ਆਏ ਪਦ ਇਕ ਦੇ ਭਾਵ ਲੈਣ ਵਿਚ ਮਤਿਭੇਦ ਹੁੰਦਾ ਹੈ")]
+
+    def test_each_line_is_cut_where_its_explanation_ends_not_where_the_page_wrapped(self):
+        lc = import_module("30_line_commentary")
+        lines, seen = lc.line_texts(self.page_481(), granth=self.GRANTH)
+        self.assertEqual(lines[1791]["text"], "(ਉਹੀ) ਥਾਉਂ ਸੁਹਣਾ ਤੇ ਪਵਿੱਤਰ ਹੈ ਜਿਥੇ (ਸਦੈਵੀ) ਸੰਤਾਂ ਦੀ ਸਭਾ (ਲਗ ਰਹੀ ਹੈ)।")
+        self.assertEqual(lines[1792]["text"], "(ਉਸ ਸਭਾ ਵਿਚ) ਉਸੇ ਨੂੰ ਆਦਰ ਮਿਲੇਗਾ ਜਿਸ ਨੂੰ ਪੂਰਾ ਗੁਰੂ ਲੱਭ ਪਿਆ ਹੇਸੀ।")
+        # the unpaired paragraph is the same stream; the note after the verse's number is not
+        self.assertEqual(lines[1793]["text"],
+                         "ਹੇ ਨਾਨਕ! (ਮੈਂ ਤਾਂ) ਓਥੇ ਘਰ ਬਨਾਇਆ ਹੈ ਜਿਥੇ ਮੌਤ ਨਹੀਂ, ਜਨਮ ਨਹੀਂ, ਬੁਢੇਪਾ ਨਹੀਂ ॥੪॥੬॥੭੬॥")
+        self.assertEqual((seen["continued"], seen["words after a verse's end"]), (1, 3))
+
+    def test_without_the_granth_a_line_keeps_what_was_printed_beside_it(self):
+        lc = import_module("30_line_commentary")
+        lines, _ = lc.line_texts(self.page_481())
+        self.assertEqual(lines[1792]["text"], "(ਲਗ ਰਹੀ ਹੈ)। (ਉਸ ਸਭਾ ਵਿਚ) ਉਸੇ ਨੂੰ ਆਦਰ ਮਿਲੇਗਾ ਜਿਸ")
+        self.assertTrue(lines[1793]["text"].endswith("ਬੁਢੇਪਾ ਨਹੀਂ ॥੪॥੬॥੭੬॥ ਵ੍ਯਾਖ੍ਯਾ ਦਾ ਮੁੱਢ"))
+
+    def test_a_cut_never_falls_inside_a_bracket_and_a_line_without_a_paragraph_gets_its_words(self):
+        lc = import_module("30_line_commentary")
+        words = "(ਤਾਂ ਤੇ) ਆਠੇ ਪਹਿਰ ਹਰੀ ਦਾ (ਰਸਨਾ ਨਾਲ) ਜਪ ਕਰੀਏ (ਇਸ ਲਈ ਮੈਂ) ਜੋ ਕੁਛ ਕਰਦਾ ਹਾਂ ਸੋਂ ਤੇਰੀ ਹਜ਼ੂਰੀ ਵਿਚ ਕਰਦਾ ਹਾਂ।".split()
+        slots = ["ਹਰਿ ਜਪੀਐ ਆਰਾਧੀਐ ਆਠ ਪਹਰ ਗੋਵਿੰਦੁ ॥", "ਜੋ ਕਛੁ ਕਰੀ ਸੁ ਤੇਰੈ ਹਦੂਰਿ ॥"]
+        # printed as one paragraph, the second line's start at the paragraph's end
+        cuts = lc.recut(words + ["ਅਗਲੀ", "ਤੁਕ।"], [0, len(words), len(words)], slots + ["ਅਗਲੀ ਤੁਕ ॥"],
+                        [False, True, False])
+        self.assertEqual(" ".join(words[cuts[1]:cuts[2]]), "(ਇਸ ਲਈ ਮੈਂ) ਜੋ ਕੁਛ ਕਰਦਾ ਹਾਂ ਸੋਂ ਤੇਰੀ ਹਜ਼ੂਰੀ ਵਿਚ ਕਰਦਾ ਹਾਂ।")
+
+    def test_a_shabad_explained_from_its_rahao_is_cut_in_that_order(self):
+        # Santhya vol. 1, ang 14: "(ਅਰਥ ਰਹਾਉ ਤੋਂ ਟੁਰੇਗਾ)" -- the rahao is explained first,
+        # then the first verse, while the OCR paired the paragraphs with the lines in print order
+        lc = import_module("30_line_commentary")
+        granth = {587: "ੴ ਸਤਿਗੁਰ ਪ੍ਰਸਾਦਿ ॥", 588: "ਰਾਗੁ ਸਿਰੀਰਾਗੁ ਮਹਲਾ ਪਹਿਲਾ ੧ ਘਰੁ ੧ ॥",
+                  589: "ਮੋਤੀ ਤ ਮੰਦਰ ਊਸਰਹਿ ਰਤਨੀ ਤ ਹੋਹਿ ਜੜਾਉ ॥", 590: "ਕਸਤੂਰਿ ਕੁੰਗੂ ਅਗਰਿ ਚੰਦਨਿ ਲੀਪਿ ਆਵੈ ਚਾਉ ॥",
+                  591: "ਮਤੁ ਦੇਖਿ ਭੂਲਾ ਵੀਸਰੈ ਤੇਰਾ ਚਿਤਿ ਨ ਆਵੈ ਨਾਉ ॥੧॥", 592: "ਹਰਿ ਬਿਨੁ ਜੀਉ ਜਲਿ ਬਲਿ ਜਾਉ ॥",
+                  593: "ਮੈ ਆਪਣਾ ਗੁਰੁ ਪੂਛਿ ਦੇਖਿਆ ਅਵਰੁ ਨਾਹੀ ਥਾਉ ॥੧॥ ਰਹਾਉ ॥"}
+        kinds = {587: ("invocation", 54), 588: ("heading", 54), 593: ("rahao", 54),
+                 **{i: ("line", 54) for i in (589, 590, 591, 592)}}
+
+        def rec(no, text, lo=None, hi=None):
+            ex = ([{"pair": no, "shabad_id": 54, "line_from": lo, "line_to": hi or lo, "ang": 14, "source": "G"}]
+                  if lo else [{"pair": no, "unmatched": True}])
+            return {"part": 1, "page": 120, "para_no": no, "style": "body", "text": text, "explains": ex}
+        records = [rec(1, "(ਅਰਥ ਰਹਾਉ ਤੋਂ ਟੁਰੇਗਾ) ਹਰੀ (ਅਰਥਾਤ ਅਕਾਲ ਪੁਰਖ ਨੂੰ ਮੈਂ", 587, 589),
+                   rec(2, "ਆਪਣੀ ਪ੍ਰਾਪਤੀ ਦਾ ਮਨੋਰਥ ਬਣਾਇਆ ਹੈ, ਕਿਉਂਕਿ ਇਸ) ਬਿਨਾ ਜੀਉ ਸੜ ਬਲ ਜਾਂਦਾ ਹੈ। ਮੈਂ ਆਪਣੇ ਗੁਰੂ ਨੂੰ ਬੀ ਪੁਛ", 590),
+                   rec(3, "ਵੇਖਿਆ ਹੈ, (ਉਸ ਨੇ ਦੱਸਿਆ ਹੈ ਕਿ ਸਦੈਵੀ ਸੁਖ ਦਾ) ਟਿਕਾਣਾ (ਹਰੀ ਬਿਨਾ) ਹੋਰ ਕੋਈ ਨਹੀਂ ਹੈ॥੧॥ਰਹਾਉ॥"),
+                   rec(4, "(ਇਸ ਲਈ ਮੈਂ ਹੋਰ ਦੀ ਲੋਚਾ ਨਹੀਂ ਰਖੀ ਕਿ ਮਤੇ ਉਹ ਆਪਣੇ", 592),
+                   rec(5, "ਵਿਚ ਬੰਨ੍ਹ ਨਾ ਬਹਾਲੇ, ਜਿਵੇਂ ਭਲਾ) ਮੋਤੀਆਂ ਦੇ ਤਾਂ ਉਸਰ ਪੈਣ", 593),
+                   rec(6, "ਮੰਦਿਰ, ਤੇ ਰਤਨਾਂ ਦੇ ਹੋਣ (ਉਨ੍ਹਾਂ ਵਿਚ) ਕੀਤੇ ਹੋਏ ਜੜਾਉ (ਅਤੇ"),
+                   rec(7, "ਉਨ੍ਹਾਂ ਵਿਚ) ਕਸਤੂਰੀ ਕੁੰਗੂ ਅਗਰਿ ਤੇ ਚੰਦਨ ਆਦਿ ਸੁਗੰਧੀਆਂ ਦੇ ਹੋਣ ਕੀਤੇ ਹੋਏ ਲੇਪ (ਜਿਨ੍ਹਾਂ ਦੀ ਖੁਸ਼ਬੋ ਤੋਂ ਮਨ ਨੂੰ) "
+                             "ਉਪਜੇ ਚਾਉ, (ਇਨ੍ਹਾਂ ਨੂੰ) ਵੇਖਕੇ ਮਤਾਂ ਮੈਂ ਮੋਹਿਤ ਹੋ ਜਾਵਾਂ, (ਤੇ ਮੋਹਿਤ ਹੋਏ ਨੂੰ ਹੇ"),
+                   rec(8, "ਹਰੀ !) ਤੇਰਾ ਨਾਮ (ਹੀ) ਭੁੱਲ ਜਾਵੇ (ਤੇ ਫੇਰ ਉਹ ਨਾਮ) ਚਿੱਤ ਹੀ ਨਾ ਆਵੇ ॥੧॥")]
+        lines, seen = lc.line_texts(records, granth=granth, kinds=kinds)
+        self.assertEqual(seen["explained from the rahao"], 1)
+        self.assertNotIn(587, lines)                       # the invocation and heading keep nothing, the note is gone
+        self.assertNotIn(588, lines)
+        self.assertTrue(lines[592]["text"].startswith("ਹਰੀ (ਅਰਥਾਤ ਅਕਾਲ ਪੁਰਖ"))
+        self.assertTrue(lines[592]["text"].endswith("ਬਿਨਾ ਜੀਉ ਸੜ ਬਲ ਜਾਂਦਾ ਹੈ।"))
+        self.assertTrue(lines[593]["text"].endswith("ਹੋਰ ਕੋਈ ਨਹੀਂ ਹੈ॥੧॥ਰਹਾਉ॥"))
+        self.assertTrue(lines[589]["text"].startswith("(ਇਸ ਲਈ ਮੈਂ ਹੋਰ ਦੀ ਲੋਚਾ"))
+        self.assertIn("ਮੋਤੀਆਂ ਦੇ ਤਾਂ ਉਸਰ ਪੈਣ ਮੰਦਿਰ", lines[589]["text"])
+        self.assertIn("ਕਸਤੂਰੀ ਕੁੰਗੂ", lines[590]["text"])
+        self.assertTrue(lines[591]["text"].endswith("ਚਿੱਤ ਹੀ ਨਾ ਆਵੇ ॥੧॥"))
+        # without the kinds the order is the printed one, as before
+        self.assertNotIn("explained from the rahao", lc.line_texts(records, granth=granth)[1])
 
 
 class KeepTests(unittest.TestCase):
