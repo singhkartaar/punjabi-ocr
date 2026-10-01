@@ -133,7 +133,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'x') verdict(id, 'rejected').then(() => focus(focused + 1));
   else if (e.key === 'b') { const ta = cs[focused].querySelector('textarea.comment'); if (ta) ta.focus(); }
 });
-for (const [id, s] of Object.entries(DATA.states)) setState(id, s.status, s.comment);
+for (const [id, s] of Object.entries(DATA.states)) if (!s.changed) setState(id, s.status, s.comment);
 """
 
 
@@ -157,7 +157,7 @@ def build_page(books: list[dict], states: dict[str, dict], counts: str, page_no:
             cands.append(cand)
             keys[rec["notation_id"]] = rec["review_key"]
             st = states.get(rec["notation_id"]) or {}
-            if not all_ and st.get("status") in ("accepted", "rejected"):      # collapsed in its place: the page keeps its shape
+            if not all_ and st.get("status") in ("accepted", "rejected") and not st.get("changed"):   # collapsed in its place: the page keeps its shape
                 parts.append('<section class="card stub done-%s" id="c-%s"><h2>%s <small>pages %s · %s%s</small></h2></section>'
                              % (st["status"], html_mod.escape(rec["notation_id"]), html_mod.escape(rec["review_key"]),
                                 "-".join(str(p) for p in rec.get("pages") or []), st["status"],
@@ -208,8 +208,11 @@ class ReviewState:
         out = {}
         for b in self.books:
             ledger = read_ledger(b["book"], self.review_dir)
+            by_nid = {r["notation_id"]: r for r in b["records"]}
             for nid, e in attach(ledger, b["records"]).items():       # keys first, then overlap; no record twice
-                out[nid] = {"status": e["status"], "comment": e.get("comment") or ""}
+                rv = by_nid[nid].get("review") or {}
+                out[nid] = {"status": e["status"], "comment": e.get("comment") or "",
+                            "changed": bool(rv.get("noted") and rv.get("changed"))}    # accepted with a note, and the cut moved since
         return out
 
     def counts(self) -> str:
@@ -219,8 +222,10 @@ class ReviewState:
         noted = sum(1 for s in st.values() if s["status"] == "accepted" and s.get("comment"))
         bl = sum(1 for s in st.values() if s["status"] == "backlog")
         rj = sum(1 for s in st.values() if s["status"] == "rejected")
-        return "%d notation(s) · %d accepted%s · %d in backlog · %d not notations · %d to review" % (
-            n, acc, " (%d with a note)" % noted if noted else "", bl, rj, n - acc - bl - rj)
+        again = sum(1 for s in st.values() if s.get("changed"))
+        return "%d notation(s) · %d accepted%s · %d in backlog · %d not notations · %d to review%s" % (
+            n, acc, " (%d with a note)" % noted if noted else "", bl, rj, n - acc - bl - rj,
+            " · %d moved under a note: look again" % again if again else "")
 
     def page(self, page_no: int) -> str:
         """
@@ -237,7 +242,8 @@ class ReviewState:
         left = []                                    # what each page still has to review
         for i in range(n_pages):
             chunk = flat[i * self.per_page: (i + 1) * self.per_page]
-            left.append(sum(1 for _, r in chunk if st.get(r["notation_id"], {}).get("status") not in ("accepted", "rejected")))
+            left.append(sum(1 for _, r in chunk if st.get(r["notation_id"], {}).get("status") not in ("accepted", "rejected")
+                            or st.get(r["notation_id"], {}).get("changed")))
         chunk = flat[(page_no - 1) * self.per_page: page_no * self.per_page]
         shown: list[dict] = []
         for b, r in chunk:
@@ -368,7 +374,9 @@ def check(args) -> None:
             notes = {k: e.get("comment") or "" for k, e in read_ledger(book, args.review_dir).items() if e["status"] == "accepted"}
             moved = [d for d in report["drift"] if not d.get("lost") and not d.get("same")]
             failed = [d for d in moved if not notes.get(d["key"])]
-            noted = [{**d, "comment": notes[d["key"]]} for d in moved if notes.get(d["key"])]
+            # under a note any move counts, however small (the fresh cut is shown again)
+            noted = [{**d, "comment": notes[d["key"]]} for d in report["drift"]
+                     if notes.get(d["key"]) and not d.get("lost") and not d.get("identical", d.get("same"))]
             lost = [d for d in report["drift"] if d.get("lost")]
             got.update({"passed": len(report["drift"]) - len(moved) - len(lost), "failed": failed, "lost": lost, "noted": noted,
                         "ok": not failed and not lost})

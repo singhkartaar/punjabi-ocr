@@ -163,6 +163,9 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
             continue
     close()
 
+    # a verse line Tesseract read as a bol row stands as a grid of a line or two right over the
+    # verse block it opens: a line of words, or one the corpus matched to the block's shabad, is the block's
+    regions = _fold_misread_verse(regions, {l.get("n"): l for l in lines}, body_h)
     # between a heading and the first section label, marker row or reference
     # lies the shabad's text, whatever the OCR made of its lines: a Kabitt
     # of Bhai Gurdas matches no corpus line and reads as prose
@@ -180,6 +183,9 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
         over_ref = bool(after_ and after_["role"] == "ref" and _verse_shaped(r["text"]))
         if not (_verse_block(r) or over_ref):
             r["role"] = "text"
+    # the swar-vistaar of a raag's description runs into the shabad under it: the block begins at the
+    # Granth's heading of the shabad, or its first matched line; what stands before is text
+    regions = _split_shabad_head(regions)
     # a grid of one line that is really a marker row or a stray
     regions = [r for r in regions if not (r["role"] == "grid" and len(r["lines"]) == 1 and r["bbox"][3] - r["bbox"][1] < body_h * 0.6)]
     # grids separated only by fragments merge; the ink decides the extent
@@ -282,6 +288,82 @@ def _verse_block(region: dict) -> bool:
         return False
     n = max(1, len(region.get("lines") or merged))
     return matched >= 2 or matched / n >= 0.34 or bool(_GRANTH_HEADING.search(region.get("text") or ""))
+
+
+_GURMUKHI_LETTER = re.compile(r"[\u0a01-\u0a65\u0a70-\u0a75]")      # letters and their vowel signs, not the digits
+_MANGAL = re.compile(r"ੴ|ਪ੍ਰਸਾਦਿ|ਸਤਿਗੁਰ|ਸਤਿ ?ਨਾਮੁ")
+
+
+def _wordy(text: str) -> bool:
+    """Three words of four letters or more and no held mark: a verse line, not a bol row ('ਕਬਹੂ ਖੀਰਿ ਕਾੜ ਘੀਉ ਨ ਭਾਵੈ । ਕਬਹੂ ਘਰ ਘਰ ਟੂਕ ਮਗਾਵੇ 1!')."""
+    toks = [t for t in _BAR_SPLIT.split(text or "") if t]
+    long_ = sum(1 for t in toks if len(_GURMUKHI_LETTER.findall(t)) >= 4)
+    held = sum(1 for t in toks if token_class(t) == "held")
+    return long_ >= 3 and held == 0 and not _swar_row(text)
+
+
+def _fold_misread_verse(regions: list[dict], by_n: dict, body_h: int) -> list[dict]:
+    """
+    The last line or two of a grid region that stands right over a verse
+    block, when they are lines of words or lines the corpus matched to
+    the block's shabad, are the block's first lines
+    (the bol-row rule of classify_line misread them). The rows of the
+    notation before -- syllables, held marks, no match or the previous
+    shabad's -- stay where they are.
+    """
+    out: list[dict] = []
+    for i, r in enumerate(regions):
+        nxt = regions[i + 1] if i + 1 < len(regions) else None
+        if r["role"] == "grid" and nxt and nxt["role"] == "shabad" and nxt["bbox"][1] - r["bbox"][3] < body_h * 1.5:
+            sid = _sid_of([nxt])
+            take: list[dict] = []
+            for n in reversed(r["lines"]):
+                line = by_n.get(n)
+                if len(take) < 2 and line and (_wordy(line.get("text") or "") or (sid is not None and _line_sid(line) == sid)):
+                    take.insert(0, line)
+                else:
+                    break
+            if take:
+                rest = [n for n in r["lines"] if n not in {l.get("n") for l in take}]
+                if rest:
+                    out.append({**r, "lines": rest, "bbox": _bbox_union([by_n[n]["bbox"] for n in rest if by_n.get(n)]) or r["bbox"]})
+                nxt.update({"lines": [l.get("n") for l in take] + nxt["lines"], "bbox": _bbox_union([l["bbox"] for l in take] + [nxt["bbox"]]),
+                            "text": "\n".join([(l.get("text") or "").strip() for l in take] + [nxt["text"]]),
+                            "kinds": [l.get("kind") for l in take] + nxt.get("kinds", []), "merged": take + nxt.get("merged", [])})
+                continue
+        out.append(r)
+    return out
+
+
+def _split_shabad_head(regions: list[dict]) -> list[dict]:
+    """
+    A shabad region whose first matched line comes after two or more
+    lines the corpus does not know and that are no verse (the swar-vistaar
+    of a raag's description, "ਰੇਗਮ ਪ, ਮੁ ਪਰ ਨੀਸਾ, ..."): those lines are a
+    text region; the shabad keeps its Granth heading and mangal (up to
+    two lines) and begins there.
+    """
+    out: list[dict] = []
+    for r in regions:
+        merged = r.get("merged") or []
+        if r["role"] == "shabad" and merged:
+            k = next((i for i, m in enumerate(merged) if m.get("matches")), None)
+            if k is not None and k >= 2:
+                keep = 0
+                while keep < min(2, k):
+                    t = merged[k - 1 - keep].get("text") or ""
+                    if _GRANTH_HEADING.search(t) or _MANGAL.search(t):
+                        keep += 1
+                    else:
+                        break
+                cut = k - keep
+                verse_like = any("॥" in (m.get("text") or "") or m.get("kind") in ("gurbani", "gurbani-unmatched") for m in merged[:cut])
+                if cut >= 2 and not verse_like:
+                    out.append(_region_of(merged[:cut], "text"))
+                    out.append(_region_of(merged[cut:], "shabad"))
+                    continue
+        out.append(r)
+    return out
 
 
 def _is_real_grid(region: dict) -> bool:
@@ -623,13 +705,16 @@ def _trim_prev_bol(region: dict, prev_sid: int | None) -> tuple[dict, dict | Non
     merged = region.get("merged") or []
     if prev_sid is None or len(merged) < 2:
         return region, None
+    sids = {_line_sid(m) for m in merged} - {None}
+    if sids and sids <= {prev_sid}:
+        return region, None             # the same shabad throughout: set again, or its next pada -- the segmenter decides
     k = 0
     while k < len(merged) - 1:
         line = merged[k]
         sid = _line_sid(line)
         if sid == prev_sid:
             k += 1
-        elif sid is None and not _GRANTH_HEADING.search(line.get("text") or "") \
+        elif sid is None and not _GRANTH_HEADING.search(line.get("text") or "") and not _wordy(line.get("text") or "") \
                 and (classify_line(line) in ("grid", "marker") or _swar_row(line.get("text") or "")
                      or not re.search(r"[\u0a05-\u0a39\u0a59-\u0a5e]", line.get("text") or "")):     # '[ |': a bar read alone
             k += 1
@@ -673,6 +758,12 @@ def _section_heading(region: dict, grids_seen: bool) -> dict | None:
     return None
 
 
+def _opens_notation(region: dict) -> bool:
+    """A heading that names a taal or carries a notation number: it opens a notation."""
+    p = _named_heading(region)
+    return bool(p and (p.get("taal") or p.get("number") is not None))
+
+
 def _is_lead(item: dict) -> bool:
     """A heading, or a bare number on a line of its own ("੧੮."), standing between one notation and the next shabad leads the next in; a loose line of text is the tail of the one before."""
     if item["role"] == "heading":
@@ -681,13 +772,13 @@ def _is_lead(item: dict) -> bool:
         and bool(_NUMBER_LINE.match(item["region"].get("text") or ""))
 
 
-def _grids_after_shabad(seg: dict) -> bool:
-    """A grid stands after the span's last shabad or reference line: the notation proper has begun."""
+def _grids_after_shabad(seg: dict, real: bool = False) -> bool:
+    """A grid stands after the span's last shabad or reference line: the notation proper has begun (`real`: a grid of two rows or more, not a one-line shred under the verse)."""
     last = -1
     for k, it in enumerate(seg["items"]):
         if it["role"] in ("shabad", "ref"):
             last = k
-    return any(it["role"] == "grid" for it in seg["items"][last + 1:])
+    return any(it["role"] == "grid" and (not real or _is_real_grid(it["region"])) for it in seg["items"][last + 1:])
 
 
 def _segments(items: list[dict], after: bool) -> list[dict]:
@@ -735,11 +826,18 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
             while j < len(items) and items[j]["role"] in ("shabad", "ref"):
                 group.append(items[j])
                 j += 1
+            has_ref = any(g["role"] == "ref" for g in group)
+            nxt_role = items[j]["role"] if j < len(items) else "break"
             if cur.get("sid") is not None and has(cur, ("grid",)):
                 first = group[0]
                 trimmed, tail = _trim_prev_bol(first["region"], cur["sid"])
                 if tail is not None:
                     cur["items"].append({**first, "role": "grid", "region": tail})     # the rows are the notation before's
+                    if _sid_of([trimmed]) is None and not has_ref and not _GRANTH_HEADING.search(trimmed.get("text") or ""):
+                        # what is left is no verse ("ao", "ਅਤਰਾ"): the rows and the label are the open notation's
+                        cur["items"].append({**first, "role": "text", "region": trimmed, "first": False})
+                        i = j
+                        continue
                     group[0] = {**first, "region": trimmed, "first": False}
             sid = _sid_of([g["region"] for g in group if g["role"] == "shabad"])
             if after:
@@ -749,7 +847,21 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
                 i = j
                 continue
             same = sid is not None and sid == cur["sid"]
-            if (has(cur, ("shabad",)) and not same) or (not has(cur, ("shabad",)) and has(cur, NOTATION_ROLES)):
+            begun = has(cur, ("shabad",)) and _grids_after_shabad(cur, real=True)
+            if begun and not has_ref and len(group) == 1 and len(group[0]["region"].get("lines") or []) == 1 \
+                    and nxt_role in ("grid", "marker", "section", "text"):
+                # one line of verse between the grids, no reference, grids again under it: the antra's
+                # first words set as its label ("ਹਰਿ ਹਰਿ ਅਗਮ ਅਗਾਧੋ ॥"), not the next shabad
+                cur["items"].append({**group[0], "role": "text"})
+                i = j
+                continue
+            # the same shabad set again after its reference under a heading with a taal or a number: a
+            # chhant's next pada, a notation of its own (a verse printed before each grid has no heading)
+            again = same and begun and has_ref and nxt_role == "heading" and _opens_notation(items[j]["region"])
+            # prose before the first shabad (a raag's description, its swar-vistaar) is not the notation's
+            prose_before = not has(cur, ("shabad",)) and not has(cur, NOTATION_ROLES) \
+                and any(it["role"] == "text" and len(it["region"].get("lines") or []) >= 3 for it in cur["items"])
+            if (has(cur, ("shabad",)) and not same) or again or (not has(cur, ("shabad",)) and has(cur, NOTATION_ROLES)) or prose_before:
                 # the next shabad -- or the first, after grids whose shabad was not read (the previous page, a failed read)
                 lead: list[dict] = []
                 while cur["items"] and _is_lead(cur["items"][-1]):
@@ -791,7 +903,7 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
 def _span_from_items(seg: dict) -> dict:
     """The span dict the parser reads, from a segment's items."""
     span = {"heading": None, "heading_page": None, "headings": [], "shabad": [], "ref": None, "sections": [],
-            "notes": [], "text": [], "pages": [], "continued": False, "extent": {},
+            "notes": [], "text": [], "pages": [], "continued": False, "continues": False, "extent": {},
             "sid": seg.get("sid"), "inherited": bool(seg.get("inherited")),
             "long": len({it["page"] for it in seg["items"]}) > LONG_SPAN_PAGES}
 
@@ -909,6 +1021,8 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
     pages_read = sorted({it["page"] for it in items if it["role"] != "break"})
     first_read, last_read = (pages_read[0], pages_read[-1]) if pages_read else (None, None)
     segs = _segments(items, after)
+    # the last item of each run of consecutive pages read (a window ends there, or the book)
+    tails = {id(it) for k, it in enumerate(items) if it["role"] != "break" and (k + 1 == len(items) or items[k + 1]["role"] == "break")}
     out: list[dict] = []
     dropped = dropped if dropped is not None else []
     prev: dict | None = None
@@ -950,6 +1064,10 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
         if edge_grid:
             seg["continued"] = True
         span = _span_from_items(seg)
+        last_item = seg["items"][-1]
+        if not after and id(last_item) in tails and last_item["role"] in NOTATION_ROLES + ("text", "note") \
+                and any(it["role"] == "grid" and it["page"] == last_item["page"] for it in seg["items"]):
+            span["continues"] = True            # the last thing read is its grid (or a line under it): the book may go on past the pages read
         # what stands between a notation's last region and the next notation's first on the same
         # page -- a bol row OCR glued to the next verse, a line read as nothing -- is the first's tail:
         # everything between one shabad and the next belongs to the notation

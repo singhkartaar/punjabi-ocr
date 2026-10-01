@@ -302,12 +302,16 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: s
                  % (esc(cid), esc(",".join(map(str, rec["pages"]))), esc(rec["kind"]), rec["seq"],
                     "" if comments else '<button data-allok="%s">all right, verified</button>' % esc(cid)))
     if rec.get("review_key"):
-        parts.append('<div class="rkey">%s%s</div>' % (esc(rec["review_key"]),
-                     ' <span class="flag-long">long span: %d pages</span>' % len(rec["pages"]) if "long-span" in rec.get("flags", []) else ""))
+        parts.append('<div class="rkey">%s%s%s</div>' % (esc(rec["review_key"]),
+                     ' <span class="flag-long">long span: %d pages</span>' % len(rec["pages"]) if "long-span" in rec.get("flags", []) else "",
+                     ' <span class="flag-long">ends on the last page read: may go on</span>' if "continues-next-page" in rec.get("flags", []) else ""))
     prior = rec.get("review") or {}
     if prior.get("status") == "backlog":
         parts.append('<div class="prior"><b>backlog, round %s:</b> %s%s</div>'
                      % (esc(prior.get("round") or "?"), esc(prior.get("comment") or ""), " · <i>the cut changed since</i>" if prior.get("changed") else ""))
+    elif prior.get("noted") and prior.get("changed"):
+        parts.append('<div class="prior"><b>accepted with a note, round %s:</b> %s · <i>the cut moved since: look again</i></div>'
+                     % (esc(prior.get("round") or "?"), esc(prior.get("comment") or "")))
     elif prior.get("status") == "accepted":
         parts.append('<div class="prior accepted"><b>accepted</b> in round %s · frozen</div>' % esc(prior.get("round") or "?"))
     parts.append('<div class="crops">')

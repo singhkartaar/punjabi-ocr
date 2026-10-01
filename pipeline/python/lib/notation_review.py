@@ -298,7 +298,9 @@ def drift_of(entry: dict, fresh: dict | None) -> dict:
             "shabad_before": before["shabad_id"], "shabad_after": (fresh.get("shabad") or {}).get("shabad_id"),
             "extent_iou": round(iou(ext_a, ext_b), 3),
             "same": (list(fresh.get("pages") or []) == before["pages"] and (fresh.get("shabad") or {}).get("shabad_id") == before["shabad_id"]
-                     and iou(ext_a, ext_b) >= IOU_PASS)}
+                     and iou(ext_a, ext_b) >= IOU_PASS),
+            "identical": (list(fresh.get("pages") or []) == before["pages"] and (fresh.get("shabad") or {}).get("shabad_id") == before["shabad_id"]
+                          and {k: list(v) for k, v in ext_a.items()} == {k: list(v) for k, v in ext_b.items()})}
 
 
 def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, review_dir: str | None = None) -> dict:
@@ -312,7 +314,7 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
     list to write.
     """
     assign_keys(records)
-    out = {"accepted": 0, "reused": 0, "lost": 0, "backlog": 0, "rejected": 0, "drift": []}
+    out = {"accepted": 0, "reused": 0, "lost": 0, "backlog": 0, "rejected": 0, "noted_moved": 0, "drift": []}
     taken: set[int] = set()
     replaced: dict[int, dict] = {}
     extra: list[dict] = []
@@ -327,6 +329,14 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
             frozen = (fx or {}).get("record")
             d = drift_of(entry, fresh)
             out["drift"].append(d)
+            if entry.get("comment") and fresh is not None and not d["identical"]:
+                # accepted with a note ("a little extra from the next shabad"): the cut has moved since, as the
+                # note hoped -- the fresh cut is shown again with the note, and the fixture waits for the new tick
+                d["noted"] = True
+                out["noted_moved"] += 1
+                fresh["review"] = {"key": key, "status": "accepted", "comment": entry["comment"], "at": entry.get("at"),
+                                   "round": entry.get("round"), "changed": True, "noted": True}
+                continue
             if frozen is None:
                 continue                                   # no fixture on this machine: the fresh record stands
             frozen = json.loads(json.dumps(frozen))
@@ -391,6 +401,8 @@ def check_book(book: str, records: list[dict], review_dir: str | None = None) ->
                 noted.append({**d, "comment": entry["comment"]})
             else:
                 failed.append(d)
+            if entry.get("comment") and not d["identical"] and d["same"]:
+                noted.append({**d, "comment": entry["comment"]})       # a small move under a note: shown again too
         elif entry["status"] == "backlog" and fresh is not None and not d["same"]:
             changed.append({**d, "comment": entry.get("comment") or ""})
     return {"book": book, "accepted": sum(1 for e in ledger.values() if e["status"] == "accepted"),

@@ -548,6 +548,116 @@ class LinkerRuleTests(unittest.TestCase):
         self.assertEqual(spans[0]["heading"]["text"], "ਰਾਗ ਸੋਰਠਿ ਤਿੰਨਤਾਲ")
         self.assertEqual(len(spans[0]["sections"][0]["grids"]), 1)
 
+    def _m(self, sid, i, score=0.9):
+        return [{"shabad_id": sid, "line_id": sid * 10 + i, "score": score, "source": "G"}]
+
+    def test_the_same_shabad_set_again_under_a_new_heading_is_the_next_notation(self):
+        # Tara Singh sets a chhant pada by pada: shabad, reference, "ਰਾਗ ਕੇਦਾਰਾ ਤਾਲ ਦਾਦਰਾ", grids -- the corpus
+        # links both padas to one shabad, the heading after the reference says it is a notation of its own
+        p1 = self._page(747, self._shabad(747, 4019, 1474) + [_line(9, "(ਗੁ. ਗ੍ਰੰਥ ਪੰਨਾ ੧੧੨੨)", 2215, x0=600, x1=1100),
+                                                              _line(10, "ਰਾਗ ਕੇਦਾਰਾ ਤਿੰਨਤਾਲ", 2300, bold=True)])
+        p2 = self._page(748, self._grids(1, 300) + self._grids(4, 800)
+                        + [_line(40, "ਕੇਦਾਰਾ ਛੰਤ ਮਹਲਾ ੫", 1061, x0=666, x1=1021),
+                           _line(41, "ਹਰਿ ਪ੍ਰੇਮ ਭਗਤਿ ਜਨ ਬੇਧਿਆ ਸੇ ਆਨ ਕਤ ਜਾਹੀ ॥", 1143, kind="gurbani", matches=self._m(4019, 5)),
+                           _line(42, "ਮੀਨੁ ਬਿਛੋਹਾ ਨਾ ਸਹੈ ਜਲ ਬਿਨੁ ਮਰਿ ਪਾਹੀ ॥", 1205, kind="gurbani", matches=self._m(4019, 6)),
+                           _line(43, "(ਗੁ. ਗ੍ਰੰਥ ਪੰਨਾ ੧੧੨੨)", 1528, x0=600, x1=1100),
+                           _line(44, "ਰਾਗ ਕੇਦਾਰਾ ਤਾਲ ਦਾਦਰਾ", 1625, bold=True)] + self._grids(45, 1770))
+        spans = link_pages([p1, p2], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [[747, 748], [748]])
+        self.assertEqual(spans[1]["extent"][748][1], 1061)
+        self.assertEqual(spans[1]["heading"]["text"], "ਰਾਗ ਕੇਦਾਰਾ ਤਾਲ ਦਾਦਰਾ")
+        self.assertTrue(spans[1]["continues"])                       # grids on the last page read
+        self.assertFalse(spans[0]["continues"])
+        # a window's end counts, not only the last page of all the pages read (the front pages, two windows)
+        p3 = self._page(760, self._shabad(760, 4030, 500) + [_line(9, "ਰਾਗ ਕੇਦਾਰਾ ਤਿੰਨਤਾਲ", 1500, bold=True)] + self._grids(10, 1650)
+                        + [_line(13, "(ਗੁ. ਗ੍ਰੰਥ ਪੰਨਾ ੧੧੨੩)", 2300, x0=600, x1=1100)])
+        spans = link_pages([p1, p2, p3], merge_style(None))
+        self.assertEqual([s.get("continues") for s in spans], [False, True, False])
+
+    def test_a_shred_under_the_verse_does_not_split_a_shabad_from_its_own_heading(self):
+        # Tara Singh: the shabad's first lines at the foot of a page (with a one-line grid shred under them),
+        # the rest of the shabad, its reference and its heading on the next: one notation
+        p1 = self._page(388, self._grids(1, 1683) + [_line(23, "ਧਨਾਸਰੀ ਮਹਲਾ ੫ ਘਰੁ ੧ ਚਉਪਦੇ", 2093, x0=580, x1=1200),
+                                                     _line(24, "ਭਵ ਖੰਡਨ ਦੁਖ ਭੰਜਨ ਸ੍ਵਾਮੀ ਭਗਤਿ ਵਛਲ ਨਿਰੰਕਾਰੇ ॥", 2200, kind="gurbani", matches=self._m(2556, 0)),
+                                                     _line(25, "ਸ | ਰੇ ਗ | — ਮ", 2319, x0=300, x1=700)])
+        p2 = self._page(389, [_line(3, "ਮੇਰਾ ਮਨੁ ਲਾਗਾ ਹੈ ਰਾਮ ਪਿਆਰੇ ॥", 275, kind="gurbani", matches=self._m(2556, 1)),
+                              _line(4, "ਦੀਨ ਦਇਆਲਿ ਕਰੀ ਪ੍ਰਭਿ ਕਿਰਪਾ ਵਸਿ ਕੀਨੇ ਪੰਚ ਦੂਤਾਰੇ ॥੧॥ ਰਹਾਉ ॥", 340, kind="gurbani", matches=self._m(2556, 2)),
+                              _line(5, "(ਗੁ. ਗ੍ਰੰਥ ਪੰਨਾ ੬੧੦)", 919, x0=600, x1=1100), _line(6, "ਰਾਗ ਧਨਾਸਰੀ (ਕਾਫੀ ਥਾਟ) ਤਿੰਨਤਾਲ", 1008, bold=True)]
+                        + self._grids(7, 1071))
+        spans = link_pages([p1, p2], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans if s["sid"] == 2556], [[388, 389]])
+        self.assertEqual([s for s in spans if s["sid"] == 2556][0]["extent"][388][1], 2093)
+
+    def test_the_bol_rows_read_as_the_verse_and_the_antra_label_stay_with_the_notation(self):
+        # Dyal Singh: shabad, sthai grid, the lyric lines under it read as the verse again, "ਅੰਤਰਾ", grid
+        p1 = self._page(328, [_line(1, "੭ ਰਾਗ ਸ਼ਿਵਰੰਜਨੀ, ਤਾਲ-ਦਾਦਰਾ", 185, bold=True)] + self._shabad(328, 1286, 293)
+                        + [_line(4, "(ਗਉੜੀ ਭਗਤ ਕਬੀਰ ਜੀ, ਪੰਨਾ ੩੨੩)", 626, x0=600, x1=1200), _line(5, "ਅਸਥਾਈ", 731, x0=800, x1=950)]
+                        + self._grids(6, 829)
+                        + [_line(12, "ਮਾਈ ਮੈ ਕਿਹਿ ਬਿਧਿ ਲਖਉ ਗੁਸਾਈ ॥", 1100, kind="gurbani", matches=self._m(1286, 0)),
+                           _line(13, "ਮਹਾ ਮੋਹ ਅਗਿਆਨਿ ਤਿਮਰਿ ਮੋ ਮਨੁ ਰਹਿਓ ਉਰਝਾਈ ॥੧॥ ਰਹਾਉ ॥", 1180, kind="gurbani", matches=self._m(1286, 1)),
+                           _line(14, "ao", 1255, x0=800, x1=830), _line(15, "ਅਤਰਾ", 1270, x0=800, x1=900)]
+                        + self._grids(16, 1300) + [_line(19, "= ਬਾਕੀ ਤੁਕਾਂ ਅੰਤਰੇ ਤੇ ਲਾਓ !", 1704)] + self._grids(20, 1800))
+        spans = link_pages([p1], merge_style(None))
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0]["extent"][328][3], 2020)
+        self.assertEqual(spans[0]["sid"], 1286)
+
+    def test_one_line_of_verse_between_the_grids_is_the_antra_label_not_the_next_shabad(self):
+        p1 = self._page(328, [_line(1, "ਰਾਗੁ ਨਟ ਤਿੰਨ ਤਾਲ", 340, bold=True)] + self._shabad(328, 3611, 400) + self._grids(4, 568)
+                        + [_line(17, "ਹਰਿ ਹਰਿ ਅਗਮ ਅਗਾਧੋ ॥", 1390, kind="gurbani", matches=self._m(4704, 0, 0.889), x0=926, x1=1559)]
+                        + self._grids(18, 1457))
+        spans = link_pages([p1], merge_style(None))
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0]["sid"], 3611)
+        self.assertEqual(spans[0]["extent"][328][3], 1457 + 160 + 60)
+        # with a reference after it, one line is a shabad of its own (a salok)
+        p2 = self._page(328, [_line(1, "ਰਾਗੁ ਨਟ ਤਿੰਨ ਤਾਲ", 340, bold=True)] + self._shabad(328, 3611, 400) + self._grids(4, 568)
+                        + [_line(17, "ਹਰਿ ਹਰਿ ਅਗਮ ਅਗਾਧੋ ॥", 1390, kind="gurbani", matches=self._m(4704, 0, 0.889), x0=926, x1=1559),
+                           _line(18, "(ਗੁ. ਗ੍ਰੰਥ ਪੰਨਾ ੯੭੫)", 1460, x0=600, x1=1100)] + self._grids(19, 1557))
+        self.assertEqual(len(link_pages([p2], merge_style(None))), 2)
+
+    def test_a_raag_description_before_the_shabad_is_not_the_notation(self):
+        swar = ["ਰੇਗਮ ਪ, ਮੁ ਪਰ ਨੀਸਾ, ਸਾਰੇਸਾਸਾਗ ਗਮ, ਮਪਮ, ਗਗਮ, ਗਮ ਧਪਪਗਮ,", "ਮਪਧਨੀਨੀਪ, ਧਧਪਧਮਪਗ ਮ, ਰੇ ਗਮਪ, ਮਗ,ਸਰੇ,ਸਾ।",
+                "2. ਸਾਰੇਸਾਸਾ, ਰੇ ਗਰੇ ਰੇ, ਗਗਮ, ਪ੍ਧ੍ਪਰਪ, ਸਾਰੇਸਾਸਾ, ਗਗ, ਮ,ਰੇਗਗਮ", "ਮਮ,ਗਮਸਾਰੇਸਾ, ਰੇਗਮਪਸਾਂ, ਧਨੀ ਪਰ ਮਪਮਗਮ, ਸਾਸਾਗਗਖ਼, ਪਮ,"]
+        prose = ["ਇਸ ਰਾਗ ਦਾ ਸਰੂਪ ਕਾਫੀ ਠਾਠ ਤੋਂ ਉਤਪੰਨ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ ਅਤੇ ਇਸ ਵਿਚ ਸਾਰੇ ਸੁਰ ਸ਼ੁੱਧ ਲਗਦੇ ਹਨ ।",
+                 "ਵਾਦੀ ਸੁਰ ਮਧਿਅਮ ਅਤੇ ਸੰਵਾਦੀ ਸੁਰ ਸ਼ੜਜ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ ਅਤੇ ਗਾਉਣ ਦਾ ਸਮਾਂ ਰਾਤ ਦਾ ਦੂਜਾ ਪਹਿਰ ਹੈ ।",
+                 "ਸੁਰਾਂ ਦੇ ਆਧਾਰ ਤੇ ਭਿੰਨ ਹੋ ਜਾਂਦੇ ਹਨ । ਇਸ ਵਿਚ ਕਦੇ ਕਦੇ ਕੋਮਲ ਨਿਸ਼ਾਦ ਵਿਵਾਦੀ ਰੂਪ ਵਿਚ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ ।"]
+        lines = [_line(1 + i, t, 299 + 70 * i) for i, t in enumerate(prose)] + [_line(8, "ਸੁਰ ਵਿਸਤਾਰ ਰਾਗ ਨਟ", 690, bold=True, x0=600, x1=1100)]
+        lines += [_line(9 + i, t, 820 + 60 * i) for i, t in enumerate(swar)]
+        lines += [_line(18, "ਨਟ ਮਹਲਾ ੪", 1747, x0=800, x1=1000),
+                  _line(19, "ਰਾਮ ਜਪਿ ਜਨ ਰਾਮੈ ਨਾਮਿ ਰਲੇ ॥", 1825, kind="gurbani", matches=self._m(3611, 0)),
+                  _line(21, "ਹਰਿ ਹਰਿ ਅਗਮ ਅਗੋਚਰੁ ਸੁਆਮੀ ਜਨ ਜਪਿ ਮਿਲਿ ਸਲਲ ਸਲਲੇ ॥", 1947, kind="gurbani", matches=self._m(3611, 1)),
+                  _line(22, "(ਗ, ਗੁ. ਪੰਨਾ ੯੭੫)", 2435, x0=600, x1=1000)]
+        p1 = self._page(327, lines)
+        p2 = self._page(328, [_line(1, "ਰਾਗੁ ਨਟ ਤਿੰਨ ਤਾਲ", 340, bold=True)] + self._grids(4, 568))
+        roles = [(r["role"], r["bbox"][1]) for r in p1["regions"]]
+        self.assertIn(("text", 820), roles); self.assertIn(("shabad", 1747), roles)       # the swar-vistaar split off
+        dropped = []
+        spans = link_pages([p1, p2], merge_style(None), dropped)
+        self.assertEqual([s["pages"] for s in spans], [[327, 328]])
+        self.assertEqual(spans[0]["extent"][327][1], 1747)
+        self.assertEqual([d["pages"] for d in dropped], [[327]])
+
+    def test_a_verse_line_read_as_a_bol_row_opens_the_shabad_block(self):
+        self.assertEqual(classify_line(_line(18, "ਕਬਹੂ ਖੀਰਿ ਕਾੜ ਘੀਉ ਨ ਭਾਵੈ । ਕਬਹੂ ਘਰ ਘਰ ਟੂਕ ਮਗਾਵੇ 1!", 1923)), "grid")
+        p1 = self._page(76, [_line(1, "ਰਾਗ ਭੇਰਉ ਤਿੰਨ ਤਾਲ", 369, bold=True)] + self._shabad(76, 4149, 420) + self._grids(4, 681)
+                        + [_line(18, "ਕਬਹੂ ਖੀਰਿ ਕਾੜ ਘੀਉ ਨ ਭਾਵੈ । ਕਬਹੂ ਘਰ ਘਰ ਟੂਕ ਮਗਾਵੇ 1!", 1923),
+                           _line(19, "ਕਬਹੂ ਕੂਰਨੁ ਚਨੇ ਬਿਨਾਵੈ ॥੧॥ ੧ ॥", 1991, kind="gurbani", matches=self._m(4150, 0)),
+                           _line(20, "ਜਿਉ ਰਾਮੁ ਰਾਖੈ ਤਿਉ ਰਹੀਐ ਰੇ ਭਾਈ ॥", 2052, kind="gurbani", matches=self._m(4150, 1)),
+                           _line(21, "(ਭੈਰਉ ਬਾਣੀ ਭਗਤ ਨਾਮਦੇਵ ਜੀ ਕੀ, ਆਦਿ ਗ੍ਰੰਥ, ਪੰਨਾ ੧੧੬੪)", 2349, x0=500, x1=1300)])
+        spans = link_pages([p1], merge_style(None))
+        self.assertEqual(len(spans), 2)
+        self.assertEqual(spans[1]["extent"][76][1], 1923)
+        self.assertEqual(spans[0]["extent"][76][3], 1922)
+        # a matched line of the block that the token shapes called a grid row, likewise
+        p2 = self._page(78, self._grids(1, 100)
+                        + [_line(3, "ਹਸਤ ਖੇਲਤ ਤੇਰੇ ਦੇਹੁਰੇ ਆਇਆ ॥ ਭਗਤਿ ਕਰਤ ਨਾਮਾ ਪਕਰਿ ਉਠਾਇਆ ॥੧॥ ੧ !!", 304, kind="gurbani", matches=self._m(4151, 0)),
+                           _line(4, "ਹੀਨੜੀ ਜਾਤਿ ਮੇਰੀ ਜਾਦਿਮ ਰਾਇਆ ॥ਛੀਪੇ ਕੇ ਜਨਮਿ ਕਾਹੇ ਕਉ ਆਇਆ ॥੧॥ ਰਹਾਉ ॥", 364, kind="gurbani", matches=self._m(4151, 1)),
+                           _line(7, "(ਭੈਰਉ ਬਾਣੀ ਭਗਤ ਨਾਮਦੇਵ ਜੀ ਕੀ, ਆਦਿ ਗ੍ਰੰਥ, ਪੰਨਾ ੧੧੬੪)", 548, x0=500, x1=1300),
+                           _line(8, "ਰਾਗ ਭੈਰਉ ਤਾਲ ਦਾਦਰਾ", 642, bold=True)] + self._grids(9, 707))
+        self.assertEqual(classify_line(_line(3, "ਹਸਤ ਖੇਲਤ ਤੇਰੇ ਦੇਹੁਰੇ ਆਇਆ ॥ ਭਗਤਿ ਕਰਤ ਨਾਮਾ ਪਕਰਿ ਉਠਾਇਆ ॥੧॥ ੧ !!", 304, kind="gurbani")), "grid")
+        self.assertEqual([r["bbox"][1] for r in p2["regions"] if r["role"] == "shabad"], [304])
+
     def test_the_lead_in_of_the_next_shabad_leaves_loose_text_with_the_notation_before(self):
         p1 = self._page(78, self._shabad(78, 4151, 300) + [_line(9, "ਰਾਗ ਭੈਰਉ ਤਾਲ ਦਾਦਰਾ", 640, bold=True)] + self._grids(10, 700)
                         + [_line(13, "ਹਸ ਤ ਖੋ5 ਲਤ ਤੇ ਰੇ ਦੇ$ ਹੁ58 ਭਰੇ ਆ 8 ਇਆ", 1290), _line(14, "ਦੁਧੁ ਦੁ ਦੁ ਨੀਨੀ ਸਾਂ ਸਾਂ ਰੇਸਾਂ ਨੀਸਾਂ ਰੁੇ ਸਾਂ ਦੁ ਪ ਪ", 1365)]
@@ -743,6 +853,13 @@ class ReviewLedgerTests(unittest.TestCase):
             got = check_book("test-book", [moved, b], d)
             self.assertTrue(got["ok"]); self.assertEqual(len(got["noted"]), 1); self.assertEqual(got["failed"], [])
             self.assertEqual(status_of("test-book", [a, b], d)["noted"], 1)
+            # and the re-run shows the moved cut again with the note instead of freezing the old one
+            from lib.notation_review import apply_review, read_ledger
+            nudged = self._rec("test-book:0170:1", [170], 1248, y1=880)         # a small move, under the IoU gate
+            got = apply_review([nudged, self._rec("test-book:0172:1", [172], 913)], read_ledger("test-book", d), os.path.join(d, "img"), d)
+            self.assertEqual(got["noted_moved"], 1); self.assertEqual(got["reused"], 0)
+            self.assertEqual(got["records"][0]["review"]["comment"], "a little extra from the next shabad")
+            self.assertTrue(got["records"][0]["review"]["changed"]); self.assertNotIn("verified", {k for k, v in got["records"][0].items() if v is True})
             st = status_of("test-book", [a, b], d)
             self.assertEqual((st["accepted"], st["backlog"], st["unreviewed"], st["clear"]), (1, 1, 0, False))
 

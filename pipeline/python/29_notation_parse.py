@@ -457,6 +457,8 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
                     flags.append(f)
     if span["continued"]:
         flags.append("continued-from-prev")
+    if span.get("continues"):
+        flags.append("continues-next-page")
     if span.get("inherited"):
         flags.append("shabad-inherited")
     if span.get("long"):
