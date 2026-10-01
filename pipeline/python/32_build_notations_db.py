@@ -161,7 +161,8 @@ def notation_row(rec: dict, ordinal: int) -> dict:
         "notation_id": rec["notation_id"], "book_key": rec["book_key"], "author_key": rec["source"]["author_key"],
         "ordinal": ordinal, "page_start": min(rec["pages"]), "page_end": max(rec["pages"]), "pages": j(rec["pages"]),
         "kind": rec["kind"],
-        "shabad_id": sh.get("shabad_id"), "shabad_source": sh.get("source"), "ang": sh.get("ang"),
+        # an ang only for a shabad the corpus named: a number read off an unidentified page is no ang
+        "shabad_id": sh.get("shabad_id"), "shabad_source": sh.get("source"), "ang": sh.get("ang") if sh.get("shabad_id") is not None else None,
         "first_line": sh.get("first_line"), "writer": sh.get("writer"), "line_ids": j(sh.get("line_ids") or []),
         "raag_shabad": sh.get("raag") or raag_row(rec.get("raag_shabad")).get("en"), "raag_shabad_key": rec.get("raag_shabad"),
         "raag_used": raag.get("printed"), "raag_used_key": raag.get("key"), "raag_used_parent_key": raag.get("parent_key"),
