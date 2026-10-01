@@ -6,7 +6,7 @@
  *
  *   node tools/publish-notation-images.mjs [--db artifacts/notations.sqlite] [--images <data>/notations]
  *        --repo OWNER/NAME [--book KEY ...] [--all-roles]
- *        [--max N] [--per-release 900] [--batch 25] [--dry-run] [--verify [--sample N]] [--prune]
+ *        [--max N] [--rate 60] [--per-release 900] [--batch 25] [--dry-run] [--verify [--sample N]] [--prune]
  *
  * What is published: the images the app shows -- a notation's `block`
  * cuts and their thumbnails, or every image of a notation that has no
@@ -24,7 +24,9 @@
  * replacing a URL a reader may have cached.
  *
  * Then: `<images>/<book>/images.urls.json` ({repo, releases, urls:
- * {sha256: url}}) -- it lives in the data repository and travels by git --
+ * {sha256: url}, keys: {"<notation_id>|<n>|<kind>": url}}) -- it lives in
+ * the data repository and travels by git; the keys serve a machine that
+ * cannot know an image's hash (a thumbnail recorded without one) --
  * and `UPDATE images SET url` in the database, so `32 --urls
  * '<data>/notations/*\/images.urls.json' --require-urls` carries them into
  * the next build.
@@ -39,8 +41,10 @@
  * The repository is --repo, or NOTATION_ASSETS_REPO in the environment.
  * Needs the GitHub CLI (`gh`) signed in with write access, and the
  * repository to exist (`gh repo create <repo> --public`). --dry-run plans
- * and touches nothing; --max caps the uploads of one run (GitHub limits
- * how fast content may be created; a stopped run resumes and exits 3);
+ * and touches nothing; uploads are paced at --rate a minute (60), and a
+ * rate-limit refusal waits for the limit to pass (up to about an hour)
+ * before giving up -- GitHub refuses bursts of content creation; --max
+ * caps the uploads of one run (a stopped run resumes, and exits 3);
  * --verify fetches every published URL (or --sample N of them) and fails
  * on any that does not answer 200 or any shown image without a URL;
  * --prune deletes the assets of a book's releases that no image names any
@@ -79,8 +83,11 @@ const MAX = num('--max', Infinity);
 const PER_RELEASE = num('--per-release', 900);
 const BATCH = num('--batch', 25);
 const SAMPLE = num('--sample', 0);
+const RATE = num('--rate', 60);                        // uploads a minute at most: GitHub refuses bursts of content creation
 const RETRIES = 5;
-const RETRY_BASE_S = Number(process.env.PUBLISH_RETRY_BASE_S || 30);   // the test sets it to 0
+const RETRY_BASE_S = Number(process.env.PUBLISH_RETRY_BASE_S ?? 30);   // the test sets it to 0
+// a rate-limit refusal waits for the limit to pass: about an hour in all before giving up
+const RATE_LIMIT_WAITS_S = [60, 120, 300, 600, 900, 900, 900].map(s => (RETRY_BASE_S ? s : 0));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function gh(argv, { json = false } = {}) {
@@ -125,9 +132,12 @@ async function withRetries(what, fn) {
   for (let attempt = 1; ; attempt++) {
     try { return fn(); } catch (err) {
       const msg = String(err.stderr || err.message || err).trim().split('\n').slice(-2).join(' ');
-      if (attempt >= RETRIES) throw new Error(`${what}: ${msg}`);
-      const wait = RETRY_BASE_S * 2 ** (attempt - 1);
-      console.log(`  ${what} failed (${msg.slice(0, 160)}); retrying in ${wait}s`);
+      const limited = /rate limit|secondary|abuse|HTTP 429|HTTP 403/i.test(msg);
+      const waits = limited ? RATE_LIMIT_WAITS_S : Array.from({ length: RETRIES - 1 }, (_, k) => RETRY_BASE_S * 2 ** k);
+      if (attempt > waits.length) throw new Error(`${what}: ${msg}`);
+      const wait = waits[attempt - 1];
+      console.log(`  ${what} failed (${msg.slice(0, 160)}); ${limited ? 'GitHub rate limit, ' : ''}retrying in ${wait}s`
+                  + ` [${new Date(Date.now() + wait * 1000).toISOString().slice(11, 19)} UTC]`);
       await sleep(wait * 1000);
     }
   }
@@ -224,11 +234,17 @@ async function main() {
         // gh names an asset after its file: each is staged under its asset name
         const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'notation-upload-'));
         const staged = batch.map(b => { const p = path.join(stage, b.name); fs.copyFileSync(b.file, p); return p; });
+        const started = Date.now();
         try {
           await withRetries(`upload ${batch.length} to ${tag}`, () => gh(['release', 'upload', tag, '--repo', REPO, '--clobber', ...staged]));
         } finally {
           fs.rmSync(stage, { recursive: true, force: true });
         }
+        // paced: a batch takes at least its share of a minute at --rate
+        const floor = (batch.length / RATE) * 60000 * (RETRY_BASE_S ? 1 : 0);
+        const spent = Date.now() - started;
+        if (spent < floor) await sleep(floor - spent);
+        if ((uploaded + batch.length) % 200 < batch.length) console.log(`  ${uploaded + batch.length} uploaded so far`);
       }
       shards[k - 1].assets.push(...batch.map(b => ({ name: b.name, state: 'uploaded' })));
       room -= batch.length;
@@ -249,11 +265,17 @@ async function main() {
       }
     }
     for (const [sha, url] of Object.entries(urls)) update.run(url, sha, book + ':%');
+    // and by image: <notation_id>|<n>|<kind> -> url, for a machine that cannot know an image's hash
+    const keys = {};
+    for (const r of mine) if (urls[r.sha256]) keys[`${r.notation_id}|${r.n}|${r.kind}`] = urls[r.sha256];
     const out = path.join(IMAGES, book, 'images.urls.json');
-    let prior = {};
-    if (fs.existsSync(out)) { try { prior = JSON.parse(fs.readFileSync(out, 'utf8')).urls || {}; } catch { prior = {}; } }
+    let prior = {}, priorKeys = {};
+    if (fs.existsSync(out)) {
+      try { const p = JSON.parse(fs.readFileSync(out, 'utf8')); prior = p.urls || {}; priorKeys = p.keys || {}; } catch { prior = {}; priorKeys = {}; }
+    }
     fs.mkdirSync(path.dirname(out), { recursive: true });
-    fs.writeFileSync(out, JSON.stringify({ repo: REPO, releases: shards.map(s => s.tag), urls: { ...prior, ...urls } }, null, 1) + '\n');
+    fs.writeFileSync(out, JSON.stringify({ repo: REPO, releases: shards.map(s => s.tag), urls: { ...prior, ...urls },
+                                           keys: { ...priorKeys, ...keys } }, null, 1) + '\n');
     console.log(`  ${Object.keys(urls).length} url(s) -> ${out} and the database`);
   }
   if (!DRY) {

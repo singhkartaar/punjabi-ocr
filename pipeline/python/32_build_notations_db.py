@@ -119,6 +119,11 @@ def load_urls(paths: list[str]) -> dict[str, str]:
             with open(p, encoding="utf-8") as fh:
                 data = json.load(fh)
             out.update(data.get("urls", data) if isinstance(data, dict) else {})
+            # {"<notation_id>|<n>|<kind>": url}: an image whose hash this machine cannot know (a thumbnail cut on
+            # another machine, recorded before thumbnails carried their hash) still finds its published URL
+            if isinstance(data, dict):
+                for k, v in (data.get("keys") or {}).items():
+                    out["key:" + k] = v
     return out
 
 
@@ -179,17 +184,18 @@ def notation_row(rec: dict, ordinal: int) -> dict:
 
 def image_rows(rec: dict, book_dir: str, urls: dict[str, str], by_file: dict[str, dict]) -> list[dict]:
     rows = []
+    key = lambda n, kind: urls.get("key:%s|%s|%s" % (rec["notation_id"], n, kind))
     for im in rec.get("images") or []:
         rows.append({"notation_id": rec["notation_id"], "n": im["n"], "kind": "full", "role": im["role"], "page": im["page"],
-                     "path": rec["book_key"] + "/" + im["file"], "url": urls.get(im["sha256"]),
+                     "path": rec["book_key"] + "/" + im["file"], "url": urls.get(im["sha256"]) or key(im["n"], "full"),
                      "bbox": j(im.get("bbox")), "w": im.get("w"), "h": im.get("h"), "bytes": im["bytes"], "sha256": im["sha256"]})
         if im.get("thumb"):
             tpath = os.path.join(book_dir, im["thumb"])
             known = by_file.get(im["thumb"]) or {}
-            sha = known.get("sha256") or (sha256_of(tpath) if os.path.exists(tpath) else "")
-            size = known.get("bytes") or (os.path.getsize(tpath) if os.path.exists(tpath) else 0)
+            sha = im.get("thumb_sha256") or known.get("sha256") or (sha256_of(tpath) if os.path.exists(tpath) else "")
+            size = im.get("thumb_bytes") or known.get("bytes") or (os.path.getsize(tpath) if os.path.exists(tpath) else 0)
             rows.append({"notation_id": rec["notation_id"], "n": im["n"], "kind": "thumb", "role": im["role"], "page": im["page"],
-                         "path": rec["book_key"] + "/" + im["thumb"], "url": urls.get(sha) if sha else None,
+                         "path": rec["book_key"] + "/" + im["thumb"], "url": (urls.get(sha) if sha else None) or key(im["n"], "thumb"),
                          "bbox": j(im.get("bbox")), "w": known.get("w"), "h": known.get("h"), "bytes": size, "sha256": sha})
     return rows
 

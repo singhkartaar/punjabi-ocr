@@ -567,6 +567,9 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
             thumbnail(img, [max(0, bbox[0] - CROP_PAD), max(0, bbox[1] - CROP_PAD), bbox[2] + CROP_PAD, bbox[3] + CROP_PAD],
                       os.path.join(images_dir, tname))
             entry["thumb"] = "images/" + tname
+            # recorded like the full crop's, so every machine names the published thumbnail alike
+            entry["thumb_sha256"] = sha256_of(os.path.join(images_dir, tname))
+            entry["thumb_bytes"] = os.path.getsize(os.path.join(images_dir, tname))
         images.append(entry)
 
     rec = {

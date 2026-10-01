@@ -1210,6 +1210,23 @@ class EvalTests(unittest.TestCase):
 
 
 class DbTests(unittest.TestCase):
+    def test_an_image_finds_its_url_by_hash_or_by_notation_n_and_kind(self):
+        build = _script("32_build_notations_db.py")
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, "images.urls.json")
+            with open(f, "w", encoding="utf-8") as fh:
+                json.dump({"repo": "x/y", "urls": {"ab" * 32: "https://e.test/full.png"},
+                           "keys": {"bk:0010:1|1|thumb": "https://e.test/thumb.png"}}, fh)
+            urls = build.load_urls([f])
+            rec = {"notation_id": "bk:0010:1", "book_key": "bk",
+                   "images": [{"n": 1, "file": "images/bk-0010-1-1.png", "role": "block", "page": 10, "bbox": [0, 0, 9, 9],
+                               "w": 9, "h": 9, "bytes": 3, "sha256": "ab" * 32, "thumb": "images/bk-0010-1-1.thumb.png"}]}
+            rows = build.image_rows(rec, d, urls, {})
+            # the thumbnail's hash is unknown here (no file, none recorded): its URL comes by key
+            self.assertEqual([(r["kind"], r["url"]) for r in rows], [("full", "https://e.test/full.png"), ("thumb", "https://e.test/thumb.png")])
+            rec["images"][0]["thumb_sha256"] = "cd" * 32
+            self.assertEqual(build.image_rows(rec, d, urls, {})[1]["sha256"], "cd" * 32)    # a recorded hash is used as is
+
     def test_the_database_has_the_pinned_columns_and_the_records(self):
         import sqlite3
         build = _script("32_build_notations_db.py")
