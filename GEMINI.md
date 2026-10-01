@@ -80,6 +80,53 @@ absent. If a test fails, the change is not finished.
   saying which script needs them, and only when nothing already installed
   will do.
 
+## Keertan notation books (the whole-book runs)
+
+The notation route (`docs/notations.md` in the private repository;
+here `docs/runbook.md` §5a and `docs/output-format.md`) is being run
+book by book on this machine. What the agent does here, and does not:
+
+- **Work on the series branch** (`music-notations-sangeet-sagar` for
+  Prin. Dyal Singh's Gurmat Sangeet Sagar 1-4, `music-notations-tara-singh`
+  for Prof Tara Singh's ratnavalis), never on `main`. Pull before a run.
+- **The data is not in this repository.** Records, ledgers and fixtures
+  live in the private data repository cloned beside this one (the
+  `OCR_DIR`, `NOTATIONS_DIR`, `REVIEW_DIR`, `ARTIFACTS_DIR`, `CORPUS_DB`
+  variables point into it); commit and push *there* after a run or a
+  review (`git add -A && git commit -m "<book>: whole book" && git push`).
+  Renders, OCR output and crops are ignored there and remade.
+- **The loop per book**, from `pipeline/python` with the venv active:
+  ```
+  python 27_ingest_book.py --src <books>/<author> --book <book-key> --dry-run
+  python 27_ingest_book.py --src <books>/<author> --book <book-key>
+  python 34_notation_review.py serve --book <book-key>          # the person reviews; verdicts save as given
+  python 34_notation_review.py check --book <book-key> --strict # must be green after any change to the reader
+  python 34_notation_review.py status
+  ```
+  `21_ocr_run.py` and `29_notation_parse.py` use all cores but two; for
+  several books at once set `NOTATION_WORKERS` (and `--workers` on 21)
+  so they share the machine.
+- **Never edit a record, a ledger line or a fixture by hand.** A wrong
+  cut is a backlog comment through the review page; a reader fix is a
+  rule in `lib/notation_layout.py` with a test in `LinkerRuleTests`
+  (`test_notation.py`), written from the cached layout
+  (`data/ocr/<book>/notation/pages/NNNN.json`) and the merged lines, as
+  small as the case allows. After it: `python -m unittest test_notation`,
+  then `34 check --strict` on **every** book that has a ledger -- an
+  accepted notation that moves is a regression unless the reviewer's
+  own note on it asked for the move (the page shows those again).
+- **Flags on a card are facts, not faults.** `long-span` is a notation
+  over more than five pages; `continues-next-page` and
+  `continued-from-prev` mean the pages read ended or began inside it (a
+  sampled window, never a whole book).
+- **Commit code on the series branch**, one rule per commit, the rule's
+  reason and the card that showed it in the message; the private
+  repository ports it back and re-exports. Do not touch the export's file
+  set (rule 1), the output contract (rule 3) or the schema
+  (`lib/notation.schema.json`, `lib/notation_columns.json`) without
+  saying so in the commit, since the app's JavaScript twins must change
+  with them.
+
 ## When running the pipeline on real books
 
 - Keep everything under `data/` after a run. `data/ocr/<book>/` and
