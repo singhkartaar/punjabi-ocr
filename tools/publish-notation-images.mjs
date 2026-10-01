@@ -152,7 +152,18 @@ async function verify(rows) {
   let bad = 0;
   for (let i = 0; i < pick.length; i += 8) {
     const got = await Promise.all(pick.slice(i, i + 8).map(async u => {
-      try { const r = await fetch(u, { method: 'HEAD', redirect: 'follow' }); return [u, r.status]; } catch { return [u, 0]; }
+      // HEAD first; a dropped connection or a refused HEAD is tried again as a one-byte GET, twice, before it counts
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const r = attempt === 0 ? await fetch(u, { method: 'HEAD', redirect: 'follow' })
+                                  : await fetch(u, { headers: { Range: 'bytes=0-0' }, redirect: 'follow' });
+          if (r.body) await r.body.cancel().catch(() => {});
+          if (r.status === 200 || r.status === 206) return [u, 200];
+          if (attempt === 2) return [u, r.status];
+        } catch { if (attempt === 2) return [u, 0]; }
+        await sleep(1000 * (attempt + 1));
+      }
+      return [u, 0];
     }));
     for (const [u, status] of got) if (status !== 200) { bad += 1; console.log(`  ${status || 'no answer'}: ${u}`); }
   }
@@ -280,8 +291,15 @@ async function main() {
     // recorded without its hash and uploaded from the machine that cut it is found by its name less the hash.
     const keys = {};
     const byKey = DRY ? null : db.prepare('UPDATE images SET url = ? WHERE notation_id = ? AND n = ? AND kind = ? AND url IS NULL');
+    const found = new Map();                         // this machine's hash -> url, for rows resolved by name
     for (const r of mine) {
       const url = urls[r.sha256] || byStem.get(rowStem(r));
+      if (url && r.sha256) found.set(r.sha256, url);
+    }
+    for (const r of mine) {
+      // a row whose file is the same as another's (two notations sharing a page's crop) takes that one's URL:
+      // the image was uploaded once, under the first row's name
+      const url = urls[r.sha256] || byStem.get(rowStem(r)) || (r.sha256 ? found.get(r.sha256) : undefined);
       if (!url) continue;
       keys[`${r.notation_id}|${r.n}|${r.kind}`] = url;
       byKey.run(url, r.notation_id, r.n, r.kind);
