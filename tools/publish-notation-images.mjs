@@ -113,6 +113,8 @@ function shown(rows) {
 
 const sha256Of = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const assetName = row => `${row.notation_id.replace(/:/g, '-')}-${row.n}-${row.kind}-${row.sha256.slice(0, 8)}.png`;
+const rowStem = row => `${row.notation_id.replace(/:/g, '-')}-${row.n}-${row.kind}`;
+const stemOf = name => { const m = name.match(/^(.*)-[0-9a-f]{0,8}\.png$/); return m ? m[1] : name; };
 const tagOf = (book, k) => (k === 1 ? `notations-${book}-v1` : `notations-${book}-v1-p${k}`);
 
 /** Every release of the repository, by tag. */
@@ -190,18 +192,24 @@ async function main() {
       shards.push({ tag, assets: await withRetries(`list ${tag}`, () => assetsOf(tag)) });
     }
     const have = new Set();                              // names published, across the book's releases, finished uploads only
-    for (const s of shards) for (const a of s.assets) if (a.state === 'uploaded') have.add(a.name);
+    const haveStems = new Set();                         // the same, less the hash: an image published from another machine's cut
+    for (const s of shards) for (const a of s.assets) if (a.state === 'uploaded') { have.add(a.name); haveStems.add(stemOf(a.name)); }
+    const wantStems = new Set(mine.map(rowStem));
     const todo = [];
     const elsewhereBefore = elsewhere, keptBefore = kept;
     for (const w of want.values()) {
-      if (have.has(w.name)) { kept += 1; continue; }
+      // published already: under this name, or under the hash the machine that cut it saw (a thumbnail recorded
+      // without its hash is hashed differently on each machine; its other copy is never uploaded beside it)
+      if (have.has(w.name) || haveStems.has(rowStem(w.row))) { kept += 1; continue; }
       if (!fs.existsSync(w.file)) { continue; }        // counted below: not cut on this machine, or not re-cut yet
       // a crop is reproducible only on the kind of machine that cut it (the deskew rotation rounds differently on
       // Apple silicon and on x86): a file whose bytes are not the record's is never uploaded under the record's name
       if (sha256Of(w.file) !== w.row.sha256) { elsewhere += 1; continue; }
       todo.push(w);
     }
-    const stale = shards.flatMap(s => s.assets.filter(a => !shaOfName.has(a.name)).map(a => ({ tag: s.tag, name: a.name })));
+    // an asset no image names: neither its name nor its notation, n and kind (never another machine's copy of a shown image)
+    const stale = shards.flatMap(s => s.assets.filter(a => !shaOfName.has(a.name) && !wantStems.has(stemOf(a.name)))
+      .map(a => ({ tag: s.tag, name: a.name })));
     orphans += stale.length;
     const gone = want.size - todo.length - (kept - keptBefore) - (elsewhere - elsewhereBefore);
     console.log(`${book}: ${want.size} image(s): ${kept - keptBefore} published, ${todo.length} to upload`
@@ -259,15 +267,25 @@ async function main() {
 
     // the URLs as GitHub now has them, into the data and the database
     const urls = {};
+    const byStem = new Map();                          // <notation id>-<n>-<kind> -> url, whatever hash the uploader saw
     for (const s of shards) {
       for (const a of await withRetries(`list ${s.tag}`, () => assetsOf(s.tag))) {
-        if (a.state === 'uploaded' && shaOfName.has(a.name)) urls[shaOfName.get(a.name)] = a.url;
+        if (a.state !== 'uploaded') continue;
+        if (shaOfName.has(a.name)) urls[shaOfName.get(a.name)] = a.url;
+        byStem.set(stemOf(a.name), a.url);
       }
     }
     for (const [sha, url] of Object.entries(urls)) update.run(url, sha, book + ':%');
-    // and by image: <notation_id>|<n>|<kind> -> url, for a machine that cannot know an image's hash
+    // and by image: <notation_id>|<n>|<kind> -> url, for a machine that cannot know an image's hash. A thumbnail
+    // recorded without its hash and uploaded from the machine that cut it is found by its name less the hash.
     const keys = {};
-    for (const r of mine) if (urls[r.sha256]) keys[`${r.notation_id}|${r.n}|${r.kind}`] = urls[r.sha256];
+    const byKey = DRY ? null : db.prepare('UPDATE images SET url = ? WHERE notation_id = ? AND n = ? AND kind = ? AND url IS NULL');
+    for (const r of mine) {
+      const url = urls[r.sha256] || byStem.get(rowStem(r));
+      if (!url) continue;
+      keys[`${r.notation_id}|${r.n}|${r.kind}`] = url;
+      byKey.run(url, r.notation_id, r.n, r.kind);
+    }
     const out = path.join(IMAGES, book, 'images.urls.json');
     let prior = {}, priorKeys = {};
     if (fs.existsSync(out)) {
