@@ -157,6 +157,8 @@ table.f th{width:92px;color:#555;font-weight:600}
 .flags span.bad{background:#fde2e2}
 .printed{color:#444;font-size:13px;white-space:pre-wrap}
 textarea{width:100%;box-sizing:border-box;font:inherit;min-height:3em}
+textarea.comment{min-height:5em;border:2px solid #c9a227;border-radius:4px;padding:6px;background:#fffdf5}
+.row.comment{margin-top:12px}
 .row{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
 .count{color:#555}
 .ntn{overflow-x:auto;margin-top:8px}
@@ -202,7 +204,12 @@ function update() {
     const sel = el.querySelector('select[data-status]'); if (sel) sel.value = s.status || 'ok';
     const note = el.querySelector('textarea[data-note]'); if (note && document.activeElement !== note) note.value = s.note || '';
   }
-  document.getElementById('count').textContent = v + ' of ' + DATA.candidates.length + ' verified';
+  if (DATA.mode === 'comments') {
+    const n = DATA.candidates.filter(c => ((state[c.notation_id] || {}).note || '').trim()).length;
+    document.getElementById('count').textContent = n + ' of ' + DATA.candidates.length + ' commented · ' + v + ' marked right';
+  } else {
+    document.getElementById('count').textContent = v + ' of ' + DATA.candidates.length + ' verified';
+  }
 }
 document.addEventListener('change', e => {
   const t = e.target;
@@ -231,10 +238,19 @@ document.addEventListener('click', e => {
   }
 });
 document.getElementById('download').addEventListener('click', () => {
-  const lines = DATA.candidates.map(c => JSON.stringify(merged(c)));
+  let lines, name;
+  if (DATA.mode === 'comments') {
+    lines = DATA.candidates.map(c => { const s = state[c.notation_id] || {}; return JSON.stringify({
+      notation_id: c.notation_id, book: c.notation_id.split(':')[0], pages: c.pages || null,
+      comment: s.note || '', looks_right: !!s.verified, at: s.at || null}); });
+    name = 'notation-comments.jsonl';
+  } else {
+    lines = DATA.candidates.map(c => JSON.stringify(merged(c)));
+    name = 'notation-candidates.jsonl';
+  }
   const blob = new Blob([lines.join('\n') + '\n'], {type: 'application/json'});
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'notation-candidates.jsonl'; a.click();
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
 });
 document.getElementById('reset').addEventListener('click', () => {
   if (confirm('Forget every judgement on this page?')) { state = {}; save(); }
@@ -268,7 +284,9 @@ def describe_sections(secs: list[dict]) -> str:
     return "; ".join(out) or "none"
 
 
-def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: str | None = None, page_files: dict | None = None) -> str:
+def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: str | None = None, page_files: dict | None = None,
+         comments: bool = False) -> str:
+    """One notation's card. With `comments`, the field judgements give way to a single comment box and a 'looks right' tick."""
     page_files = page_files or {}
     cid = rec["notation_id"]
     h = rec.get("heading") or {}
@@ -276,9 +294,9 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: s
     raag = h.get("raag") or {}
     taal = h.get("taal") or {}
     parts = ['<section class="card" id="c-%s">' % esc(cid)]
-    parts.append('<h2>%s <small>pages %s · %s · seq %d</small>'
-                 '<span style="flex:1"></span><button data-allok="%s">all right, verified</button></h2>'
-                 % (esc(cid), esc(",".join(map(str, rec["pages"]))), esc(rec["kind"]), rec["seq"], esc(cid)))
+    parts.append('<h2>%s <small>pages %s · %s · seq %d</small><span style="flex:1"></span>%s</h2>'
+                 % (esc(cid), esc(",".join(map(str, rec["pages"]))), esc(rec["kind"]), rec["seq"],
+                    "" if comments else '<button data-allok="%s">all right, verified</button>' % esc(cid)))
     parts.append('<div class="crops">')
     blocks = [im for im in rec.get("images", []) if im["role"] == "block"]
     others = [im for im in rec.get("images", []) if im["role"] != "block"]
@@ -345,6 +363,13 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: s
         parts.append('<div class="ntn-wrap">%s</div>' % render_html(rec, "gurmukhi", corpus_lines))
         parts.append('<div class="ntn-wrap">%s</div>' % render_html(rec, "english", corpus_lines))
         parts.append('</details>')
+    if comments:
+        parts.append('<div class="row comment"><b>your comment</b> <label><input type="checkbox" data-id="%s" data-verified> looks right</label></div>'
+                     '<textarea data-id="%s" data-note class="comment" placeholder="what is wrong, missing or cut off here: the shabad, the pages, '
+                     'the start or the end of the cut, a taan or a note left out, anything the page shows that the record does not"></textarea>'
+                     % (esc(cid), esc(cid)))
+        parts.append("</div></section>")
+        return "".join(parts)
     parts.append(judge(cid, "shabad", sh.get("shabad_id"), "correct shabad_id, or empty for none"))
     parts.append(judge(cid, "raag_used", raag.get("key"), "raag key, e.g. bhairavi"))
     parts.append(judge(cid, "taal", taal.get("key"), "taal key, e.g. teentaal"))

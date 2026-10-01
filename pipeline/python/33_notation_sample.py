@@ -185,6 +185,7 @@ def main() -> None:
     ap.add_argument("--out", default=os.path.join(OCR_DIR, "_sample"))
     ap.add_argument("--skip-ocr", action="store_true", help="only write the page from what is already parsed")
     ap.add_argument("--only", help="comma list of book keys to restrict to")
+    ap.add_argument("--judge", action="store_true", help="the per-field right/wrong controls instead of one comment box a notation")
     args = ap.parse_args()
 
     rng = random.Random(args.seed)
@@ -296,8 +297,9 @@ def write_page(args, results: list[dict]) -> None:
             cand = gt.candidate(rec)
             cand["book"] = b["book"]
             cands.append(cand)
-            parts.append(gt.card(rec, cand, img_base, {}, pages_base, files))
-    data = json.dumps({"book": "_sample", "reviewer": os.environ.get("USER") or "", "candidates": cands}, ensure_ascii=False).replace("</", "<\\/")
+            parts.append(gt.card(rec, cand, img_base, {}, pages_base, files, comments=not args.judge))
+    data = json.dumps({"book": os.path.basename(args.out.rstrip("/")) or "_sample", "reviewer": os.environ.get("USER") or "",
+                       "mode": "judge" if args.judge else "comments", "candidates": cands}, ensure_ascii=False).replace("</", "<\\/")
     extra_css = """
 .book{margin:26px 16px 6px;font-size:18px}.book small{color:#666;font-weight:normal;font-size:13px}
 .none{margin:0 16px;color:#a33}
@@ -320,11 +322,12 @@ document.addEventListener('click', e => { if (e.target.tagName === 'IMG' && e.ta
            "<meta name=viewport content='width=device-width,initial-scale=1'>"
            "<style>%s%s%s</style><body>"
            "<header><h1>A sample across the shelf <small>%d books · %d notations · %s · each notation as printed, its page, the finer cuts</small></h1>"
-           "<span id=count class=count></span><button id=download class=primary>download candidates.jsonl</button><button id=reset>reset</button></header>"
+           "<span id=count class=count></span><button id=download class=primary>download %s</button><button id=reset>reset</button></header>"
            "%s<script id=cands type=application/json>%s</script><script>%s%s</script></html>"
            % (n_books, gt.PAGE_CSS, gt.NOTATION_CSS, extra_css, n_books, n_shown,
               ("%d pages at the %s of every book" % (args.window, " and the ".join(args.places.split(","))) if args.places != "random"
                else "%d random places a book, seed %d" % (args.per_book, args.seed)),
+              "candidates.jsonl" if args.judge else "comments.jsonl",
               "".join(parts), data, gt.PAGE_JS, extra_js))
     with open(os.path.join(args.out, "review.html"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(doc)
