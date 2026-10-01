@@ -716,8 +716,16 @@ class ReviewLedgerTests(unittest.TestCase):
                 self.assertEqual(ledger[b["review_key"]]["round"], 2)
                 self.assertTrue(os.path.exists(os.path.join(d, "fixtures", "test-book", "test-book__1248__gujri__teentaal__1.json")))
                 page = urllib.request.urlopen(base + "/").read().decode("utf-8")
-                self.assertNotIn("test-book/1248/gujri/teentaal#1", page.split("<script id=cands")[0])   # accepted: hidden
+                body = page.split("<script id=cands")[0]
+                self.assertIn('class="card stub done-accepted" id="c-test-book:0170:1"', body)           # accepted: a stub in its place
+                self.assertEqual(body.count("<textarea"), 1)                                             # only the backlog card is whole
                 self.assertIn("test-book/913/gujri/teentaal#1", page)                                     # backlog: shown
+                # the pages do not shift under the reviewer: one card a page, page 2 is still the second card
+                state.per_page = 1
+                p2 = urllib.request.urlopen(base + "/?page=2").read().decode("utf-8").split("<script id=cands")[0]
+                self.assertIn('id="c-test-book:0172:1"', p2); self.assertNotIn('id="c-test-book:0170:1"', p2)
+                self.assertIn("(0 left)", p2); self.assertIn("(1 left)", p2)
+                state.per_page = 40
                 bad = urllib.request.Request(base + "/verdict", data=b'{"notation_id": "nope", "status": "accepted"}', headers={"content-type": "application/json"}, method="POST")
                 with self.assertRaises(urllib.error.HTTPError):
                     urllib.request.urlopen(bad)
@@ -729,6 +737,12 @@ class ReviewLedgerTests(unittest.TestCase):
             moved = self._rec("test-book:0170:1", [170, 171], 1248, y0=600)
             got = check_book("test-book", [moved, b], d)
             self.assertFalse(got["ok"]); self.assertEqual(len(got["failed"]), 1)
+            # accepted with a note: a move there is reported, not failed
+            from lib.notation_review import append_entry, entry_of
+            append_entry(entry_of(a, "accepted", "a little extra from the next shabad", round_=3), d)
+            got = check_book("test-book", [moved, b], d)
+            self.assertTrue(got["ok"]); self.assertEqual(len(got["noted"]), 1); self.assertEqual(got["failed"], [])
+            self.assertEqual(status_of("test-book", [a, b], d)["noted"], 1)
             st = status_of("test-book", [a, b], d)
             self.assertEqual((st["accepted"], st["backlog"], st["unreviewed"], st["clear"]), (1, 1, 0, False))
 

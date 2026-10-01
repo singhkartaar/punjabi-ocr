@@ -83,7 +83,8 @@ section.card.done-rejected{opacity:.35;border-left:6px solid #999}
 .prior b{color:#8a5a00}
 .flag-long{background:#fde2e2;color:#a00;padding:1px 6px;border-radius:3px;font-size:12px;margin-left:6px}
 .pager{display:flex;gap:8px;margin:12px 16px;align-items:center}.pager a{padding:4px 8px;border:1px solid #ccc;border-radius:4px;color:#333;text-decoration:none}
-.pager a.cur{background:#333;color:#fff}
+.pager a.cur{background:#333;color:#fff}.pager a.done{color:#999}.pager a small{font-size:11px}
+section.card.stub{display:block;opacity:.6}section.card.stub h2{border:0}
 section.card.focus{outline:3px solid #4a90d9}
 """
 
@@ -98,7 +99,8 @@ function setState(id, status, comment) {
   const st = el.querySelector('.verdict .state'); if (st) st.textContent = status ? (status + (comment ? ' · ' + comment : '')) : '';
 }
 async function verdict(id, status) {
-  const el = card(id); const ta = el.querySelector('textarea.comment'); const comment = ta ? ta.value.trim() : '';
+  const el = card(id); if (!el || el.classList.contains('stub')) return;
+  const ta = el.querySelector('textarea.comment'); const comment = ta ? ta.value.trim() : '';
   if (status === 'backlog' && !comment) { ta.focus(); ta.placeholder = 'say what is wrong, then press To backlog again'; return; }
   const r = await fetch('/verdict', {method: 'POST', headers: {'content-type': 'application/json'},
                                      body: JSON.stringify({notation_id: id, key: KEYS[id], status, comment})});
@@ -108,7 +110,7 @@ async function verdict(id, status) {
   document.getElementById('count').textContent = got.counts;
 }
 let focused = 0;
-const cards = () => [...document.querySelectorAll('section.card')];
+const cards = () => [...document.querySelectorAll('section.card:not(.stub)')];
 function focus(i) {
   const cs = cards(); if (!cs.length) return;
   focused = Math.max(0, Math.min(cs.length - 1, i));
@@ -135,10 +137,12 @@ for (const [id, s] of Object.entries(DATA.states)) setState(id, s.status, s.comm
 """
 
 
-def build_page(books: list[dict], states: dict[str, dict], counts: str, page_no: int, n_pages: int, title: str, all_: bool) -> str:
+def build_page(books: list[dict], states: dict[str, dict], counts: str, page_no: int, n_pages: int, title: str, all_: bool,
+               left: list[int] | None = None) -> str:
     """
     One review page: `books` is [{"book", "title", "author", "records", "img_base", "pages_base", "files"}];
-    `states` is {notation_id: {"status", "comment"}} for the verdicts already given.
+    `states` is {notation_id: {"status", "comment"}} for the verdicts already given; `left` how many
+    cards each page still has to review (the pager prints it).
     """
     gt = load_script("30_notation_gt.py")
     parts: list[str] = []
@@ -152,6 +156,13 @@ def build_page(books: list[dict], states: dict[str, dict], counts: str, page_no:
             cand["book"] = b["book"]
             cands.append(cand)
             keys[rec["notation_id"]] = rec["review_key"]
+            st = states.get(rec["notation_id"]) or {}
+            if not all_ and st.get("status") in ("accepted", "rejected"):      # collapsed in its place: the page keeps its shape
+                parts.append('<section class="card stub done-%s" id="c-%s"><h2>%s <small>pages %s · %s%s</small></h2></section>'
+                             % (st["status"], html_mod.escape(rec["notation_id"]), html_mod.escape(rec["review_key"]),
+                                "-".join(str(p) for p in rec.get("pages") or []), st["status"],
+                                " · " + html_mod.escape(st.get("comment") or "") if st.get("comment") else ""))
+                continue
             html = gt.card(rec, cand, b["img_base"], {}, b["pages_base"], b["files"], comments=True)
             prior = rec.get("review") or {}
             extra: list[str] = []           # the card already prints the key, the long-span flag and the prior verdict
@@ -163,8 +174,11 @@ def build_page(books: list[dict], states: dict[str, dict], counts: str, page_no:
             parts.append(html)
     pager = ""
     if n_pages > 1:
-        pager = '<div class="pager">page ' + " ".join('<a href="/?page=%d%s" class="%s">%d</a>' % (i, "&all=1" if all_ else "", "cur" if i == page_no else "", i)
-                                                        for i in range(1, n_pages + 1)) + "</div>"
+        def link(i):
+            n = left[i - 1] if left and i - 1 < len(left) else None
+            return '<a href="/?page=%d%s" class="%s%s">%d%s</a>' % (i, "&all=1" if all_ else "", "cur" if i == page_no else "",
+                                                                    " done" if n == 0 else "", i, "" if n is None else " <small>(%d left)</small>" % n)
+        pager = '<div class="pager">page ' + " ".join(link(i) for i in range(1, n_pages + 1)) + "</div>"
     data = json.dumps({"book": title, "mode": "comments", "candidates": cands, "keys": keys, "states": states},
                       ensure_ascii=False).replace("</", "<\\/")
     return ("<!doctype html><html lang=en><meta charset=utf-8><title>%s · review</title>"
@@ -173,7 +187,7 @@ def build_page(books: list[dict], states: dict[str, dict], counts: str, page_no:
             "<header><h1>%s <small>%s</small></h1><span id=count class=count>%s</span></header>%s%s%s"
             "<script id=cands type=application/json>%s</script><script>%s</script></html>"
             % (html_mod.escape(title), gt.PAGE_CSS, gt.NOTATION_CSS, REVIEW_CSS, html_mod.escape(title),
-               "accepted hidden; a verdict is saved the moment it is given" if not all_ else "every notation, accepted ones greyed",
+               "accepted collapsed in place; a verdict is saved the moment it is given" if not all_ else "every notation, accepted ones greyed",
                html_mod.escape(counts), pager, "".join(parts), pager, data, REVIEW_JS))
 
 
@@ -202,31 +216,35 @@ class ReviewState:
         st = self.states()
         n = sum(len(b["records"]) for b in self.books)
         acc = sum(1 for s in st.values() if s["status"] == "accepted")
+        noted = sum(1 for s in st.values() if s["status"] == "accepted" and s.get("comment"))
         bl = sum(1 for s in st.values() if s["status"] == "backlog")
         rj = sum(1 for s in st.values() if s["status"] == "rejected")
-        return "%d notation(s) · %d accepted · %d in backlog · %d not notations · %d to review" % (n, acc, bl, rj, n - acc - bl - rj)
-
-    def visible(self) -> list[dict]:
-        st = self.states()
-        out = []
-        for b in self.books:
-            recs = b["records"] if self.all else [r for r in b["records"] if st.get(r["notation_id"], {}).get("status") not in ("accepted", "rejected")]
-            if recs:
-                out.append({**b, "records": recs})
-        return out
+        return "%d notation(s) · %d accepted%s · %d in backlog · %d not notations · %d to review" % (
+            n, acc, " (%d with a note)" % noted if noted else "", bl, rj, n - acc - bl - rj)
 
     def page(self, page_no: int) -> str:
-        books = self.visible()
-        flat = [(b, r) for b in books for r in b["records"]]
+        """
+        Page N is always the same N cards: the pages are cut over every
+        record in its fixed place, and a card that is accepted or rejected
+        collapses to a one-line stub there (shown whole with --all). A
+        page cut over the unreviewed ones alone shifted under the
+        reviewer: accepting page 1 moved page 2's cards onto page 1.
+        """
+        st = self.states()
+        flat = [(b, r) for b in self.books for r in b["records"]]
         n_pages = max(1, (len(flat) + self.per_page - 1) // self.per_page)
         page_no = max(1, min(n_pages, page_no))
+        left = []                                    # what each page still has to review
+        for i in range(n_pages):
+            chunk = flat[i * self.per_page: (i + 1) * self.per_page]
+            left.append(sum(1 for _, r in chunk if st.get(r["notation_id"], {}).get("status") not in ("accepted", "rejected")))
         chunk = flat[(page_no - 1) * self.per_page: page_no * self.per_page]
         shown: list[dict] = []
         for b, r in chunk:
             if not shown or shown[-1]["book"] != b["book"]:
                 shown.append({**b, "records": []})
             shown[-1]["records"].append(r)
-        return build_page(shown, self.states(), self.counts(), page_no, n_pages, self.title, self.all)
+        return build_page(shown, st, self.counts(), page_no, n_pages, self.title, self.all, left)
 
     def verdict(self, notation_id: str, status: str, comment: str) -> dict:
         if status not in STATUSES:
@@ -347,15 +365,22 @@ def check(args) -> None:
         got = check_book(book, records, args.review_dir)
         if report and report.get("drift"):
             # the parser's own drift (fresh cut against the fixture) is the finer witness when it exists
-            failed = [d for d in report["drift"] if not d.get("lost") and not d.get("same")]
+            notes = {k: e.get("comment") or "" for k, e in read_ledger(book, args.review_dir).items() if e["status"] == "accepted"}
+            moved = [d for d in report["drift"] if not d.get("lost") and not d.get("same")]
+            failed = [d for d in moved if not notes.get(d["key"])]
+            noted = [{**d, "comment": notes[d["key"]]} for d in moved if notes.get(d["key"])]
             lost = [d for d in report["drift"] if d.get("lost")]
-            got.update({"passed": len(report["drift"]) - len(failed) - len(lost), "failed": failed, "lost": lost, "ok": not failed and not lost})
-        print("%-50s accepted %3d  passed %3d  failed %2d  lost %2d  backlog changed %2d  %s"
-              % (book[:50], got["accepted"], got["passed"], len(got["failed"]), len(got["lost"]), len(got["backlog_changed"]), "ok" if got["ok"] else "FAIL"))
+            got.update({"passed": len(report["drift"]) - len(moved) - len(lost), "failed": failed, "lost": lost, "noted": noted,
+                        "ok": not failed and not lost})
+        print("%-50s accepted %3d  passed %3d  failed %2d  lost %2d  noted moved %2d  backlog changed %2d  %s"
+              % (book[:50], got["accepted"], got["passed"], len(got["failed"]), len(got["lost"]), len(got.get("noted", [])),
+                 len(got["backlog_changed"]), "ok" if got["ok"] else "FAIL"))
         for d in got["failed"]:
             print("   moved  %s: pages %s -> %s, shabad %s -> %s, overlap %.2f" % (d["key"], d["pages_before"], d.get("pages_after"), d["shabad_before"], d.get("shabad_after"), d.get("extent_iou", 0)))
         for d in got["lost"]:
             print("   lost   %s: pages %s" % (d["key"], d["pages_before"]))
+        for d in got.get("noted", []):
+            print("   noted, moved  %s: pages %s -> %s (%s)" % (d["key"], d["pages_before"], d.get("pages_after"), d["comment"][:60]))
         for d in got["backlog_changed"]:
             print("   changed, show again  %s: %s" % (d["key"], d["comment"][:60]))
         bad += 0 if got["ok"] else 1
@@ -371,16 +396,16 @@ def status(args) -> None:
         _, records = fresh_records(book)
         rows.append(status_of(book, records, review_dir))
         r = rows[-1]
-        print("%-50s notations %4d  accepted %4d  backlog %3d  rejected %3d  unreviewed %4d  %s"
-              % (book[:50], r["notations"], r["accepted"], r["backlog"], r["rejected"], r["unreviewed"], "CLEAR" if r["clear"] else ""))
+        print("%-50s notations %4d  accepted %4d (%d noted)  backlog %3d  rejected %3d  unreviewed %4d  %s"
+              % (book[:50], r["notations"], r["accepted"], r["noted"], r["backlog"], r["rejected"], r["unreviewed"], "CLEAR" if r["clear"] else ""))
     os.makedirs(review_dir, exist_ok=True)
     with open(os.path.join(review_dir, "index.html"), "w", encoding="utf-8") as fh:
         fh.write("<!doctype html><meta charset=utf-8><title>notation review</title>"
                  "<style>body{font:14px system-ui;margin:24px}table{border-collapse:collapse}td,th{padding:4px 10px;border-bottom:1px solid #ddd;text-align:right}"
                  "td:first-child,th:first-child{text-align:left}tr.clear{background:#e3f4e6}</style>"
-                 "<h1>Notation review</h1><table><tr><th>book</th><th>notations</th><th>accepted</th><th>backlog</th><th>not notations</th><th>unreviewed</th></tr>"
-                 + "".join("<tr class='%s'><td>%s</td><td>%d</td><td>%d</td><td>%d</td><td>%d</td><td>%d</td></tr>"
-                           % ("clear" if r["clear"] else "", html_mod.escape(r["book"]), r["notations"], r["accepted"], r["backlog"], r["rejected"], r["unreviewed"])
+                 "<h1>Notation review</h1><table><tr><th>book</th><th>notations</th><th>accepted</th><th>with a note</th><th>backlog</th><th>not notations</th><th>unreviewed</th></tr>"
+                 + "".join("<tr class='%s'><td>%s</td><td>%d</td><td>%d</td><td>%d</td><td>%d</td><td>%d</td><td>%d</td></tr>"
+                           % ("clear" if r["clear"] else "", html_mod.escape(r["book"]), r["notations"], r["accepted"], r["noted"], r["backlog"], r["rejected"], r["unreviewed"])
                            for r in rows)
                  + "</table><p>Serve a book with <code>34_notation_review.py serve --book &lt;key&gt;</code>.</p>")
     print("-> %s" % os.path.join(review_dir, "index.html"))

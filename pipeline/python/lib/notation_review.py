@@ -373,7 +373,7 @@ def check_book(book: str, records: list[dict], review_dir: str | None = None) ->
     """
     ledger = read_ledger(book, review_dir)
     assign_keys(records)
-    passed, failed, changed, lost = [], [], [], []
+    passed, failed, changed, lost, noted = [], [], [], [], []
     attached = attach(ledger, records)
     by_entry = {id(e): nid for nid, e in attached.items()}
     by_nid = {r["notation_id"]: r for r in records}
@@ -385,12 +385,16 @@ def check_book(book: str, records: list[dict], review_dir: str | None = None) ->
                 lost.append(d)
             elif d["same"]:
                 passed.append(key)
+            elif entry.get("comment"):
+                # accepted with a note ("a little extra from the next shabad"): the reviewer expects
+                # the cut to move there, so a move is reported for a look, not failed
+                noted.append({**d, "comment": entry["comment"]})
             else:
                 failed.append(d)
         elif entry["status"] == "backlog" and fresh is not None and not d["same"]:
             changed.append({**d, "comment": entry.get("comment") or ""})
     return {"book": book, "accepted": sum(1 for e in ledger.values() if e["status"] == "accepted"),
-            "passed": len(passed), "failed": failed, "lost": lost, "backlog_changed": changed,
+            "passed": len(passed), "failed": failed, "lost": lost, "noted": noted, "backlog_changed": changed,
             "ok": not failed and not lost}
 
 
@@ -403,5 +407,6 @@ def status_of(book: str, records: list[dict], review_dir: str | None = None) -> 
         by_status[e["status"]] = by_status.get(e["status"], 0) + 1
     attached = attach(ledger, records)
     unreviewed = sum(1 for r in records if r["notation_id"] not in attached)
-    return {"book": book, "notations": len(records), **by_status, "unreviewed": unreviewed,
+    noted = sum(1 for e in ledger.values() if e["status"] == "accepted" and e.get("comment"))
+    return {"book": book, "notations": len(records), **by_status, "noted": noted, "unreviewed": unreviewed,
             "clear": unreviewed == 0 and by_status["backlog"] == 0 and len(records) > 0}
