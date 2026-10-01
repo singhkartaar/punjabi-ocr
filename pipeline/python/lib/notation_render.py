@@ -221,7 +221,8 @@ def cells(rec: dict, corpus_lines: dict | None = None, kanna: bool = False) -> l
     top_taal = (rec.get("heading") or {}).get("taal")
     out = []
     for sec in rec.get("sections") or []:
-        taal = sec.get("taal") or top_taal
+        own = sec.get("taal")                            # a section's taal is its key; the heading's is an object
+        taal = ({"key": own} if isinstance(own, str) else own) or top_taal
         key = (taal or {}).get("key")
         info = TAALS.get(key) if key else None
         vibhag_starts = _vibhag_starts(info)

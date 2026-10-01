@@ -571,6 +571,9 @@ def _repeated_tops(layouts: list[dict], style: dict | None = None) -> list[str]:
 
 
 def _is_running(region: dict, page_h: int, repeated: list[str]) -> bool:
+    """A top-of-page region that reads like a repeated header -- never one that names a taal: Dyal Singh's consecutive numbered headings resemble each other too."""
+    if (region.get("parsed") or {}).get("taal"):
+        return False
     key = _top_key(region, page_h)
     return bool(key) and any(_similar(key, r) for r in repeated)
 
@@ -586,6 +589,33 @@ def _named_heading(region: dict) -> dict | None:
     """The parse of a heading that names a raag or a taal (a notation's heading, not a section label)."""
     p = region.get("parsed") or {}
     return p if (p.get("raag") or p.get("taal")) and not p.get("section") else None
+
+
+_ORDINALS = {"ਪਹਿਲਾ": 1, "ਪਹਿਲੀ": 1, "ਦੂਜਾ": 2, "ਦੂਜੀ": 2, "ਤੀਜਾ": 3, "ਤੀਜੀ": 3, "ਚੌਥਾ": 4, "ਚੌਥੀ": 4, "ਪੰਜਵਾਂ": 5, "ਪੰਜਵੀਂ": 5}
+
+
+def _section_heading(region: dict, grids_seen: bool) -> dict | None:
+    """
+    A heading that is a section of the notation rather than a notation's own:
+    'ਅੰਤਰਾ-ਸੂਲਫਾਕ (ਮਣੀ ਤਾਲ ਦੀ ਚੌਗੁਨ ਲਯ ਵਿਚ)', 'ਦੂਜਾ ਅੰਤਰਾ-ਤਾਲ ਰੂਪਕ', or -- once
+    the grids have begun -- 'ਤਾਲ ਚੰਚਲ (...)' alone (a partaal changes taal
+    from section to section). {"kind", "n", "taal"} or None.
+    """
+    p = region.get("parsed") or {}
+    if p.get("section"):
+        return {"kind": p["section"].get("kind"), "n": p["section"].get("n"), "taal": p.get("taal")}
+    words = [w for w in re.split(r"[\s\-:–—(),]+", (region.get("text") or "").strip()) if w]
+    if words:
+        n = None
+        k = 0
+        if words[0] in _ORDINALS and len(words) > 1:
+            n, k = _ORDINALS[words[0]], 1
+        lab = section_label(words[k]) if k < len(words) else None
+        if lab:
+            return {"kind": lab[0], "n": lab[1] if lab[1] is not None else n, "taal": p.get("taal")}
+    if grids_seen and p.get("taal") and not p.get("raag") and p.get("number") is None:
+        return {"kind": None, "n": None, "taal": p["taal"]}
+    return None
 
 
 def _is_lead(item: dict) -> bool:
@@ -671,6 +701,10 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
             i = j
             continue
         if role == "heading":
+            if _section_heading(it["region"], has(cur, ("grid",))):
+                cur["items"].append(it)                 # a section's own heading (ਅੰਤਰਾ, a partaal's next taal): inside the notation
+                i += 1
+                continue
             p = _named_heading(it["region"])
             if p:
                 done = has(cur, ("shabad",)) and _grids_after_shabad(cur)
@@ -729,10 +763,10 @@ def _span_from_items(seg: dict) -> dict:
         span["extent"][page] = _bbox_union([ext, r["bbox"]]) if ext else list(r["bbox"])
         if role == "heading":
             p = r.get("parsed") or {}
-            if p.get("section"):
-                sec = p["section"]
+            sec = _section_heading(r, bool(span["sections"]) and any(s["grids"] for s in span["sections"]))
+            if sec:
                 span["sections"].append({"label": r, "kind": sec.get("kind"), "n": sec.get("n"), "page": page,
-                                         "grids": [], "markers": [], "taal": p.get("taal")})
+                                         "grids": [], "markers": [], "taal": sec.get("taal")})
             else:
                 span["headings"].append((page, r))
                 if span["heading"] is None:

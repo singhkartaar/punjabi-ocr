@@ -467,12 +467,20 @@ class LayoutTests(unittest.TestCase):
                           _line(5, "ਨੋਟ :--ਇਹ ਸ਼ਬਦ ਨੰ: ੩ ਤੇ ਲਿਖਿਆ ਹੈ ।", 560)])
         spans = link_pages([p1, p2, p3, p4b], merge_style(None), dropped := [])
         self.assertEqual((len(spans), dropped, spans[2]["shabad"]), (3, [], []))
-        # the same shabad set again under a heading with no number keeps its shabad
+        # a taal on its own after the grids is the next section of the same notation (a partaal) ...
         p5 = self._page(170, [_line(1, "ਤਾਲ ਝਪਤਾਲ", 200, bold=True),
                               _line(2, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 400),
                               _line(3, "ਮਨ ਕਹਾ | ਲੁ ਭਾ | ਈ ऽ | ਐ ਆਨ", 480),
                               _line(4, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 560)])
         spans = link_pages([p1, p2, p3, p5], merge_style(None))
+        self.assertEqual(len(spans), 2)
+        self.assertEqual((spans[1]["pages"], (spans[1]["sections"][-1]["taal"] or {}).get("key")), ([169, 170], "jhaptaal"))
+        # ... and the same shabad set again under a raag-and-taal heading with no number keeps its shabad
+        p6 = self._page(170, [_line(1, "ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਝਪਤਾਲ", 200, bold=True),
+                              _line(2, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 400),
+                              _line(3, "ਮਨ ਕਹਾ | ਲੁ ਭਾ | ਈ ऽ | ਐ ਆਨ", 480),
+                              _line(4, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 560)])
+        spans = link_pages([p1, p2, p3, p6], merge_style(None))
         self.assertEqual(len(spans), 3)
         self.assertTrue(spans[2]["inherited"])
         self.assertEqual(spans[2]["shabad"][0][1]["text"], spans[1]["shabad"][0][1]["text"])
@@ -536,6 +544,24 @@ class LinkerRuleTests(unittest.TestCase):
         self.assertGreaterEqual(spans[0]["extent"][78][3], 1365 + 60)      # the two loose rows stay with the first
         self.assertEqual(spans[1]["extent"][78][1], 1430)
 
+    def test_a_partaal_changes_taal_from_section_to_section_inside_one_notation(self):
+        p1 = self._page(284, [_line(1, "੧੧. ਰਾਗ ਵਡਹੰਸ, ਪੜਤਾਲ, ਮਣੀ ਤਾਲ, ੧੧ ਮਾਤਰੇ (ਬਿਲੰਬਿਤ ਲਯ)", 650, bold=True)] + self._shabad(284, 2159, 770)
+                        + [_line(9, "ਅਸਥਾਈ", 1648, x0=830, x1=972)] + self._grids(10, 1714))
+        p2 = self._page(285, [_line(1, "ਅੰਤਰਾ-ਸੂਲਫਾਕ (ਮਣੀ ਤਾਲ ਦੀ ਚੌਗੁਨ ਲਯ ਵਿਚ)", 135, x0=565, x1=1337)] + self._grids(2, 230)
+                        + [_line(6, "ਤਾਲ ਚੰਚਲ (ਮਣੀ ਤਾਲ ਦੀ ਦੁਗੁਨ ਲਯ ਵਿਚ)", 1878, x0=608, x1=1312)] + self._grids(7, 1960))
+        p3 = self._page(286, [_line(1, "ਦੂਜਾ ਅੰਤਰਾ-ਤਾਲ ਰੂਪਕ (ਬਿਲੰਬਿਤ ਇਕਤਾਲੇ ਦੀ)", 211, x0=537, x1=1200)] + self._grids(2, 300))
+        spans = link_pages([p1, p2, p3], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [[284, 285, 286]])
+        secs = [(sec["kind"], sec.get("n"), (sec.get("taal") or {}).get("key"), len(sec["grids"])) for sec in spans[0]["sections"]]
+        self.assertEqual(secs, [("sthai", None, None, 1), ("antara", None, "sooltaal", 1), (None, None, "chachar", 1), ("antara", 2, "rupak", 1)])
+        # before the grids, a taal on its own line is the heading's second half, not a section
+        p4 = self._page(431, self._shabad(431, 2655, 300) + [_line(9, "ਰਾਗ ਜੈਤਸਰੀ", 700, x0=124, x1=400), _line(10, "ਤਿੰਨ ਤਾਲ", 700, x0=1300, x1=1611)]
+                        + self._grids(11, 800))
+        spans = link_pages([p4], merge_style(None))
+        self.assertEqual(len(spans), 1)
+        self.assertEqual((spans[0]["heading"]["parsed"]["raag"]["key"], spans[0]["heading"]["parsed"]["taal"]["key"]), ("jaitsri", "teentaal"))
+        self.assertEqual(len(spans[0]["sections"]), 1)
+
     def test_a_line_with_no_two_gurmukhi_letters_is_not_a_heading(self):
         self.assertFalse(is_heading_like("N..O\" '"))
         self.assertEqual(classify_line(_line(5, "N..O\" '", 2021, x0=984, x1=1127)), "text")
@@ -546,6 +572,8 @@ class SectionTaalTests(unittest.TestCase):
         rec = _record()
         rec["sections"][0]["taal"] = "teentaal"
         self.assertEqual(validate(rec), [])
+        from lib.notation_render import html as render_html
+        self.assertIn("ntn-sec", render_html(rec, "english", {}))      # the renderer takes the key too
         rec["sections"][0]["taal"] = "no-such-taal"
         self.assertEqual([e["code"] for e in validate(rec)], ["vocab.key"])
 
