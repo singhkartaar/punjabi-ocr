@@ -641,6 +641,16 @@ class ReviewLedgerTests(unittest.TestCase):
         self.assertIsNone(match_entry(e, [other]))
         self.assertTrue(drift_of(e, None)["lost"])
 
+    def test_two_notations_of_one_shabad_on_overlapping_pages_keep_their_own_verdicts(self):
+        from lib.notation_review import assign_keys, attach, entry_of
+        first = self._rec("test-book:0049:1", [49, 50], 3107, y0=200, y1=2300)
+        second = self._rec("test-book:0050:1", [49, 50, 51], 3107, y0=1700, y1=2400)     # the same shabad set again, inherited
+        assign_keys([first, second])
+        self.assertEqual((first["review_nth"], second["review_nth"]), (1, 2))
+        ledger = {first["review_key"]: entry_of(first, "accepted")}
+        got = attach(ledger, [first, second])
+        self.assertEqual(list(got), ["test-book:0049:1"])                                  # the second is still unreviewed
+
     def test_the_ledger_freezes_accepted_records_and_annotates_the_backlog(self):
         import tempfile
         from lib.notation_review import append_entry, apply_review, assign_keys, entry_of, read_ledger, save_fixture

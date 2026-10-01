@@ -38,7 +38,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from lib.notation import read_jsonl  # noqa: E402
-from lib.notation_review import (STATUSES, append_entry, assign_keys, check_book, entry_of, match_entry,  # noqa: E402
+from lib.notation_review import (STATUSES, append_entry, assign_keys, attach, check_book, entry_of, match_entry,  # noqa: E402
                                  read_ledger, save_fixture, status_of)
 from lib.paths import NOTATIONS_DIR, OCR_DIR, REVIEW_DIR  # noqa: E402
 
@@ -154,19 +154,12 @@ def build_page(books: list[dict], states: dict[str, dict], counts: str, page_no:
             keys[rec["notation_id"]] = rec["review_key"]
             html = gt.card(rec, cand, b["img_base"], {}, b["pages_base"], b["files"], comments=True)
             prior = rec.get("review") or {}
-            extra = ['<div class="rkey">%s%s</div>' % (html_mod.escape(rec["review_key"]),
-                     '<span class="flag-long">long span: %d pages</span>' % len(rec["pages"]) if "long-span" in rec.get("flags", []) else "")]
-            if prior.get("status") == "backlog":
-                extra.append('<div class="prior"><b>backlog, round %s:</b> %s%s</div>'
-                             % (html_mod.escape(str(prior.get("round") or "?")), html_mod.escape(prior.get("comment") or ""),
-                                " · <i>the cut changed since</i>" if prior.get("changed") else ""))
+            extra: list[str] = []           # the card already prints the key, the long-span flag and the prior verdict
             verdict = ('<div class="verdict"><button class="accept" data-verdict="accepted" data-vid="%s">Accept (a)</button>'
                        '<button class="backlog" data-verdict="backlog" data-vid="%s">To backlog (b)</button>'
                        '<button class="reject" data-verdict="rejected" data-vid="%s">Not a notation (x)</button>'
                        '<span class="state"></span></div>' % ((html_mod.escape(rec["notation_id"]),) * 3))
-            # the key and the prior comment go under the heading; the verdict row goes before the card closes
-            html = html.replace('<div class="crops">', "".join(extra) + '<div class="crops">', 1)
-            html = html.replace("</div></section>", verdict + "</div></section>")
+            html = html.replace("</div></section>", verdict + "</div></section>")     # the verdict row closes the card
             parts.append(html)
     pager = ""
     if n_pages > 1:
@@ -201,16 +194,8 @@ class ReviewState:
         out = {}
         for b in self.books:
             ledger = read_ledger(b["book"], self.review_dir)
-            for rec in b["records"]:
-                e = ledger.get(rec["review_key"])
-                if e is None:
-                    # a verdict given under an earlier key re-attaches by overlap
-                    for cand in ledger.values():
-                        if match_entry(cand, [rec]) is rec:
-                            e = cand
-                            break
-                if e:
-                    out[rec["notation_id"]] = {"status": e["status"], "comment": e.get("comment") or ""}
+            for nid, e in attach(ledger, b["records"]).items():       # keys first, then overlap; no record twice
+                out[nid] = {"status": e["status"], "comment": e.get("comment") or ""}
         return out
 
     def counts(self) -> str:
@@ -329,13 +314,13 @@ def books_for_sample(name: str) -> list[dict]:
 def serve(args) -> None:
     if args.sample:
         books = books_for_sample(args.sample)
-        title = "%s · review" % args.sample
+        title = args.sample
     else:
         meta, records = fresh_records(args.book)
         if not records:
             sys.exit("no notations for %s; run 29_notation_parse.py first" % args.book)
         books = [book_entry(args.book, records, meta)]
-        title = "%s · review" % (meta.get("title") or args.book)
+        title = meta.get("title") or args.book
     state = ReviewState(books, args.per_page, args.all, args.round, args.review_dir, title)
     srv = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(state))
     print("review: http://127.0.0.1:%d/  (%s)  ledger %s" % (args.port, state.counts(), args.review_dir or REVIEW_DIR))
@@ -357,7 +342,9 @@ def check(args) -> None:
         if os.path.exists(rp):
             with open(rp, encoding="utf-8") as fh:
                 report = json.load(fh).get("review")
-        got = check_book(book, [r for r in records if not r.get("verified")], args.review_dir)
+        # the records as written hold the frozen fixtures in place of the fresh cut; the parser's
+        # report keeps the fresh cut's drift, which is the finer witness when it exists
+        got = check_book(book, records, args.review_dir)
         if report and report.get("drift"):
             # the parser's own drift (fresh cut against the fixture) is the finer witness when it exists
             failed = [d for d in report["drift"] if not d.get("lost") and not d.get("same")]

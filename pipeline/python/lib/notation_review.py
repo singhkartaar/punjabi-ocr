@@ -226,6 +226,13 @@ def match_entry(entry: dict, records: list[dict]) -> dict | None:
     sid = entry.get("shabad_id")
     pages = set(entry.get("pages") or [])
     ext = {int(k): v for k, v in (entry.get("extent") or {}).items()}
+    # the key itself first: two notations of one shabad on overlapping pages (a second taal, an
+    # inherited verse) are told apart by their nth, and an entry must not take its neighbour
+    for rec in records:
+        if rec.get("review_key") == entry["key"] and (pages & set(rec.get("pages") or [])):
+            return rec
+    if any(rec.get("review_key") == entry["key"] for rec in records):
+        return None                                        # the key exists but moved off its pages: not the same notation
     best, best_score = None, 0.0
     for rec in records:
         if rec["book_key"] != entry["book_key"]:
@@ -244,6 +251,25 @@ def match_entry(entry: dict, records: list[dict]) -> dict | None:
         if score > best_score:
             best, best_score = rec, score
     return best
+
+
+def attach(ledger: dict[str, dict], records: list[dict]) -> dict[str, dict]:
+    """{notation_id: entry} -- every ledger entry attached to at most one record, keys first, then overlap, no record taken twice."""
+    out: dict[str, dict] = {}
+    taken: set[str] = set()
+    for key, entry in sorted(ledger.items()):
+        rec = next((r for r in records if r.get("review_key") == key and set(entry.get("pages") or []) & set(r.get("pages") or [])), None)
+        if rec is not None and rec["notation_id"] not in taken:
+            out[rec["notation_id"]] = entry
+            taken.add(rec["notation_id"])
+    for key, entry in sorted(ledger.items()):
+        if any(e is entry for e in out.values()):
+            continue
+        rec = match_entry(entry, [r for r in records if r["notation_id"] not in taken])
+        if rec is not None:
+            out[rec["notation_id"]] = entry
+            taken.add(rec["notation_id"])
+    return out
 
 
 def iou(a: dict[int, list[int]], b: dict[int, list[int]]) -> float:
@@ -290,8 +316,11 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
     taken: set[int] = set()
     replaced: dict[int, dict] = {}
     extra: list[dict] = []
+    attached = attach(ledger, records)
+    by_entry = {id(e): nid for nid, e in attached.items()}
+    by_nid = {r["notation_id"]: r for r in records}
     for key, entry in sorted(ledger.items()):
-        fresh = match_entry(entry, [r for i, r in enumerate(records) if i not in taken])
+        fresh = by_nid.get(by_entry.get(id(entry)))
         if entry["status"] == "accepted":
             out["accepted"] += 1
             fx = load_fixture(entry, review_dir)
@@ -345,8 +374,11 @@ def check_book(book: str, records: list[dict], review_dir: str | None = None) ->
     ledger = read_ledger(book, review_dir)
     assign_keys(records)
     passed, failed, changed, lost = [], [], [], []
+    attached = attach(ledger, records)
+    by_entry = {id(e): nid for nid, e in attached.items()}
+    by_nid = {r["notation_id"]: r for r in records}
     for key, entry in sorted(ledger.items()):
-        fresh = match_entry(entry, records)
+        fresh = by_nid.get(by_entry.get(id(entry)))
         d = drift_of(entry, fresh)
         if entry["status"] == "accepted":
             if fresh is None:
@@ -369,11 +401,7 @@ def status_of(book: str, records: list[dict], review_dir: str | None = None) -> 
     by_status = {s: 0 for s in STATUSES}
     for e in ledger.values():
         by_status[e["status"]] = by_status.get(e["status"], 0) + 1
-    reviewed_keys = set()
-    for key, entry in ledger.items():
-        fresh = match_entry(entry, records)
-        if fresh is not None:
-            reviewed_keys.add(fresh["review_key"])
-    unreviewed = sum(1 for r in records if r["review_key"] not in reviewed_keys)
+    attached = attach(ledger, records)
+    unreviewed = sum(1 for r in records if r["notation_id"] not in attached)
     return {"book": book, "notations": len(records), **by_status, "unreviewed": unreviewed,
             "clear": unreviewed == 0 and by_status["backlog"] == 0 and len(records) > 0}
