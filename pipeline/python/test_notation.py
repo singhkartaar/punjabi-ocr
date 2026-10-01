@@ -541,8 +541,8 @@ class LinkerRuleTests(unittest.TestCase):
                         + [_line(22, "੧੯.", 1600, x0=800, x1=860)])
         spans = link_pages([p1], merge_style(None))
         self.assertEqual(len(spans), 2)
-        self.assertGreaterEqual(spans[0]["extent"][78][3], 1365 + 60)      # the two loose rows stay with the first
         self.assertEqual(spans[1]["extent"][78][1], 1430)
+        self.assertEqual(spans[0]["extent"][78][3], 1429)     # the first runs to the edge of the next: the gap is its tail
 
     def test_a_partaal_changes_taal_from_section_to_section_inside_one_notation(self):
         p1 = self._page(284, [_line(1, "੧੧. ਰਾਗ ਵਡਹੰਸ, ਪੜਤਾਲ, ਮਣੀ ਤਾਲ, ੧੧ ਮਾਤਰੇ (ਬਿਲੰਬਿਤ ਲਯ)", 650, bold=True)] + self._shabad(284, 2159, 770)
@@ -561,6 +561,30 @@ class LinkerRuleTests(unittest.TestCase):
         self.assertEqual(len(spans), 1)
         self.assertEqual((spans[0]["heading"]["parsed"]["raag"]["key"], spans[0]["heading"]["parsed"]["taal"]["key"]), ("jaitsri", "teentaal"))
         self.assertEqual(len(spans[0]["sections"]), 1)
+
+    def test_the_previous_notations_bol_row_read_as_the_next_verse_is_trimmed_off_the_shabad(self):
+        prev = [{"shabad_id": 4151, "line_id": 7, "score": 0.9, "source": "G"}]
+        nxt = [{"shabad_id": 4152, "line_id": 8, "score": 0.95, "source": "G"}]
+        p1 = self._page(78, self._shabad(78, 4151, 300) + [_line(9, "ਰਾਗ ਭੈਰਉ ਤਾਲ ਦਾਦਰਾ", 640, bold=True)] + self._grids(10, 700)
+                        + [_line(13, "ਭਗਤਿ ਕਰਤ ਨਾਮਾ ਪਕਰਿ ਉਠਾਇਆ ॥੧॥s ਠਾਂ s ਇਆ", 1426, kind="gurbani", matches=prev),
+                           _line(14, "ਜੈਸੀ ਭੂਖੇ ਪ੍ਰੀਤਿ ਅਨਾਜ ॥ ਤ੍ਰਿਖਾਵੰਤ ਜਲ ਸੇਤੀ ਕਾਜ ॥", 1700, kind="gurbani", matches=nxt),
+                           _line(15, "ਨਾਮੇ ਪ੍ਰੀਤਿ ਨਾਰਾਇਣ ਲਾਗੀ ॥", 1780, kind="gurbani", matches=nxt)])
+        spans = link_pages([p1], merge_style(None))
+        self.assertEqual([s["sid"] for s in spans], [4151, 4152])
+        self.assertEqual(spans[1]["extent"][78][1], 1700)              # the next begins at its own first verse
+        self.assertEqual(spans[0]["extent"][78][3], 1699)              # the bol row is the first's tail
+        self.assertNotIn("ਭਗਤਿ ਕਰਤ", spans[1]["shabad"][0][1]["text"])
+        self.assertEqual(len(spans[0]["sections"][0]["grids"]), 2)     # ... and a grid of the first
+        # the previous notation's swar rows, unknown to the corpus, over a page turn: they go with it, page and all
+        p2 = self._page(746, [_line(1, "ਪ ਸੀ ਰੋ ਸਾ ਧਧ ਪ ਮਪ ਧਨੀ ਧਪ ਮਪ ਮਮ ਰੇਸਾ", 345, kind="gurbani"),
+                              _line(2, "ਕੇਦਾਰਾ ਮਹਲਾ ੫", 581, kind="gurbani", x0=708, x1=1005),
+                              _line(3, "ਹਰਿ ਕੇ ਨਾਮ ਕੀ ਮਨ ਰੁਚੈ ॥", 636, kind="gurbani", matches=nxt),
+                              _line(4, "ਕੋਟਿ ਸਾਂਤਿ ਅਨੰਦ ਪੂਰਨ ਜਲਤ ਛਾਤੀ ਬੁਝੈ ॥ ਰਹਾਉ ॥", 697, kind="gurbani", matches=nxt)]
+                        + self._grids(5, 1200))
+        p0 = self._page(745, self._shabad(745, 4151, 300) + [_line(9, "ਰਾਗ ਕੇਦਾਰਾ ਇਕਤਾਲ", 640, bold=True)] + self._grids(10, 700))
+        spans = link_pages([p0, p2], merge_style(None))
+        self.assertEqual([(s["sid"], s["pages"]) for s in spans], [(4151, [745, 746]), (4152, [746])])
+        self.assertEqual(spans[1]["extent"][746][1], 581)
 
     def test_a_line_with_no_two_gurmukhi_letters_is_not_a_heading(self):
         self.assertFalse(is_heading_like("N..O\" '"))

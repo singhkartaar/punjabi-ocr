@@ -585,6 +585,61 @@ def _sid_of(regions: list[dict]) -> int | None:
     return max(weight, key=weight.get) if weight else None
 
 
+def _line_sid(line: dict) -> int | None:
+    """The shabad one merged line's best corpus match names, or None."""
+    best = None
+    for m in line.get("matches") or []:
+        if m.get("shabad_id") is not None and (best is None or float(m.get("score") or 0) > float(best.get("score") or 0)):
+            best = m
+    return best.get("shabad_id") if best else None
+
+
+_SWAR_TOKEN = re.compile(r"^(?:[ਸਰਗਮਪਧਨ][ਾਿੀੁੂੇੈੋੌੰਂ\u0a3c]*){1,4}$|^[-—–ऽsS5]+$")
+
+
+def _swar_row(text: str) -> bool:
+    """'ਪ ਸੀ ਰੋ ਸਾ ਧਧ ਪ ਮਪ ਧਨੀ': three tokens or more, most of them swara letters (or held marks) and nothing else."""
+    toks = [t for t in _BAR_SPLIT.split(text or "") if t]
+    if len(toks) < 3:
+        return False
+    return sum(1 for t in toks if _SWAR_TOKEN.match(t)) >= 0.6 * len(toks)
+
+
+def _region_of(lines: list[dict], role: str) -> dict:
+    boxes = [m["bbox"] for m in lines if m.get("bbox")]
+    return {"role": role, "merged": lines, "lines": [m.get("n") for m in lines],
+            "text": "\n".join((m.get("text") or "").strip() for m in lines),
+            "kinds": [m.get("kind") for m in lines], "bbox": _bbox_union(boxes) if boxes else [0, 0, 0, 0]}
+
+
+def _trim_prev_bol(region: dict, prev_sid: int | None) -> tuple[dict, dict | None]:
+    """
+    A verse block headed by the previous notation's last rows -- its bol row
+    read as a verse (the syllables spell the words the corpus knows), its
+    swar rows read as nothing the corpus knows -- begins at its first line
+    of its own. Returns (the block from there, the rows cut off as a grid
+    region for the notation before, or None).
+    """
+    merged = region.get("merged") or []
+    if prev_sid is None or len(merged) < 2:
+        return region, None
+    k = 0
+    while k < len(merged) - 1:
+        line = merged[k]
+        sid = _line_sid(line)
+        if sid == prev_sid:
+            k += 1
+        elif sid is None and not _GRANTH_HEADING.search(line.get("text") or "") \
+                and (classify_line(line) in ("grid", "marker") or _swar_row(line.get("text") or "")
+                     or not re.search(r"[\u0a05-\u0a39\u0a59-\u0a5e]", line.get("text") or "")):     # '[ |': a bar read alone
+            k += 1
+        else:
+            break
+    if k == 0:
+        return region, None
+    return _region_of(merged[k:], "shabad") | {"role": "shabad"}, _region_of(merged[:k], "grid")
+
+
 def _named_heading(region: dict) -> dict | None:
     """The parse of a heading that names a raag or a taal (a notation's heading, not a section label)."""
     p = region.get("parsed") or {}
@@ -680,6 +735,12 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
             while j < len(items) and items[j]["role"] in ("shabad", "ref"):
                 group.append(items[j])
                 j += 1
+            if cur.get("sid") is not None and has(cur, ("grid",)):
+                first = group[0]
+                trimmed, tail = _trim_prev_bol(first["region"], cur["sid"])
+                if tail is not None:
+                    cur["items"].append({**first, "role": "grid", "region": tail})     # the rows are the notation before's
+                    group[0] = {**first, "region": trimmed, "first": False}
             sid = _sid_of([g["region"] for g in group if g["role"] == "shabad"])
             if after:
                 cur["items"].extend(group)
@@ -836,6 +897,7 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
     out: list[dict] = []
     dropped = dropped if dropped is not None else []
     prev: dict | None = None
+    seg_before: dict | None = None            # the segment just before this one, kept or dropped
     for seg in segs:
         roles = {it["role"] for it in seg["items"]}
         pages = sorted({it["page"] for it in seg["items"]})
@@ -868,11 +930,22 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
             dropped.append({"why": "no-shabad" if not has_shabad else "no-notation", "pages": pages,
                             "roles": sorted(roles), "opened_by": seg.get("opened_by")})
             prev = seg if has_shabad else prev
+            seg_before = None                  # a dropped part between two notations: the gap is not filled
             continue
         if edge_grid:
             seg["continued"] = True
         if not after:
             _cap_pages(seg, dropped)
-        out.append(_span_from_items(seg))
+        span = _span_from_items(seg)
+        # what stands between a notation's last region and the next notation's first on the same
+        # page -- a bol row OCR glued to the next verse, a line read as nothing -- is the first's tail:
+        # everything between one shabad and the next belongs to the notation
+        if out and prev is seg_before and not after:
+            last = out[-1]
+            for pg, ext in span["extent"].items():
+                if pg in last["extent"] and last["extent"][pg][3] < ext[1]:
+                    last["extent"][pg][3] = ext[1] - 1
+        out.append(span)
         prev = seg
+        seg_before = seg
     return out
