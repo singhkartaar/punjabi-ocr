@@ -6,12 +6,13 @@
  *
  *   node tools/publish-notation-images.mjs [--db artifacts/notations.sqlite] [--images <data>/notations]
  *        --repo OWNER/NAME [--book KEY ...] [--all-roles]
- *        [--max N] [--rate 60] [--per-release 900] [--batch 25] [--dry-run] [--verify [--sample N]] [--prune]
+ *        [--thumbs] [--max N] [--rate 30] [--per-hour 1800] [--per-release 900] [--batch 25] [--dry-run] [--verify [--sample N]] [--prune]
  *
  * What is published: the images the app shows -- a notation's `block`
- * cuts and their thumbnails, or every image of a notation that has no
- * block (older records) -- unless --all-roles asks for the finer cuts
- * too (grid, shabad, heading: the parser's working material). The
+ * cuts, or every image of a notation that has no block (older records);
+ * thumbnails only with --thumbs (the app shows the first crop in a list
+ * when no thumbnail is published, and the 1-bit crops are small), and the
+ * finer cuts (grid, shabad, heading) only with --all-roles. The
  * database decides which notations: a manual build (32 --accepted-only)
  * publishes the accepted ones, an auto build every one.
  *
@@ -41,7 +42,9 @@
  * The repository is --repo, or NOTATION_ASSETS_REPO in the environment.
  * Needs the GitHub CLI (`gh`) signed in with write access, and the
  * repository to exist (`gh repo create <repo> --public`). --dry-run plans
- * and touches nothing; uploads are paced at --rate a minute (60), and a
+ * and touches nothing; uploads are paced at --rate a minute (30) and at
+ * most --per-hour in any rolling hour (1,800: GitHub cut the account off
+ * after about 2,440 within an hour), and a
  * rate-limit refusal waits for the limit to pass (up to about an hour)
  * before giving up -- GitHub refuses bursts of content creation; --max
  * caps the uploads of one run (a stopped run resumes, and exits 3);
@@ -76,6 +79,7 @@ const IMAGES = path.resolve(opt('--images', process.env.NOTATIONS_DIR || path.jo
 const REPO = opt('--repo', process.env.NOTATION_ASSETS_REPO || null);
 const ONLY = new Set(opts('--book'));
 const ALL_ROLES = flag('--all-roles');
+const THUMBS = flag('--thumbs');                      // the app shows the first crop when a thumbnail is not published
 const DRY = flag('--dry-run');
 const VERIFY = flag('--verify');
 const PRUNE = flag('--prune');
@@ -83,7 +87,10 @@ const MAX = num('--max', Infinity);
 const PER_RELEASE = num('--per-release', 900);
 const BATCH = num('--batch', 25);
 const SAMPLE = num('--sample', 0);
-const RATE = num('--rate', 60);                        // uploads a minute at most: GitHub refuses bursts of content creation
+// GitHub cut the account off after about 2,440 uploads in under an hour (1 October 2026) and kept refusing until
+// the hour was out: so 30 a minute, and never more than --per-hour in any rolling hour
+const RATE = num('--rate', 30);
+const PER_HOUR = num('--per-hour', 1800);
 const RETRIES = 5;
 const RETRY_BASE_S = Number(process.env.PUBLISH_RETRY_BASE_S ?? 30);   // the test sets it to 0
 // a rate-limit refusal waits for the limit to pass: about an hour in all before giving up
@@ -97,6 +104,7 @@ function gh(argv, { json = false } = {}) {
 
 /** The images of one book the app shows: a notation's block cuts and thumbs, or all of a notation without blocks. */
 function shown(rows) {
+  if (!THUMBS && !ALL_ROLES) rows = rows.filter(r => r.kind !== 'thumb');
   if (ALL_ROLES) return rows;
   const byNotation = new Map();
   for (const r of rows) {
@@ -191,6 +199,7 @@ async function main() {
   const tags = exists ? releaseTags() : new Set();
   const update = DRY ? null : db.prepare('UPDATE images SET url = ? WHERE sha256 = ? AND notation_id LIKE ?');
   let uploaded = 0, kept = 0, orphans = 0, elsewhere = 0, stopped = false;
+  const sent = [];                                    // when each upload of this run went, for the hourly ceiling
   for (const book of books) {
     const mine = rows.filter(r => r.notation_id.startsWith(book + ':'));
     // one asset a content hash: the first row that carries it names it
@@ -205,7 +214,11 @@ async function main() {
     const have = new Set();                              // names published, across the book's releases, finished uploads only
     const haveStems = new Set();                         // the same, less the hash: an image published from another machine's cut
     for (const s of shards) for (const a of s.assets) if (a.state === 'uploaded') { have.add(a.name); haveStems.add(stemOf(a.name)); }
-    const wantStems = new Set(mine.map(rowStem));
+    // what the book names at all -- every image of every notation, thumbnails and finer cuts included, published by
+    // this run or not: an asset is an orphan only if none of these names it
+    const allOfBook = all.filter(r => r.notation_id.startsWith(book + ':'));
+    const wantStems = new Set(allOfBook.map(rowStem));
+    const allNames = new Set(allOfBook.filter(r => r.sha256).map(assetName));
     const todo = [];
     const elsewhereBefore = elsewhere, keptBefore = kept;
     for (const w of want.values()) {
@@ -219,7 +232,7 @@ async function main() {
       todo.push(w);
     }
     // an asset no image names: neither its name nor its notation, n and kind (never another machine's copy of a shown image)
-    const stale = shards.flatMap(s => s.assets.filter(a => !shaOfName.has(a.name) && !wantStems.has(stemOf(a.name)))
+    const stale = shards.flatMap(s => s.assets.filter(a => !shaOfName.has(a.name) && !allNames.has(a.name) && !wantStems.has(stemOf(a.name)))
       .map(a => ({ tag: s.tag, name: a.name })));
     orphans += stale.length;
     const gone = want.size - todo.length - (kept - keptBefore) - (elsewhere - elsewhereBefore);
@@ -250,6 +263,15 @@ async function main() {
       if (DRY) {
         console.log(`  would upload ${batch.length} to ${tag}: ${batch.slice(0, 2).map(b => b.name).join(', ')}${batch.length > 2 ? ', ...' : ''}`);
       } else {
+        // the hourly ceiling: wait until the oldest upload of the last hour leaves the window
+        const hourAgo = Date.now() - 3600000;
+        while (sent.length && sent[0] < hourAgo) sent.shift();
+        if (RETRY_BASE_S && sent.length + batch.length > PER_HOUR) {
+          const wait = sent[sent.length + batch.length - PER_HOUR - 1] + 3600000 - Date.now();
+          console.log(`  ${sent.length} uploads in the last hour (--per-hour ${PER_HOUR}): pausing ${Math.ceil(wait / 60000)} min`
+                      + ` [until ${new Date(Date.now() + wait).toISOString().slice(11, 19)} UTC]`);
+          await sleep(Math.max(0, wait));
+        }
         // gh names an asset after its file: each is staged under its asset name
         const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'notation-upload-'));
         const staged = batch.map(b => { const p = path.join(stage, b.name); fs.copyFileSync(b.file, p); return p; });
@@ -260,6 +282,7 @@ async function main() {
           fs.rmSync(stage, { recursive: true, force: true });
         }
         // paced: a batch takes at least its share of a minute at --rate
+        for (let k = 0; k < batch.length; k++) sent.push(Date.now());
         const floor = (batch.length / RATE) * 60000 * (RETRY_BASE_S ? 1 : 0);
         const spent = Date.now() - started;
         if (spent < floor) await sleep(floor - spent);

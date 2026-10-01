@@ -287,8 +287,12 @@ gh release create notations-db-v<N> notations.sqlite notations.sqlite.sha256 --r
 `--allow-unmeasured` without `--accepted-only` is the auto build: every
 notation ships, each row carrying its review state. A published release
 is never replaced; the next round is `v<N+1>`. GitHub limits how fast one
-account creates content: after a burst of a few thousand uploads it
-refuses for about an hour, which the tool waits out.
+account creates content: after about 2,400 uploads within an hour it
+refused for the rest of that hour. The tool stays under that by itself:
+30 uploads a minute and at most 1,800 in any rolling hour (`--rate`,
+`--per-hour`), thumbnails only with `--thumbs` (the app shows the first
+crop instead), and a refusal waited out. Both machines publish under
+the same account, so they share the limit: run one at a time.
 
 ## 6. Paid services, only through a cap
 

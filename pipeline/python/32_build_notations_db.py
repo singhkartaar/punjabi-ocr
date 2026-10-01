@@ -317,7 +317,8 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
                 full = os.path.join(src, im["path"])
                 if verify_images and os.path.exists(full) and im["sha256"] and sha256_of(full) != im["sha256"]:
                     problems.append("%s: %s does not match its sha256" % (rec["notation_id"], im["path"]))
-                if require_urls and not im["url"] and (im["role"] == "block" or not has_block):
+                # thumbnails are optional: the app shows the first crop when a thumbnail has no URL
+                if require_urls and not im["url"] and im["kind"] == "full" and (im["role"] == "block" or not has_block):
                     problems.append("%s: image %s has no URL" % (rec["notation_id"], im["path"]))
                 insert("images", im)
                 images_manifest.append({"notation_id": im["notation_id"], "n": im["n"], "kind": im["kind"],
