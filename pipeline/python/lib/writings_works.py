@@ -84,7 +84,11 @@ def parse_filename(path: str, roster: dict | None = None) -> dict:
                 "folder": source_folder(path),
                 "author": named.get("author") or roster.get("author"),
                 # never inferred from where the file sits: see the roster's note
-                "original": bool(named.get("original", roster.get("quote_policy") == "verbatim"))}
+                "original": bool(named.get("original", roster.get("quote_policy") == "verbatim")),
+                # a short text pooled into a larger work keeps its own name: the
+                # work is "Articles", the section is "Haumai, by Gurdeep Singh
+                # Randhawa" (rosters/barusahib.json)
+                "section": named.get("section")}
 
     stem = os.path.splitext(os.path.basename(path))[0]
     essay, rest = None, stem

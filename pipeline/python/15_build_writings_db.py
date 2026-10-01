@@ -63,7 +63,8 @@ CREATE TABLE units (
   para_no   INTEGER NOT NULL,
   marker    TEXT,                  -- the essay's own page label, "L127.3"
   text      TEXT NOT NULL,
-  text_src  TEXT                   -- the original where `text` is a machine translation of it
+  text_src  TEXT,                  -- the original where `text` is a machine translation of it
+  section   TEXT                   -- a pooled short text's own title, where the work is a collection
 );
 CREATE TABLE citations (
   unit_row  INTEGER NOT NULL,
@@ -113,9 +114,10 @@ def main():
           w.get("language", "en"), w.get("licence"))
          for w in head["works"]])
     con.executemany(
-        "INSERT INTO units VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO units VALUES (?,?,?,?,?,?,?,?,?,?)",
         [(u["unit_row"], u["unit_id"], u["work"], u["part"], u["page"],
-          u["para_no"], u.get("marker"), u["text"], u.get("text_src")) for u in units])
+          u["para_no"], u.get("marker"), u["text"], u.get("text_src"), u.get("section"))
+         for u in units])
     con.executemany(
         "INSERT INTO citations VALUES (?,?,?,?,?,?,?)",
         [(u["unit_row"], c["shabad_id"], c["line_id"], c["ang"], c["score"], c["method"], c["span"])

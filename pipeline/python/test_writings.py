@@ -14,7 +14,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib.paths import ROOT
 from lib.writings_pdf import (columns, group_lines, is_spread, join_runs, left_margin,
-                              paragraphs, read_pdf, running_heads)
+                              collapse_overprint, drop_shadows, legacy_font_run, page_columns, strip_legacy_words, paragraphs, read_pdf, running_heads)
 from lib.citations import (clean_quote, detect, find_ang, looks_quoted, opened_by, resolve_lexical,
                            tokens, wholly)
 from lib.writings_works import parse_filename
@@ -244,6 +244,105 @@ class ColumnTests(unittest.TestCase):
     def test_an_ordinary_column_has_no_gutter(self):
         page = [run(43 + (i % 7) * 40, "an ordinary single column of prose", y=200 - i * 12) for i in range(40)]
         self.assertEqual(columns([page]), [])
+
+
+class PageColumnTests(unittest.TestCase):
+    """
+    A magazine's columns, found page by page (rosters/barusahib.json).
+
+    Eternal Voice sets one article in two columns, the next in four, a title
+    page in one, and puts a pull quote or an indented verse in the gutter; the
+    whole-document profile above finds nothing in any of its sixteen articles.
+    """
+
+    WIDTH = 595.0
+
+    def column(self, x, n, top=780):
+        return [run(x, "a line of the column", y=top - i * 12) for i in range(n)]
+
+    def test_two_columns_split_where_the_right_one_starts(self):
+        page = self.column(40, 40) + self.column(300, 40)
+        bands = page_columns(page, self.WIDTH)
+        self.assertEqual(len(bands), 2)
+        self.assertTrue(40 < bands[0][1] <= 300)
+
+    def test_four_columns_are_four(self):
+        page = self.column(36, 45) + self.column(180, 17) + self.column(300, 26) + self.column(432, 16)
+        self.assertEqual(len(page_columns(page, self.WIDTH)), 4)
+
+    def test_a_pull_quote_in_the_gutter_does_not_move_it(self):
+        page = self.column(40, 40) + self.column(300, 40) + [run(150, "a pull quote", y=400)] * 3
+        bands = page_columns(page, self.WIDTH)
+        self.assertEqual(len(bands), 2)
+        self.assertGreater(bands[0][1], 150)
+
+    def test_a_single_column_with_runs_starting_mid_line_is_one(self):
+        # an italic word or a bold name starts a run wherever it falls in the line
+        page = self.column(80, 40) + [run(120 + 37 * i, "word", y=700 - 30 * i) for i in range(10)]
+        self.assertEqual(page_columns(page, self.WIDTH), [])
+
+    def test_an_indented_verse_is_not_a_column(self):
+        page = self.column(80, 30) + self.column(130, 10, top=500)
+        self.assertEqual(page_columns(page, self.WIDTH), [])
+
+
+class OverprintTests(unittest.TestCase):
+    """Fake bold, cut to one copy (Sikh Faith draws its headings five times over)."""
+
+    def collapsed(self, *texts, copies=5):
+        runs = [run(90 + 0.3 * i, t, y=500) for i, t in enumerate(texts)]
+        collapse_overprint(runs, copies)
+        return [r["text"] for r in runs]
+
+    def test_a_run_holding_its_words_five_times_holds_them_once(self):
+        self.assertEqual(self.collapsed("Union with the Divine (God)" * 5), ["Union with the Divine (God)"])
+
+    def test_a_label_inside_body_text_is_cut_and_the_text_kept(self):
+        self.assertEqual(self.collapsed("Inert Matter : " * 5 + "This class consists of suns"),
+                         ["Inert Matter : This class consists of suns"])
+
+    def test_copies_drawn_as_separate_runs_at_one_spot_are_one_run(self):
+        # a drop shadow, as the Eternal Voice articles set their headings
+        runs = [run(56.0, "Need for ", y=610.55), run(56.0, "Persons", y=396.04),
+                run(54.67, "Need for ", y=612.26), run(54.67, "Persons", y=397.75)]
+        self.assertEqual(drop_shadows(runs), 2)
+        self.assertEqual([r["text"] for r in runs], ["Need for ", "Persons"])
+        # the same words elsewhere on the page are text, not a shadow
+        runs = [run(56.0, "Need for ", y=610.55), run(90.0, "Need for ", y=300.0)]
+        self.assertEqual(drop_shadows(runs), 0)
+
+    def test_in_a_fake_bold_run_a_lone_word_and_a_stuttered_capital_are_cut_too(self):
+        self.assertEqual(self.collapsed("Guru " * 5 + "Arjan Dev states:" * 5), ["Guru Arjan Dev states:"])
+        self.assertEqual(self.collapsed("W WW WWilliam " + "William " * 4 + "W " + "arburt" * 5),
+                         ["William Warburt"])
+
+    def test_a_word_repeated_as_verse_or_chant_is_left_alone(self):
+        # "Har " five times is how a verse is written, not fake bold
+        self.assertEqual(self.collapsed("Har Har Har Har Har gun gaavahu"), ["Har Har Har Har Har gun gaavahu"])
+        # and a count other than the book's is not its fake bold
+        self.assertEqual(self.collapsed("SaintSaint"), ["SaintSaint"])
+
+
+class LegacyFontTests(unittest.TestCase):
+    """Gurmukhi in fonts nothing here converts (Sant Waryam Singh Ji's books)."""
+
+    def test_a_whole_line_in_either_font_is_legacy_and_english_is_not(self):
+        self.assertTrue(legacy_font_run("ÕÇð ÕÇð ÔÅÇðú ÁÇéÕ"))
+        self.assertTrue(legacy_font_run("frqj ;'fJB uzdB[ ;[rzX bkfJ w'sh jho/.."))
+        for english in ("strength and rhythm", "In holy company are these effaced.’ P. 206",
+                        "Sabh meh jot jot hai soi", "P.", " 707"):
+            self.assertFalse(legacy_font_run(english), english)
+
+    def test_legacy_words_inside_a_line_of_english_are_cut_and_the_english_kept(self):
+        line = ("vzvT[fs pzdB nfBe pko ;op ebk ;woE.. v'bB s/ okyj[ gqG{ BkBe d/ efo jE.. "
+                "P. 256 'After wandering and wandering O Lord, I have come")
+        self.assertEqual(strip_legacy_words(line), "P. 256 'After wandering and wandering O Lord, I have come")
+
+    def test_english_punctuation_is_not_the_fonts(self):
+        for english in ("Kindly save me, O Lord; kindly keep me in Thy refuge.",
+                        "he/she may be; whose births whirls them; round and round",
+                        "[The idea that I am the Creator.] and [Considering the world as Brahm]"):
+            self.assertEqual(strip_legacy_words(english), english)
 
 
 class GroupLinesTests(unittest.TestCase):
@@ -876,7 +975,7 @@ class RosterTests(unittest.TestCase):
     POLICY = {"akj": "summarise", "puran": "verbatim",
               "virsingh": "summarise", "raghbir": "summarise",
               "bariaran": "summarise", "rama": "summarise",
-              "rampurkhera": "summarise"}
+              "rampurkhera": "summarise", "barusahib": "verbatim", "ratwara": "summarise"}
 
     @classmethod
     def setUpClass(cls):

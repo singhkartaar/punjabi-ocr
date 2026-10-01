@@ -45,7 +45,9 @@ ANG_TAIL = re.compile(r"(?:^|[^0-9])([0-9]{2,4})\s*$")
 QUOTE_KEYS = ("line_ids", "shabad_id", "ang", "match_score", "match_method")
 
 
-def read_source(path: str, meta: dict, furniture: bool = False, italic_quotes: bool = True) -> dict:
+def read_source(path: str, meta: dict, furniture: bool = False, italic_quotes: bool = True,
+                page_columns: bool = False, overprint: int = 0, drop: list | None = None,
+                drop_above: float | None = None, shadow: bool = False, drop_legacy: bool = False) -> dict:
     """
     The reader a source needs: the PDF text layer (the essays), the legacy
     Gurmukhi-font converter (lib/writings_legacy.py), or the merged OCR
@@ -60,15 +62,28 @@ def read_source(path: str, meta: dict, furniture: bool = False, italic_quotes: b
     if reader == "legacy-font":
         from lib.writings_legacy import read_legacy_pdf
         return read_legacy_pdf(path)
-    return read_pdf(path, furniture=furniture, italic_quotes=italic_quotes)
+    return read_pdf(path, furniture=furniture, italic_quotes=italic_quotes,
+                    page_columns_on=page_columns, overprint=overprint, drop=drop,
+                    drop_above=drop_above, shadow=shadow, drop_legacy=drop_legacy)
 
 
 def read_one(path: str, manifest: dict | None = None, roster: dict | None = None,
-             furniture: bool = False, italic_quotes: bool = True) -> dict:
+             furniture: bool = False, italic_quotes: bool = True, page_columns: bool = False) -> dict:
     """One source to its paragraph records. Runs in a worker process."""
     meta = parse_source(path, manifest, roster)
+    # a roster's layout settings are the corpus's, and one file may differ: a
+    # magazine's articles are read column by column, a single-column book in
+    # the same corpus is not (its centred verses would read as a column)
+    entry = ((roster or {}).get("works", {}).get(meta["file"]) or {})
+    page_columns = bool(entry.get("page_columns", page_columns))
+    overprint = int(entry.get("overprint", (roster or {}).get("overprint", 0)) or 0)
+    drop, drop_above = entry.get("drop"), entry.get("drop_above")
+    shadow = bool(entry.get("shadow", (roster or {}).get("shadow", False)))
+    drop_legacy = bool(entry.get("drop_legacy", (roster or {}).get("drop_legacy", False)))
     try:
-        doc = read_source(path, meta, furniture=furniture, italic_quotes=italic_quotes)
+        doc = read_source(path, meta, furniture=furniture, italic_quotes=italic_quotes,
+                          page_columns=page_columns, overprint=overprint, drop=drop,
+                          drop_above=drop_above, shadow=shadow, drop_legacy=drop_legacy)
     except Exception as exc:
         return {"meta": meta, "error": "%s: %s" % (type(exc).__name__, exc), "records": [], "pages": 0}
     records, markers = [], []
@@ -83,6 +98,8 @@ def read_one(path: str, manifest: dict | None = None, roster: dict | None = None
                 "style": para["style"], "italic": para["italic"], "text": para["text"],
                 "lang": meta.get("language", "en"),
             }
+            if meta.get("section"):
+                rec["section"] = meta["section"]
             # what the OCR merge already knew about a quoted verse travels
             # with the paragraph (lib/writings_ocr.py); a text layer has none
             for k in QUOTE_KEYS:
@@ -405,7 +422,9 @@ def main():
     # default
     read = functools.partial(read_one, manifest=manifest, roster=roster or None,
                              furniture=bool(roster.get("furniture")),
-                             italic_quotes=bool(roster.get("italic_quotes", True)))
+                             italic_quotes=bool(roster.get("italic_quotes", True)),
+                             # a magazine's columns change page to page (lib/writings_pdf.py)
+                             page_columns=bool(roster.get("page_columns")))
     results = []
     with cf.ProcessPoolExecutor(max_workers=args.workers) as pool:
         for n, res in enumerate(pool.map(read, sources), start=1):

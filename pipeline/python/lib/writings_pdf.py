@@ -293,6 +293,209 @@ def columns(pages: list[list[dict]]) -> list[tuple[float, float]]:
     return [(lo - 1.0, at), (at, max(r["x"] for r in runs) + 1e6)]
 
 
+# A magazine page, not a book: two columns on one page, four on the next, one
+# on a third; a pull quote or an indented verse starting inside a gutter; and
+# too few lines in a three-page article for the whole-document profile above to
+# outvote them (Eternal Voice, rosters/barusahib.json: columns() finds nothing
+# in any of its sixteen articles). So each page is asked on its own where its
+# columns START: an x at which at least PAGE_COL_SHARE of the page's lines (and
+# PAGE_COL_MIN of them) begin, at least PAGE_COL_GAP of the width from the
+# column before. A run starting mid-line in a single-column page -- an italic
+# word, a bold name -- is a scattering of x's, never a share of the page at one,
+# and an indented verse sits well inside PAGE_COL_GAP of its margin.
+PAGE_COL_SHARE = 0.10
+PAGE_COL_MIN = 6
+PAGE_COL_GAP = 0.20
+PAGE_COL_BIN = 12.0                          # x tolerance of "one x"
+
+
+# Fake bold: a heading drawn several times over. A PDF's text layer keeps the
+# copies back to back -- the whole run ("Union with the Divine (God)Union with
+# the Divine (God)..."), or a label inside a run of body text ("Inert Matter :
+# Inert Matter : ... This class consists of suns") -- or as separate runs a
+# fraction of a point apart ("Guru Guru Guru Guru Guru Arjan Dev states:"). The
+# book's own count of copies is the roster's (`overprint`: 5 for Sikh Faith,
+# rosters/barusahib.json), and a stretch of three or more characters repeated
+# exactly that many times, back to back, is cut to one copy: prose repeats a
+# word, never a string five times with nothing between.
+OVERPRINT_NEAR = 3.0                         # a copy drawn this close is the same run
+CAPITAL_APART = re.compile(r"\b([A-Z]) (?=[a-z]{3,})")
+
+
+def collapse_overprint(runs: list[dict], copies: int = 5) -> int:
+    """
+    Cut each overprinted stretch inside a run to one copy, in place; returns
+    how many runs were cut. Copies drawn as separate runs are drop_shadows'.
+
+    Three passes, the later two only on a run the first has already shown to be
+    fake bold:
+      1. a stretch of three or more characters repeated exactly `copies` times
+         back to back -- except one word and a space ("Har Har Har Har Har" is
+         how a verse or a chant is written);
+      2. in a fake-bold run, that one word too: "Guru Guru Guru Guru Guru Arjan
+         Dev states:" held "Arjan Dev states:" five times as well;
+      3. in a fake-bold run, a word's first letter stuttered before it -- "T T
+         T T Temptation", "W WW WWilliam" -- where the copies of the letter did
+         not land on the word, and a capital left standing apart from its word
+         ("William W arburt").
+    """
+    unit = re.compile(r"(.{3,}?)\1{%d}(?!\1)" % (copies - 1))
+    stutter = re.compile(r"\b(\w)(?: ?\1){1,%d} ?(?=\1\w)" % (copies - 1))
+    cut = 0
+    for r in runs:
+        text = unit.sub(lambda m: m.group(0) if re.fullmatch(r"\S+ ", m.group(1)) else m.group(1),
+                        r["text"])
+        if text == r["text"]:
+            continue
+        text = unit.sub(r"\1", text)
+        text = stutter.sub("", text)
+        # the capital a stutter split off its word: "William W arburt"
+        text = CAPITAL_APART.sub(r"\1", text)
+        if r.get("width"):
+            r["width"] = r["width"] * len(text) / max(1, len(r["text"]))
+        r["text"] = text
+        cut += 1
+    return cut
+
+
+def drop_shadows(runs: list[dict]) -> int:
+    """
+    Drop a run whose text an earlier run already has, drawn within
+    OVERPRINT_NEAR in both x and y; returns how many were dropped.
+
+    Fake bold as a drop shadow: the Eternal Voice articles set a heading twice,
+    a point and a half apart ("Need for" at 56.00, 610.55 and at 54.67,
+    612.26), and read by lines the two interleave -- "Need for Need for
+    God-Conscious God-Conscious PersonsPersons". Text does not repeat itself on
+    the same spot, so this is safe for any file that turns it on.
+    """
+    kept: list[dict] = []
+    dropped = 0
+    for r in runs:
+        text = r["text"].strip()
+        if text and any(k["text"].strip() == text and abs(k["x"] - r["x"]) < OVERPRINT_NEAR
+                        and abs(k["y"] - r["y"]) < OVERPRINT_NEAR for k in kept[-12:]):
+            dropped += 1
+            continue
+        kept.append(r)
+    runs[:] = kept
+    return dropped
+
+
+def legacy_font_run(text: str) -> bool:
+    """
+    A run of Gurmukhi set in a legacy font this pipeline cannot convert.
+
+    Sant Waryam Singh Ji's books (rosters/ratwara.json) print every verse three
+    ways -- the English rendering with its ang, the Gurmukhi, and the
+    explanation -- and the Gurmukhi is in two fonts that are not GurbaniAkhar,
+    the one anvaad converts: Amar Gatha's maps the letters onto Latin-1
+    ("\u00d5\u00c7\u00f0 \u00d5\u00c7\u00f0 \u00d4\u00c5\u00c7\u00f0\u00fa", ਕਰਿ ਕਰਿ ਹਾਰਿਓ),
+    Surat Shabad Marg's onto ASCII punctuation and consonants
+    ("frqj ;'fJB uzdB[", ਗ੍ਰਿਹ ਸੋਇਨ ਚੰਦਨ). Read as English either is noise in
+    the passage, and the verse is not lost: its English carries the ang, and
+    the citation made from that shows the reader the Gurmukhi from the corpus.
+
+    Latin-1: at least a third of the characters in U+00A0-U+00FF (an English
+    line has an accent or none). ASCII: eight letters or more and under a
+    fifth of them vowels -- 8% on the line above, 35-40% on English, 30% on
+    romanised Gurbani.
+    """
+    chars = [c for c in text if not c.isspace()]
+    if not chars:
+        return False
+    if sum(1 for c in chars if "\u00a0" <= c <= "\u00ff") >= len(chars) / 3:
+        return True
+    letters = [c for c in chars if c.isascii() and c.isalpha()]
+    if len(letters) < 8 or sum(1 for c in letters if c in "aeiouAEIOU") >= 0.2 * len(letters):
+        return False
+    # few vowels alone is not enough -- "strength and rhythm" has two in
+    # sixteen -- so the font must also show itself: its punctuation letters
+    # (";" is sa, "[" is aunkar) or a capital inside a word ("fJB", "rzX")
+    return bool(re.search(r"[;\[\]{}/]|[a-z][A-Z]", text))
+
+
+# Words of the ASCII legacy font inside a line of English -- Surat Shabad Marg
+# sets the Gurmukhi and the English in one run: "... ;woE.. v'bB s/ okyj[ gqG{
+# BkBe d/ efo jE.. P. 256 'After wandering and wandering O Lord ...". The font
+# shows itself where English never puts the same marks: ";" (sa) before a
+# letter, "[" "{" (aunkar, dulainkar) after one, "/" (lavan) ending a word or
+# after a single letter, "?" after a single letter, a capital inside a word,
+# the ".." danda, and a word with no vowel at all ("Bkw", "Jhx").
+LEGACY_MARKS = re.compile(r";[A-Za-z'\[{]|[A-Za-z;'][\[{]|[A-Za-z]/(?:[.,'\"]*$)"
+                          r"|(?<![A-Za-z])[A-Za-z]/[A-Za-z]|(?<![A-Za-z])[A-Za-z]\?$|[a-z][A-Z]|\.\.$")
+# words English uses short and often: never a bridge between two legacy words
+ENGLISH_SHORT = set("the and of to is in that a are be for with as by this it on or his he you your we our "
+                    "not but from have has was were will shall all one who which when then there their them "
+                    "they so if no at an my me i o lord god guru name mind soul thou thy thee".split())
+
+
+def legacy_word(t: str) -> bool:
+    if LEGACY_MARKS.search(t):
+        return True
+    letters = re.sub(r"[^A-Za-z]", "", t)
+    return len(letters) >= 2 and not re.search(r"[aeiouyAEIOUY]", letters)
+
+
+def strip_legacy_words(text: str) -> str:
+    """
+    A paragraph without its stretches of legacy-font Gurmukhi. A stretch is two
+    or more legacy words, joined across a short word (seven letters or fewer,
+    not a common English one) when another legacy word follows within three.
+    Measured on the three Ratwara Sahib books: 516 stretches, none English.
+    """
+    toks = text.split(" ")
+    marks = [bool(t) and legacy_word(t) for t in toks]
+    n = len(toks)
+    drop = [False] * n
+    i = 0
+    while i < n:
+        if not marks[i]:
+            i += 1
+            continue
+        j, count, k = i, 1, i + 1
+        while k < n:
+            if marks[k]:
+                count, j, k = count + 1, k, k + 1
+                continue
+            bare = re.sub(r"[^A-Za-z]", "", toks[k])
+            if toks[k] == "" or (len(bare) <= 7 and bare.lower() not in ENGLISH_SHORT
+                                 and any(marks[m] for m in range(k + 1, min(n, k + 4)))):
+                k += 1
+                continue
+            break
+        if count >= 2:
+            for m in range(i, j + 1):
+                drop[m] = True
+        i = j + 1
+    return re.sub(r"\s{2,}", " ", " ".join(t for t, d in zip(toks, drop) if not d)).strip()
+
+
+def page_columns(runs: list[dict], width: float) -> list[tuple[float, float]]:
+    """This page's columns, left to right, split where each one starts, or [] for one."""
+    xs = [r["x"] for r in runs if r["text"].strip()]
+    if not xs:
+        return []
+    bins: dict = {}
+    for x in xs:
+        bins.setdefault(int(x // PAGE_COL_BIN), []).append(x)
+    # a start with its neighbouring bins, so a bin edge cannot halve it
+    starts = []
+    for k in sorted(bins):
+        near = bins[k] + bins.get(k - 1, []) + bins.get(k + 1, [])
+        if len(near) >= max(PAGE_COL_MIN, PAGE_COL_SHARE * len(xs)):
+            starts.append((min(near), len(near)))
+    cols: list[float] = []
+    for x, n in starts:
+        if not cols or x - cols[-1] >= PAGE_COL_GAP * width:
+            cols.append(x)
+    if len(cols) < 2:
+        return []
+    cuts = [c - 2.0 for c in cols[1:]]
+    edges = [-1e6] + cuts + [1e6]
+    return list(zip(edges[:-1], edges[1:]))
+
+
 def is_spread(lines: list[dict]) -> bool:
     """True when the page is two-up and only the right (English) half has text."""
     starts = [ln["x0"] for ln in lines if len(ln["text"]) > 12]
@@ -435,7 +638,10 @@ def running_heads(per_page: list[list[dict]]) -> tuple:
     return texts, (best[0] if best[1] >= floor else None), marks, repeated
 
 
-def read_pdf(path: str, furniture: bool = False, italic_quotes: bool = True) -> dict:
+def read_pdf(path: str, furniture: bool = False, italic_quotes: bool = True,
+             page_columns_on: bool = False, overprint: int = 0,
+             drop: list | None = None, drop_above: float | None = None,
+             shadow: bool = False, drop_legacy: bool = False) -> dict:
     """
     One PDF as pages of paragraphs.
 
@@ -448,12 +654,31 @@ def read_pdf(path: str, furniture: bool = False, italic_quotes: bool = True) -> 
 
     @returns {"path", "body_size", "pages": [{"page", "marker", "spread", "paragraphs"}]}
     where a paragraph is {"text", "style", "italic", "x0", "size"}.
+
+    `page_columns_on` decides columns page by page (page_columns) where the
+    whole-document profile finds none, and `overprint` (the book's number of
+    fake-bold copies) collapses them (collapse_overprint); both off by default for the same reason as
+    `furniture`. `drop` is a book's own list of line patterns to remove --
+    a running head or a page number the generic furniture filter does not
+    recognise ("•  12  •"); a run whose whole text matches one is dropped, and `drop_above` drops every
+    run printed higher on the page than that y (a chapter title as running head).
     """
     reader = PdfReader(path)
     per_page: list[dict] = []
     for n, page in enumerate(reader.pages, start=1):
         try:
-            per_page.append({"page": n, "runs": page_runs(page)})
+            runs = page_runs(page)
+            if overprint:
+                collapse_overprint(runs, overprint)
+            if shadow or overprint:
+                drop_shadows(runs)
+            if drop:
+                runs = [r for r in runs if not any(re.fullmatch(d, r["text"].strip()) for d in drop)]
+            if drop_above is not None:
+                runs = [r for r in runs if r["y"] <= drop_above]
+            if drop_legacy:
+                runs = [r for r in runs if not legacy_font_run(r["text"])]
+            per_page.append({"page": n, "runs": runs, "width": float(page.mediabox.width)})
         except Exception as exc:              # a damaged page must not lose the book
             per_page.append({"page": n, "runs": [], "error": str(exc)})
     bands = columns([p["runs"] for p in per_page])
@@ -462,11 +687,12 @@ def read_pdf(path: str, furniture: bool = False, italic_quotes: bool = True) -> 
     raw: list[dict] = []
     for p in per_page:
         runs = p["runs"]
-        cols = ([group_lines([r for r in runs if lo <= r["x"] < hi]) for lo, hi in bands]
-                if bands else [group_lines(runs)])
+        here = bands or (page_columns(runs, p.get("width", 600.0)) if page_columns_on else [])
+        cols = ([group_lines([r for r in runs if lo <= r["x"] < hi]) for lo, hi in here]
+                if here else [group_lines(runs)])
         every = [ln for col in cols for ln in col]
         raw.append({"page": p["page"], "cols": cols, "spread": is_spread(every),
-                    "columns": len(bands), **({"error": p["error"]} if p.get("error") else {})})
+                    "columns": len(here), **({"error": p["error"]} if p.get("error") else {})})
         sizes.extend(ln["size"] for ln in every if len(ln["text"]) > 20)
     body = statistics.median(sizes) if sizes else 10.0
     heads, head_offset, stamps, repeated = running_heads(
@@ -526,7 +752,11 @@ def read_pdf(path: str, furniture: bool = False, italic_quotes: bool = True) -> 
                 if pg.get("spread") and ln["x0"] < SPREAD_X:
                     continue                     # stray ink from the scanned Punjabi half
                 kept.append(ln)
-            out.extend(paragraphs(kept, body, left_margin(kept), italic_quotes))
+            paras = paragraphs(kept, body, left_margin(kept), italic_quotes)
+            if drop_legacy:
+                # the legacy words a line of English carries (strip_legacy_words)
+                paras = [q for q in ({**q, "text": strip_legacy_words(q["text"])} for q in paras) if q["text"]]
+            out.extend(paras)
         pages.append({
             "page": pg["page"], "marker": marker, "spread": bool(pg.get("spread")),
             "columns": pg.get("columns", 0), "paragraphs": out,

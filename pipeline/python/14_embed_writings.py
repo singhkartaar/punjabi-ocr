@@ -212,6 +212,7 @@ def build_units(records: list[dict], citations: dict, target: int, hard: int) ->
         held, carried[:] = list(carried), []
         return {"work": rec["work"], "part": rec["part"], "page": rec["page"],
                 "para_no": rec["para_no"], "marker": rec.get("marker"),
+                **({"section": rec["section"]} if rec.get("section") else {}),
                 "text": [], "text_src": [], "words": 0, "body": 0, "cites": held}
 
     for rec in records:
