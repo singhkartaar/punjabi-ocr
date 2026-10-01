@@ -573,6 +573,10 @@ class LinkerRuleTests(unittest.TestCase):
                         + [_line(13, "(ਗੁ. ਗ੍ਰੰਥ ਪੰਨਾ ੧੧੨੩)", 2300, x0=600, x1=1100)])
         spans = link_pages([p1, p2, p3], merge_style(None))
         self.assertEqual([s.get("continues") for s in spans], [False, True, False])
+        # a shabad's text at the very start of the pages read may begin on the page before; one under a heading does not
+        self.assertEqual([s.get("continued") for s in spans], [True, False, True])   # 760 opens its own window with a shabad too
+        p0 = self._page(746, [_line(1, "ਰਾਗ ਕੇਦਾਰਾ ਤਿੰਨਤਾਲ", 300, bold=True)] + self._shabad(746, 4017, 400) + self._grids(5, 700))
+        self.assertFalse(link_pages([p0], merge_style(None))[0]["continued"])
 
     def test_a_shred_under_the_verse_does_not_split_a_shabad_from_its_own_heading(self):
         # Tara Singh: the shabad's first lines at the foot of a page (with a one-line grid shred under them),

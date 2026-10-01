@@ -211,8 +211,10 @@ class ReviewState:
             by_nid = {r["notation_id"]: r for r in b["records"]}
             for nid, e in attach(ledger, b["records"]).items():       # keys first, then overlap; no record twice
                 rv = by_nid[nid].get("review") or {}
+                # accepted with a note, and the cut moved since -- as the last run marked it; a tick given after that run
+                # (the ledger's line is newer than the mark) settles it until the next run
                 out[nid] = {"status": e["status"], "comment": e.get("comment") or "",
-                            "changed": bool(rv.get("noted") and rv.get("changed"))}    # accepted with a note, and the cut moved since
+                            "changed": bool(rv.get("noted") and rv.get("changed") and rv.get("at") == e.get("at"))}
         return out
 
     def counts(self) -> str:

@@ -206,6 +206,13 @@ on everything accepted. The database refuses a book whose review did not
 pass; `--allow-unmeasured` is for a pilot, `--accepted-only` builds the
 reviewed notations alone. `docs/output-format.md` describes what is written.
 
+On a second machine the same commands run from the same branch; only the
+small files move between machines, by git: the records, the ledger and
+the fixtures under `REVIEW_DIR`, the page metadata and the layout cache.
+Renders, OCR output and images are made again where they are needed, and
+`29_notation_parse.py --recut --book <book>` cuts a book's images again
+from the bboxes its records store, refusing a crop whose sha differs.
+
 To see how the reader fares across a shelf of books before committing to
 any of them, `33_notation_sample.py --library <folder of books> --books 20
 --per-book 2` reads a few pages at two random places in each and writes

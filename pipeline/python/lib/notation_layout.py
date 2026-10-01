@@ -1023,6 +1023,7 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
     segs = _segments(items, after)
     # the last item of each run of consecutive pages read (a window ends there, or the book)
     tails = {id(it) for k, it in enumerate(items) if it["role"] != "break" and (k + 1 == len(items) or items[k + 1]["role"] == "break")}
+    heads = {id(it) for k, it in enumerate(items) if it["role"] != "break" and (k == 0 or items[k - 1]["role"] == "break")}
     out: list[dict] = []
     dropped = dropped if dropped is not None else []
     prev: dict | None = None
@@ -1061,8 +1062,8 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
             prev = seg if has_shabad else prev
             seg_before = None                  # a dropped part between two notations: the gap is not filled
             continue
-        if edge_grid:
-            seg["continued"] = True
+        if edge_grid or (not after and id(seg["items"][0]) in heads and seg["items"][0]["role"] == "shabad"):
+            seg["continued"] = True             # grids, or a shabad's text, at the very start of the pages read: it may begin on the page before
         span = _span_from_items(seg)
         last_item = seg["items"][-1]
         if not after and id(last_item) in tails and last_item["role"] in NOTATION_ROLES + ("text", "note") \

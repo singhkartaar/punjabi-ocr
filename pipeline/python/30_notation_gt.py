@@ -304,7 +304,9 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: s
     if rec.get("review_key"):
         parts.append('<div class="rkey">%s%s%s</div>' % (esc(rec["review_key"]),
                      ' <span class="flag-long">long span: %d pages</span>' % len(rec["pages"]) if "long-span" in rec.get("flags", []) else "",
-                     ' <span class="flag-long">ends on the last page read: may go on</span>' if "continues-next-page" in rec.get("flags", []) else ""))
+                     (' <span class="flag-long">ends on the last page read: may go on</span>' if "continues-next-page" in rec.get("flags", []) else "")
+                     + (' <span class="flag-long">begins on the first page read: may start earlier</span>'
+                        if "continued-from-prev" in rec.get("flags", []) and rec["shabad"].get("shabad_id") is not None else "")))
     prior = rec.get("review") or {}
     if prior.get("status") == "backlog":
         parts.append('<div class="prior"><b>backlog, round %s:</b> %s%s</div>'

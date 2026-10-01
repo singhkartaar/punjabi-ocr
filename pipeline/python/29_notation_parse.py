@@ -50,6 +50,45 @@ def load_jsonl(path: str) -> tuple[dict, list[dict]]:
     return rows[0]["_meta"], rows[1:]
 
 
+def make_engine():
+    """The row reader: Tesseract at psm 7 in `pan`, with a second reading of the swar rows in script/Gurmukhi."""
+    from lib.ocr_engines import TesseractEngine
+    engine = TesseractEngine(psm=7, tess_lang="pan")
+    engine.key = "tesseract-pan-psm7"
+    try:
+        engine.alt = TesseractEngine(psm=7, tess_lang="script/Gurmukhi")
+    except SystemExit:
+        engine.alt = None
+    return engine
+
+
+_POOL: dict = {}
+
+
+def _pool_init(no_grid: bool) -> None:
+    """Worker-process initialiser: one corpus connection and one row reader per process, one Tesseract thread each."""
+    os.environ.setdefault("OMP_THREAD_LIMIT", "1")
+    _POOL["con"] = corpus_connection()
+    _POOL["engine"] = None
+    if not no_grid:
+        try:
+            _POOL["engine"] = make_engine()
+        except SystemExit:
+            _POOL["engine"] = None
+    _POOL["no_grid"] = no_grid or _POOL["engine"] is None
+
+
+def _pool_work(job: tuple) -> tuple[dict, list[dict]]:
+    span, book, style, seq, book_dir, images_dir, page_files, body_h_of = job
+    return span_record(span, book, style, _POOL["con"], seq, book_dir, images_dir, page_files, _POOL["no_grid"], _POOL["engine"], body_h_of)
+
+
+def default_workers() -> int:
+    """NOTATION_WORKERS, else all cores but two: the grid reading is the slow half (about two seconds a page in one process)."""
+    env = os.environ.get("NOTATION_WORKERS")
+    return max(1, int(env)) if env and env.isdigit() else max(1, (os.cpu_count() or 4) - 2)
+
+
 def corpus_connection() -> sqlite3.Connection | None:
     """corpus.sqlite if it is there, else the shipped gurbani.sqlite: both hold lines and shabads."""
     for path in (CORPUS_DB, os.path.join(ARTIFACTS, "gurbani.sqlite")):
@@ -637,6 +676,8 @@ def main():
     ap.add_argument("--no-grid", action="store_true", help="layout, shabad and crops; leave the grids unread")
     ap.add_argument("--no-images", action="store_true")
     ap.add_argument("--force", action="store_true", help="recompute cached page layouts")
+    ap.add_argument("--workers", type=int, default=default_workers(),
+                    help="processes for the records (grid reading, crops); NOTATION_WORKERS or all cores but two; 1 = in this process")
     ap.add_argument("--no-index", action="store_true", help="do not read the book's index for the numbered notations")
     ap.add_argument("--no-review", action="store_true", help="ignore the review ledger (accepted notations are re-cut like any other)")
     ap.add_argument("--recut", action="store_true", help="cut the images again from the records' stored bboxes (after a git pull of the data); no parsing")
@@ -674,13 +715,7 @@ def main():
     engine = None
     if not args.no_grid:
         try:
-            from lib.ocr_engines import TesseractEngine
-            engine = TesseractEngine(psm=7, tess_lang="pan")
-            engine.key = "tesseract-pan-psm7"
-            try:
-                engine.alt = TesseractEngine(psm=7, tess_lang="script/Gurmukhi")   # a second reading of the swar rows
-            except SystemExit:
-                engine.alt = None
+            engine = make_engine()
         except SystemExit as err:
             print("grid reader off: %s" % err)
             args.no_grid = True
@@ -693,12 +728,22 @@ def main():
     os.makedirs(images_dir, exist_ok=True)
     records, all_images, problems = [], [], []
     seq_by_page: dict[int, int] = {}
+    jobs: list[tuple[dict, int]] = []
     for span in spans:
         grid_pages = [p for sec in span["sections"] for p, _ in sec["grids"]]
         page = grid_pages[0] if grid_pages else (span["heading_page"] or span["pages"][0])
         seq_by_page[page] = seq_by_page.get(page, 0) + 1
-        rec, images = span_record(span, book, style, con, seq_by_page[page], book_dir, images_dir, page_files,
-                                  args.no_grid, engine, body_h_of)
+        jobs.append((span, seq_by_page[page]))
+    # the records, one per span: across the cores when there is more than a handful (each worker opens its own
+    # corpus connection and row reader; the order of the results is the order of the spans)
+    if args.workers > 1 and len(jobs) > 3:
+        import concurrent.futures as cf
+        with cf.ProcessPoolExecutor(max_workers=min(args.workers, len(jobs)), initializer=_pool_init, initargs=(args.no_grid,)) as pool:
+            results = list(pool.map(_pool_work, [(span, book, style, seq, book_dir, images_dir, page_files, body_h_of) for span, seq in jobs]))
+    else:
+        results = [span_record(span, book, style, con, seq, book_dir, images_dir, page_files, args.no_grid, engine, body_h_of)
+                   for span, seq in jobs]
+    for (span, _), (rec, images) in zip(jobs, results):
         if rec["shabad"].get("shabad_id") is None and "no-shabad-text" in rec["flags"] and "continued-from-prev" in rec["flags"] \
                 and not rec["layout"].get("shabad_at_number"):
             # grids at the edge of the pages read with no shabad before them and none the bol row names: nothing anchors them
