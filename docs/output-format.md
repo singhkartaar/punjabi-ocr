@@ -38,10 +38,13 @@ and scored by dot product against the dequantised rows
 
 ```sql
 CREATE TABLE works (
-  work_id TEXT PRIMARY KEY, title TEXT, author TEXT, folder TEXT, original INTEGER,
+  work_id TEXT PRIMARY KEY, title TEXT, title_en TEXT, author TEXT, folder TEXT, original INTEGER,
   quote_policy TEXT, parts TEXT, files INTEGER, units INTEGER,
   language TEXT DEFAULT 'en',      -- the language the work was written in
-  licence TEXT                     -- 'public-domain' | 'copyright' | NULL (treated as copyright)
+  licence TEXT,                    -- 'public-domain' | 'copyright' | NULL (treated as copyright)
+  kind TEXT DEFAULT 'essay',       -- essay | translation | word-meaning | commentary | reference (the manifest's `kind`)
+  translate INTEGER DEFAULT 0,     -- 1 where the work is rendered into English for the English corpus
+  ang_from INTEGER, ang_to INTEGER -- the angs its links span, else the manifest's `angs`
 );
 CREATE TABLE units (
   unit_row INTEGER PRIMARY KEY,    -- ALSO the row in units.i8; never renumbered
@@ -50,12 +53,34 @@ CREATE TABLE units (
   text TEXT,                       -- what is searched and shown (English in writings-en, even for a translated work)
   text_src TEXT                    -- the source-language text of a translated passage, else NULL
 );
-CREATE TABLE citations (           -- the scripture a passage quotes, as the pipeline resolved it
+CREATE TABLE citations (           -- the Guru Granth Sahib lines a passage quotes: one row per shabad per passage
   unit_row INTEGER, shabad_id INTEGER, line_id INTEGER, ang INTEGER,
   score REAL, method TEXT, span TEXT
 );
-CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);   -- corpus, authors, units, works, citations, built
+CREATE TABLE links (               -- every relation between a passage and the scripture, any scripture
+  unit_row INTEGER,
+  source TEXT,                     -- G (Guru Granth Sahib) | D (Dasam Bani) | B (Bhai Gurdas) | K: the id space of the lines
+  shabad_id INTEGER, line_from INTEGER, line_to INTEGER, ang INTEGER,   -- the range of lines, inclusive
+  role TEXT,                       -- 'explains': the passage is about these lines | 'quotes': it cites them
+  kind TEXT,                       -- the work's kind
+  method TEXT, score REAL, page INTEGER
+);
+CREATE INDEX idx_links_lines ON links(source, line_from, line_to);
+CREATE INDEX idx_links_shabad ON links(source, shabad_id);
+CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT);   -- corpus, authors, units, works, citations, links, built
 ```
+
+`citations` is the older table and keeps its shape: `line_id` is a line of the
+Guru Granth Sahib, and a reader joins it to that scripture's shabads. `links`
+is the general one: which lines of which scripture a passage stands in
+relation to, over what range, and in what role. A translation, a word
+meaning or a commentary of a verse is an `explains` link from the passage to
+the lines it explains; an essay that quotes a verse in passing is a `quotes`
+link. A reader of the scripture that wants the passages about a line asks
+`links` by `(source, line_from, line_to)`; a search result that wants the
+verses a passage cites asks it by `unit_row`. Every id and range keeps the
+BaniDB line ids of its own scripture; the corpus database those come from is
+the same one the merge matched against.
 
 ## The manifest fields the server reads
 
@@ -99,7 +124,7 @@ A work with `kind: notation` writes no passages. Its output is
 
 | file | |
 |---|---|
-| `data/writings/<work>.jsonl` | one record per source paragraph, in reading order: `unit_id`, `work`, `part`, `page`, `para_no`, `style` (`body`, `heading`, `quote`, `footnote`), `text`, `lang`, and for a quoted verse its `line_ids`, `shabad_id`, `ang`, `match_score` |
+| `data/writings/<work>.jsonl` | one record per source paragraph, in reading order: `unit_id`, `work`, `part`, `page`, `para_no`, `style` (`body`, `heading`, `quote`, `footnote`), `text`, `lang`, and for a quoted verse its `line_ids`, `line_from`, `line_to`, `source`, `shabad_id`, `ang`, `match_score` |
 | `data/writings/<work>.en.jsonl` | `unit_id`, `en`, `engine`, `model` per translated paragraph |
 | `data/writings/units[-<lang>].jsonl` | the retrieval units, `_meta` first, exactly what the database holds |
 | `data/writings/citations.jsonl` | the resolved quotations |

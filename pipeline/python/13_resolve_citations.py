@@ -59,6 +59,24 @@ def load_works(src: str, work: str | None) -> list[dict]:
     return out
 
 
+def kept_citations(path: str, replaced: set[str]) -> list[dict]:
+    """The citations already in `path` of every work not in `replaced`, in file order."""
+    if not os.path.exists(path):
+        return []
+    out = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            rec = json.loads(line)
+            if "_meta" in rec:
+                continue
+            work = rec.get("work") or rec.get("unit_id", "").split(":")[0]
+            if work not in replaced:
+                out.append(rec)
+    return out
+
+
 def restyle(works: list[dict], resolved: list[dict]) -> int:
     """
     Paragraphs that are nothing but a resolved quotation, marked as quotes.
@@ -178,7 +196,10 @@ def main():
     con = sqlite3.connect(CORPUS_DB)
     by_ang = corpus_by_ang(con)
     con.close()
-    print("corpus lines indexed by ang: %d" % sum(len(v) for v in by_ang.values()))
+    if by_ang:
+        print("corpus lines indexed by ang: %d" % sum(len(v) for v in by_ang.values()))
+    else:
+        print("no English translations in %s: only the merge's own Gurmukhi matches are kept" % CORPUS_DB)
 
     resolved, ambiguous, unresolved = [], 0, 0
     for p in pre:
@@ -198,11 +219,18 @@ def main():
                          "span": span["text"][:400], **hit})
 
     restyled = restyle(works, resolved) if args.restyle else 0
+    # --work replaces that work's citations and keeps every other work's: a
+    # scanned book that joins a roster's corpus (Baru Sahib) shares the folder's
+    # citations.jsonl with what the legacy-font and transliteration resolvers
+    # wrote for the roster's works, which this script never reads again
+    others = kept_citations(out_path, {args.work}) if args.work else []
     with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps({"_meta": {"accept": ACCEPT, "margin": MARGIN,
                                        "translators": ["ssk", "bdb", "ms"]}}, ensure_ascii=False) + "\n")
-        for r in resolved:
+        for r in others + resolved:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+    if others:
+        print("kept %d citations of the folder's other works" % len(others))
 
     # Held-out ang self-consistency. Resolve again with the window removed and
     # let the cited ang judge: agreement is precision on a free labelled set.

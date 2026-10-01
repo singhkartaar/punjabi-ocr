@@ -111,6 +111,26 @@ def graphemes(text: str) -> list[str]:
     return out
 
 
+HALANT = "\u0a4d"
+
+
+def conjuncts(text: str) -> list[str]:
+    """
+    graphemes(), with a cluster that ends in a halant joined to the one after
+    it: ਪ੍ਰੇਮ is [ਪ੍ਰੇ, ਮ], not [ਪ੍, ਰੇ, ਮ]. For the corrector only. A scan that
+    reads the subjoined ra as an aunkar (ਪੁੇਮ, [ਪੁੇ, ਮ]) is then one cluster
+    away from the word, not a cluster insert plus a substitution: 0.75
+    against MAX_COST 1.0 instead of 2.25. CER, the vote and the lexicon's
+    word lengths keep graphemes(), so every published number stays comparable.
+    """
+    out: list[str] = []
+    for g in graphemes(text):
+        if out and out[-1].endswith(HALANT):
+            out[-1] += g
+        else:
+            out.append(g)
+    return out
+
 def script_of(text: str) -> str:
     """"gurmukhi", "latin", "devanagari", "mixed" or "none", by letters present."""
     g, d, l = bool(GURMUKHI.search(text)), bool(DEVANAGARI.search(text)), bool(LATIN.search(text))

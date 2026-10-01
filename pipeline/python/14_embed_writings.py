@@ -7,6 +7,8 @@ Build the writings corpus: retrieval units, their vectors, their citations.
       --model multilingual-e5-small-gurbani-trim --lang pa --max-len 160
   14_embed_writings.py --lang pa                       # the Punjabi works of data/writings
   14_embed_writings.py --lang en --translations        # the English ones, plus every translated one
+  14_embed_writings.py --src data/barusahib --corpus barusahib-en --lang en --translations \
+      --keep artifacts/barusahib.sqlite                # a scanned book joins a corpus built elsewhere
 
 Writes <src>/units.jsonl (what a reader is shown and what the server serves;
 units-<lang>.jsonl for a language other than English, so the Punjabi and the
@@ -59,6 +61,7 @@ import glob
 import json
 import os
 import re
+import sqlite3
 import sys
 from collections import defaultdict
 
@@ -75,6 +78,17 @@ from lib.writings_works import db_name
 
 WRITINGS = os.path.join(ROOT, "data", "writings")
 OUT_DIM = 256
+
+
+def index_dim_for(n_units: int, embed_dim: int, out_dim: int = OUT_DIM) -> int:
+    """
+    The dimension the PCA reduces to: OUT_DIM, or fewer when the corpus has
+    fewer units than that. A work of a few pages -- a word-meaning list, a
+    bench sample of twenty pages -- gives 77 units, and a 256-component PCA
+    over 77 rows is not a thing; the manifest records the dimension used and
+    the reader takes it from there.
+    """
+    return max(1, min(out_dim, n_units, embed_dim))
 # What closes a sentence, so that a merge never leaves one hanging. Punjabi
 # prose ends on a danda, not a full stop: without these two characters every
 # unit of a Gurmukhi work runs to the hard cap instead of the target, and 4,703
@@ -157,6 +171,73 @@ def apply_translations(records: list[dict], path: str) -> tuple[list[dict], int,
     return out, translated, dropped
 
 
+def kept_corpus(db_path: str, rebuilt: set[str]) -> tuple[list[dict], list[dict]]:
+    """
+    The works of a built corpus that are not being rebuilt, taken as they were
+    built: their units, text and citations from its database, in its order.
+
+    For a corpus whose sources are on another machine. Baru Sahib's roster
+    reads PDFs that live on the machine that published the corpus; a scanned
+    book joining it (manifest `corpus`) is OCR'd here. With --keep, every work
+    whose <work>.jsonl is in --src is read from it as always, and only the
+    others come from the database -- so where every source is present, as on
+    the publishing machine, --keep changes nothing. The kept units are
+    embedded again from their own text (the same model gives the same vector)
+    so that one PCA is fitted over the whole corpus.
+
+    A database from before `links` existed carries its Guru Granth Sahib
+    citations only; those are what a kept unit's cites are rebuilt from.
+    """
+    con = sqlite3.connect("file:%s?mode=ro" % db_path, uri=True)
+    con.row_factory = sqlite3.Row
+    tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    work_cols = {r[1] for r in con.execute("PRAGMA table_info(works)")}
+    works = []
+    for w in con.execute("SELECT * FROM works ORDER BY rowid"):
+        if w["work_id"] in rebuilt:
+            continue
+        works.append({"work": w["work_id"], "title": w["title"], "title_en": w["title_en"], "author": w["author"],
+                      "folder": w["folder"], "original": bool(w["original"]), "quote_policy": w["quote_policy"],
+                      "parts": json.loads(w["parts"] or "[]"), "files": w["files"], "language": w["language"],
+                      "licence": w["licence"], "kept": True,
+                      **{k: w[k] for k in ("kind", "translate", "ang_from", "ang_to") if k in work_cols}})
+    meta = {w["work"]: w for w in works}
+    cites: dict[int, list[dict]] = {}
+    if "links" in tables:
+        for c in con.execute("SELECT * FROM links ORDER BY rowid"):
+            cites.setdefault(c["unit_row"], []).append(
+                {"source": c["source"], "shabad_id": c["shabad_id"], "line_id": c["line_from"],
+                 "line_from": c["line_from"], "line_to": c["line_to"], "ang": c["ang"], "role": c["role"],
+                 "method": c["method"], "score": c["score"], "page": c["page"], "span": ""})
+        # the span is the citations table's alone
+        spans = {(c["unit_row"], c["line_id"]): c["span"] for c in con.execute("SELECT * FROM citations")}
+        for row, cs in cites.items():
+            for c in cs:
+                c["span"] = spans.get((row, c["line_id"]), "")
+    else:
+        for c in con.execute("SELECT * FROM citations ORDER BY rowid"):
+            cites.setdefault(c["unit_row"], []).append(
+                {"source": "G", "shabad_id": c["shabad_id"], "line_id": c["line_id"], "line_from": c["line_id"],
+                 "line_to": c["line_id"], "ang": c["ang"], "role": "quotes", "method": c["method"],
+                 "score": c["score"], "page": None, "span": c["span"]})
+    units = []
+    for u in con.execute("SELECT * FROM units ORDER BY unit_row"):
+        w = meta.get(u["work_id"])
+        if w is None:
+            continue
+        units.append({"work": u["work_id"], "part": u["part"], "page": u["page"], "para_no": u["para_no"],
+                      "marker": u["marker"], **({"section": u["section"]} if u["section"] else {}),
+                      "text": u["text"], "text_src": u["text_src"], "cites": cites.get(u["unit_row"], []),
+                      "unit_id": u["unit_id"], "title": w["title"], "title_en": w["title_en"],
+                      "author": w["author"], "quote_policy": w["quote_policy"]})
+    con.close()
+    for w in works:
+        mine = [u for u in units if u["work"] == w["work"]]
+        w["units"] = len(mine)
+        w["cites"] = w["links"] = sum(len(u["cites"]) for u in mine)
+    return works, units
+
+
 def build_units(records: list[dict], citations: dict, target: int, hard: int) -> list[dict]:
     """
     Paragraphs merged into retrieval units, with the verses they lead into.
@@ -164,6 +245,12 @@ def build_units(records: list[dict], citations: dict, target: int, hard: int) ->
     A unit closes once it is big enough AND ends on a full stop, so a merge
     never leaves a sentence hanging; it closes regardless at `hard` tokens, at a
     heading, and at a part boundary.
+
+    A verse's links go BACK to the prose that led into it (an essay quotes a
+    tuk to make its point), unless some prose EXPLAINS the verse's pair -- a
+    translation, a word-meaning, a commentary -- and then they go FORWARD to
+    that prose, in the "explains" role, with the links the prose itself
+    states. Each cite carries `role`, `source` and its line range.
     """
     # One paragraph may cite SEVERAL verses, so the map holds a list per
     # paragraph. A bare citation is accepted and wrapped rather than trusted to
@@ -173,13 +260,42 @@ def build_units(records: list[dict], citations: dict, target: int, hard: int) ->
     units: list[dict] = []
     cur: dict | None = None
     carried: list[dict] = []      # citations from a unit that was discarded
+    # The pairs some prose EXPLAINS (lib/writings_ocr: the arth beside a verse,
+    # or after it in a translation). A verse of such a pair is not the prose
+    # before it leading into a quotation; it is what the prose after it is
+    # about, so its citations wait for that prose and attach there, forward.
+    explained = {e["pair"] for rec in records for e in (rec.get("explains") or []) if e.get("pair")}
+    held: dict[int, list[dict]] = {}          # pair -> the verse's citations, until its prose comes
 
     def add_cite(unit, cite):
-        # One shabad, once. A source may name the same shabad after every
-        # paragraph of a gist -- which is how a long gist stays linked when the
-        # embedder splits it -- and a passage listing it twice is noise.
-        if not any(c["shabad_id"] == cite["shabad_id"] for c in unit["cites"]):
-            unit["cites"].append(cite)
+        # One shabad, once, per scripture and role: a source may name the same
+        # shabad after every paragraph of a gist -- which is how a long gist
+        # stays linked when the embedder splits it -- and a passage listing it
+        # twice is noise. Two mentions of one shabad widen the range to cover
+        # both: an arth that explains tuks 3-4 and then 5-6 explains 3-6.
+        key = (cite.get("source") or "G", cite["shabad_id"], cite.get("role") or "quotes")
+        for c in unit["cites"]:
+            if (c.get("source") or "G", c["shabad_id"], c.get("role") or "quotes") == key:
+                if cite.get("line_from") is not None and c.get("line_from") is not None:
+                    c["line_from"] = min(c["line_from"], cite["line_from"])
+                    c["line_to"] = max(c["line_to"], cite["line_to"])
+                return
+        unit["cites"].append(dict(cite))
+
+    def explains_cites(rec):
+        """The links a prose paragraph's `explains` state, as citations in the explains role."""
+        out = []
+        for e in rec.get("explains") or []:
+            for cite in held.pop(e.get("pair"), []):
+                out.append({**cite, "role": "explains"})
+            if e.get("shabad_id") is None:
+                continue                       # verse the merge could not place: the pair links nothing yet
+            out.append({"shabad_id": e["shabad_id"], "line_id": e.get("line_from"),
+                        "line_from": e.get("line_from"), "line_to": e.get("line_to"),
+                        "source": e.get("source") or "G", "role": "explains", "page": rec.get("page"),
+                        "ang": e.get("ang"), "score": e.get("score"), "method": e.get("method") or "ocr-corpus-match",
+                        "span": ""})
+        return out
 
     def flush():
         # A unit needs PROSE. A heading carried into the next unit is context;
@@ -218,6 +334,10 @@ def build_units(records: list[dict], citations: dict, target: int, hard: int) ->
     for rec in records:
         found = citations.get(rec["unit_id"]) or []
         if rec["style"] == "quote":
+            if rec.get("pair") in explained:
+                # the verse is what the prose after it explains: its links wait there
+                held.setdefault(rec["pair"], []).extend(found)
+                continue
             # the verse belongs to the prose that introduced it
             for cite in found:
                 if cur:
@@ -231,7 +351,7 @@ def build_units(records: list[dict], citations: dict, target: int, hard: int) ->
         # words are still retrievable. The citation still belongs to it, and
         # before this only the paragraphs restyled as quotes were linked at all:
         # 35 of 80 for Bandginama.
-        pending = found
+        pending = found + explains_cites(rec)
         # The source-language text of a translated paragraph (apply_translations)
         # goes whole to the unit its first sentence lands in: the English is
         # cut at its own sentence ends below, and the Punjabi does not break
@@ -267,9 +387,13 @@ def build_units(records: list[dict], citations: dict, target: int, hard: int) ->
             if cur["words"] >= hard or (cur["words"] >= target and whole):
                 flush()
     flush()
-    # a verse quoted after the last prose of the work has nothing to carry to
+    # a verse quoted after the last prose of the work has nothing to carry to;
+    # a verse whose explanation never came (it was said to have one) likewise
+    for cites in held.values():
+        carried.extend(cites)
     if carried and units:
-        units[-1]["cites"].extend(carried)
+        for cite in carried:
+            add_cite(units[-1], cite)
     return units
 
 
@@ -287,6 +411,9 @@ def main():
     ap.add_argument("--max-len", type=int, default=256, help="token window for a unit")
     ap.add_argument("--target-tokens", type=int, default=60, help="words a unit aims for")
     ap.add_argument("--hard-tokens", type=int, default=220, help="words a unit never exceeds")
+    ap.add_argument("--keep", metavar="DB",
+                    help="a built corpus database: its works with no <work>.jsonl in --src are carried over "
+                         "as built (kept_corpus), the rest read from --src")
     ap.add_argument("--translations", action="store_true",
                     help="also take every work of another language that has a <work>.en.jsonl "
                          "(26_translate_writings.py), embedding its English into this corpus; --lang en")
@@ -317,18 +444,32 @@ def main():
                     # finds every verse in a paragraph and Bandginama runs three
                     # into one -- keyed singly, two of the three were overwritten
                     # and lost here, silently.
+                    # the whole range of lines, and which scripture they are lines
+                    # of: line_id alone lost both, and a Dasam Bani id read as a
+                    # Guru Granth Sahib one is a wrong verse, silently
+                    ids = rec.get("line_ids") or [rec["line_id"]]
                     cites.setdefault(rec["unit_id"], []).append(
                         {"shabad_id": rec["shabad_id"], "line_id": rec["line_id"],
+                         "line_from": rec.get("line_from", min(ids)), "line_to": rec.get("line_to", max(ids)),
+                         "source": rec.get("source") or "G", "role": "quotes", "page": rec.get("page"),
                          "ang": rec["ang"], "score": rec["score"],
                          "method": rec["method"], "span": rec["span"][:300]})
     print("%d resolved citations in %d paragraphs"
           % (sum(len(v) for v in cites.values()), len(cites)))
 
     works, units = [], []
-    for path in sorted(glob.glob(os.path.join(src, "*.jsonl"))):
+    paths = [p for p in sorted(glob.glob(os.path.join(src, "*.jsonl")))
+             if not (os.path.basename(p) == "citations.jsonl" or os.path.basename(p).startswith("units")
+                     or os.path.basename(p).endswith(".en.jsonl"))]
+    if args.keep:
+        if not os.path.exists(args.keep):
+            sys.exit("--keep %s: no such database" % args.keep)
+        works, units = kept_corpus(args.keep, {os.path.basename(p)[:-len(".jsonl")] for p in paths})
+        for i, u in enumerate(units):
+            u["unit_row"] = i
+        print("kept %d works, %d units, as built in %s" % (len(works), len(units), args.keep))
+    for path in paths:
         name = os.path.basename(path)
-        if name == "citations.jsonl" or name.startswith("units") or name.endswith(".en.jsonl"):
-            continue
         meta, records = load_work(path)
         # a work ingested through a roster states no language: it is the
         # corpus's (the treatises are Punjabi, the essays English)
@@ -340,7 +481,8 @@ def main():
             records, translated, dropped = apply_translations(records, translation)
             print("%s: %d paragraphs translated from %s, %d without a translation dropped"
                   % (meta["work"], translated, language, dropped))
-            meta = {**meta, "translated_from": language}
+            # its English is a machine's, not the author's own (works.original)
+            meta = {**meta, "translated_from": language, "original": False}
         built = build_units(records, cites, args.target_tokens, args.hard_tokens)
         for u in built:
             u["unit_row"] = len(units)
@@ -354,8 +496,18 @@ def main():
             # the essays are translations of his Punjabi and are summarised
             u["quote_policy"] = meta.get("quote_policy", "summarise")
             units.append(u)
+        # the angs a work covers: what the manifest says when it says; else
+        # the verses the work explains; else every verse it quotes (an essay
+        # reaches wherever its quotations go)
+        said = meta.get("angs") or []
+        g = [c for u in built for c in u["cites"] if (c.get("source") or "G") == "G" and c.get("ang")]
+        explained = [c["ang"] for c in g if c.get("role") == "explains"]
+        reach = explained or [c["ang"] for c in g]
         works.append({**meta, "units": len(built),
-                      "cites": sum(len(u["cites"]) for u in built)})
+                      "cites": sum(len(u["cites"]) for u in built),
+                      "links": sum(len(u["cites"]) for u in built),
+                      "ang_from": said[0] if said else (min(reach) if reach else None),
+                      "ang_to": said[-1] if said else (max(reach) if reach else None)})
     print("%d works, %d units, %d citations attached"
           % (len(works), len(units), sum(len(u["cites"]) for u in units)))
 
@@ -374,7 +526,10 @@ def main():
     vectors, chunked = embed_long(emb, texts, args.max_len)
     print("  %d units were longer than the window and were chunked" % chunked)
 
-    pca = PCA(n_components=OUT_DIM, svd_solver="full", random_state=0)
+    index_dim = index_dim_for(len(units), int(vectors.shape[1]))
+    if index_dim < OUT_DIM:
+        print("  %d units: the index keeps %d dimensions, not %d" % (len(units), index_dim, OUT_DIM))
+    pca = PCA(n_components=index_dim, svd_solver="full", random_state=0)
     reduced = pca.fit_transform(vectors.astype(np.float32))
     reduced /= np.maximum(np.linalg.norm(reduced, axis=1, keepdims=True), 1e-12)
     codes, scale = quantize(reduced.astype(np.float32))
@@ -411,9 +566,10 @@ def main():
         "pooling": prof["pooling"], "query_prefix": prof["query_prefix"], "doc_prefix": prof["doc_prefix"],
         "pad_token": prof["pad_token"], "pad_id": prof["pad_id"],
         "lowercase": bool(prof.get("lowercase", True)), "strip_accents": bool(prof.get("strip_accents", True)),
-        "max_len": args.max_len, "embed_dim": int(vectors.shape[1]), "index_dim": OUT_DIM,
+        "max_len": args.max_len, "embed_dim": int(vectors.shape[1]), "index_dim": index_dim,
         "units": len(units), "works": len(works), "chunked_units": int(chunked),
         "citations": sum(len(u["cites"]) for u in units),
+        "links": sum(len(u["cites"]) for u in units),
         "text_lang": args.lang, "query_scripts": defaults["query_scripts"],
         "explained_variance": float(pca.explained_variance_ratio_.sum()),
         "quantization": {"type": "int8", "scale": "per-vector float32",

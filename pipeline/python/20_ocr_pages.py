@@ -95,7 +95,8 @@ def run_book(pdf: str, book: str, meta: dict, args) -> dict:
            "author": meta.get("author"), "work": meta.get("work"), "part": meta.get("part"),
            "title": meta.get("title") or meta.get("work_title"),
            "scripture": meta.get("scripture", "G"), "quote_policy": meta.get("quote_policy"),
-           "kind": meta.get("kind", "prose"), "style": meta.get("style"),
+           "kind": meta.get("kind", "essay"), "layout": meta.get("layout", "auto"), "angs": meta.get("angs"),
+           "header_pattern": meta.get("header_pattern"), "coverage": meta.get("coverage"), "style": meta.get("style"),
            "probe": probe, "options": {"crop": crop, "deskew": deskew, "bleed": bleed},
            "pages": [by_page[k] for k in sorted(by_page)]}
     with open(meta_path, "w", encoding="utf-8", newline="\n") as fh:

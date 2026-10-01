@@ -11,7 +11,7 @@ weights from the evaluation.
 
 | engine (`--engine`) | what | runs on | measured (word accuracy on our own ground truth) |
 |---|---|---|---|
-| `tesseract` (`--tess-lang pan`, `script/Gurmukhi`, `eng`, `hin`, or the default per language) | Tesseract 5 with `tessdata_best`; `gurmukhifix` reorders its Gurmukhi output | CPU, ~0.35 s a page with 6 workers | Punjabi 92-96%, English 99.1%, Hindi (synthetic page) 98.2% |
+| `tesseract` (`--tess-lang pan`, `script/Gurmukhi`, `eng`, `hin`, or the default per language) | Tesseract 5 with `tessdata_best`; `gurmukhifix` reorders its Gurmukhi output; `recognise_region` reads one crop (`psm 7`) for the merge's coverage pass, the only engine that does | CPU, ~0.35 s a page with 6 workers | Punjabi 92-96%, English 99.1%, Hindi (synthetic page) 98.2% |
 | `pdftext` | the text layer a scan already carries, if any | free | a voter, never a pivot |
 | `dotsocr` | dots.ocr (3B VLM) through transformers; its own venv (transformers 4.51.3); input capped at 2.6 MP for a 12 GB card | GPU, ~350 s a page | Punjabi 87% at line level, perfect where its blocks align; Hindi 100% |
 | `surya` | Surya 2, through `llama-server` (`SURYA_INFERENCE_BACKEND=llamacpp`); returns paragraph blocks the merge cuts at the pivot's lines | GPU, ~13 s a page | English voter |
@@ -32,7 +32,7 @@ vote at full confidence. So the merge sets aside any engine the evaluation
 measured under 90% word accuracy (`MIN_VOTER_ACC` in `22_ocr_merge.py`) and
 says so; `--engines` overrides. The neural engines earn their place on a
 scan where Tesseract itself is under the bar, or on the pages the merge
-routes for a second opinion.
+routes for a second opinion. A Tesseract variant beside a Tesseract pivot is not held to the bar: it reads the same lines the same way, and on a scan where both variants measure under 90% (Santhya vols. 2, 4, 5, 7: 0.78-0.91) the bar left the pivot voting alone, with no book vocabulary and no corrections; with both voting the merge measured 0.817 -> 0.830, 0.820 -> 0.825, 0.913 -> 0.923, 0.856 -> 0.854.
 
 Measure before you trust: `23_ocr_gt.py --sample 30` draws lines to verify
 (with crops and a review page), `--promote` records them, and
@@ -55,10 +55,26 @@ matched to the right id with how many false matches. `--bakeoff --books a,b
 Every answer is checked before it is written: empty, the source script left
 in the English, no Latin letters, more than four times the source's length,
 or a six-word run repeated three times (a small model looping on OCR noise)
--- rejected and counted. `28_translate_bench.py` translates a stratified
-30-paragraph sample with each local engine and scores chrF, BLEU and the
-length ratio against the Vertex reference, caching the reference so a later
-engine is scored for free.
+-- rejected and counted. With a glossary (the manifest's `glossary`,
+`lib/mt_glossary.py`) there is one more reason: a Sikh term the paragraph
+uses that the English renders by none of its accepted forms ("term:
+Karah Prasad"). Before the check the model's own emphasis and bracketed
+explanations are taken out, never more brackets than the source has.
+
+`--prompt rules` gives the model the glossary's one-sentence rule and the
+terms that paragraph uses, in the form it uses them, instead of its trained
+instruction alone. `--arbiter` names who translates a refused paragraph
+again, always with the rules prompt: `self` (the same local model), `llama`
+or `vertex` (metered by `--arbiter-budget-usd`); what fails twice is counted
+and not written.
+
+`28_translate_bench.py` translates a stratified 30-paragraph sample with each
+engine and scores chrF, BLEU and the length ratio against a reference: Gemini
+through Vertex (cached, so a later engine is scored for free) or, with
+`--reference manual`, one a person writes from the Punjabi. A row can be a
+variant of an engine (`sarvam:rules`, `sarvam:rules:raw` keeping the glosses,
+`sarvam:rules+self` with the arbiter); with `--glossary` each row also gets
+the share of the sample's terms it renders and its refusals by reason.
 
 ## Notation books
 

@@ -139,9 +139,38 @@ book by book on this machine. What the agent does here, and does not:
 
 ## When running the pipeline on real books
 
+- Describe the book in its folder's `manifest.json` first (`docs/manifest.md`):
+  `kind` (essay, translation, word-meaning, commentary, reference), `angs`
+  when the book says which angs it covers, `translate` (false for a work kept
+  in its own language for display; on by default for a work not in English).
+  Leave `layout`, `header_pattern` and `coverage` alone until a bench row asks
+  for them. Every decision about a book goes into its manifest entry, never
+  into the code.
+- Bench before the whole book: `29_bench_books.py --src <folder>` runs about
+  twenty pages of each work and prints one row per book. `docs/design.md`
+  ("The bench") says what each column means and which manifest key answers a
+  bad one. Then `--gt 20` on the bench, read the crops, promote, so the
+  engines' votes are weighted by a measurement of this scan.
+- Then the whole book: `27_ingest_book.py --src <folder> --book <book>`. The
+  coverage pass is on by default; `CORPUS_DB` must point at the scripture
+  database or nothing is matched or linked, and a prose book needs the Mahan
+  Kosh (`00_fetch_mahankosh.py`) or the corrector knows only Gurbani's words.
+  On a grey or low-resolution scan, look at the words with a subjoined ra
+  (ਪ੍ਰ, ਸ੍ਰ, ਗ੍ਰ) in the merged text: if they come out as ਪੁ, ਸੁ, ਗੁ, set
+  `correct_agreed: true` for that book and measure it on its ground truth.
 - Keep everything under `data/` after a run. `data/ocr/<book>/` and
   `data/writings/<work>.jsonl` are hours of work; the last two steps
   (`14_embed_writings.py`, `15_build_writings_db.py`) can be run again from
-  them in minutes.
-- Start with `--pages 1-20`, then `--gt` to measure, before a whole book.
+  them in minutes. Keep `data/ocr/<book>/gt/` above all: it is a person's
+  reading, and every later measurement depends on it.
+- Translation (`26`) needs torch and transformers and a card, or patience:
+  the weights go under `vendor/models/sarvam-translate`; on a card smaller
+  than 8 GB the default `--device auto` uses host memory for the rest.
+  A book that is translated gets a `glossary` beside its manifest (start
+  from `examples/glossary.json`): its terms are written into the Punjabi in
+  English before translation and checked in the English after. When the
+  check flags a translation that was in fact right, the fix is the term's
+  `accept` or `unless` list in that file, never the code; keep `accept`
+  narrow (a transliteration and exact equivalents), because a wide one lets
+  a wrong sentence through.
 - `--dry-run` first on anything that might call a paid service.

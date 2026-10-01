@@ -1,0 +1,482 @@
+{
+ "about": "Sikh terms for 26_translate_writings.py: the prompt names the ones a paragraph contains, the check rejects a translation that renders none of a term's accepted forms. Copy it beside a book's manifest.json, name it in the manifest's `glossary` key, and grow it from what the check reports. Leave out words with a common ordinary sense (ਨਾਮ is also a person's name); list every correct rendering in `accept`, so the check catches only a wrong one.",
+ "rule": "Keep Sikh terms transliterated in the forms given below; do not translate them into other words, and do not add explanations, notes or brackets that the text does not have.",
+ "terms": [
+  {
+   "pa": [
+    "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ",
+    "ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ",
+    "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ",
+    "ਗ੍ਰੰਥ ਸਾਹਿਬ"
+   ],
+   "en": "Sri Guru Granth Sahib",
+   "accept": [
+    "Guru Granth Sahib",
+    "Granth Sahib",
+    "Guru Granth",
+    "Sri Guru Granth"
+   ]
+  },
+  {
+   "pa": [
+    "ਆਸਾ ਦੀ ਵਾਰ",
+    "ਆਸਾ ਜੀ ਦੀ ਵਾਰ",
+    "ਆਸਾ ਕੀ ਵਾਰ"
+   ],
+   "en": "Asa di Var",
+   "accept": [
+    "Asa di Vaar",
+    "Asa Ji di Var",
+    "Asa Ji di Vaar",
+    "Asa ki Var",
+    "Asa ki Vaar",
+    "Asa Ji's Var",
+    "Asa Ji's Vaar"
+   ]
+  },
+  {
+   "pa": [
+    "ਭੋਗ"
+   ],
+   "en": "bhog",
+   "accept": [
+    "concluded",
+    "conclusion",
+    "completed",
+    "completion",
+    "concluding"
+   ]
+  },
+  {
+   "pa": [
+    "ਕੜਾਹ ਪ੍ਰਸ਼ਾਦ",
+    "ਕੜਾਹ-ਪ੍ਰਸ਼ਾਦ",
+    "ਕੜਾਹ ਪ੍ਰਸਾਦ",
+    "ਕੜਾਹ-ਪ੍ਰਸਾਦ"
+   ],
+   "en": "Karah Prasad",
+   "accept": [
+    "Karah Parshad",
+    "Karah Prashad",
+    "Karah-Prasad",
+    "Karah-Parshad",
+    "Karah Parsad"
+   ]
+  },
+  {
+   "pa": [
+    "ਪ੍ਰਸ਼ਾਦ",
+    "ਪ੍ਰਸ਼ਾਦਾ",
+    "ਪ੍ਰਸਾਦ"
+   ],
+   "en": "Prasad",
+   "accept": [
+    "Parshad",
+    "Prashad",
+    "Parshada",
+    "Prashada",
+    "food",
+    "meal"
+   ]
+  },
+  {
+   "pa": [
+    "ਲੰਗਰ"
+   ],
+   "en": "Langar",
+   "accept": [
+    "community kitchen"
+   ]
+  },
+  {
+   "pa": [
+    "ਗੁਰਦੁਆਰਾ",
+    "ਗੁਰਦੁਆਰੇ",
+    "ਗੁਰਦੁਆਰਿਆਂ"
+   ],
+   "en": "Gurdwara",
+   "accept": [
+    "Gurudwara"
+   ]
+  },
+  {
+   "pa": [
+    "ਸਾਧ ਸੰਗਤ",
+    "ਸਾਧ-ਸੰਗਤ"
+   ],
+   "en": "Sadh Sangat",
+   "accept": [
+    "Sadh-Sangat",
+    "Sangat",
+    "congregation",
+    "devotees",
+    "holy congregation"
+   ]
+  },
+  {
+   "pa": [
+    "ਸੰਗਤ"
+   ],
+   "en": "Sangat",
+   "accept": [
+    "Sadh Sangat",
+    "congregation",
+    "devotees",
+    "company"
+   ]
+  },
+  {
+   "pa": [
+    "ਦੀਵਾਨ"
+   ],
+   "en": "Diwan",
+   "accept": [
+    "Dewan",
+    "Divan",
+    "congregation",
+    "assembly",
+    "gathering"
+   ]
+  },
+  {
+   "pa": [
+    "ਸਤਿਗੁਰੂ",
+    "ਸਤਿਗੁਰ"
+   ],
+   "en": "Satguru",
+   "accept": [
+    "True Guru",
+    "Satgur"
+   ]
+  },
+  {
+   "pa": [
+    "ਅੰਮ੍ਰਿਤ ਵੇਲਾ",
+    "ਅੰਮ੍ਰਿਤ ਵੇਲੇ"
+   ],
+   "en": "Amrit Vela",
+   "accept": [
+    "Amritvela",
+    "Amrit-vela",
+    "early morning",
+    "ambrosial hour"
+   ]
+  },
+  {
+   "pa": [
+    "ਅੰਮ੍ਰਿਤ"
+   ],
+   "en": "Amrit",
+   "accept": [
+    "nectar",
+    "ambrosia",
+    "ambrosial"
+   ]
+  },
+  {
+   "pa": [
+    "ਕੀਰਤਨ"
+   ],
+   "en": "Kirtan",
+   "accept": [
+    "Keertan"
+   ]
+  },
+  {
+   "pa": [
+    "ਸਿਮਰਨ"
+   ],
+   "en": "Simran",
+   "accept": [
+    "meditation",
+    "meditate",
+    "meditated",
+    "meditating",
+    "remembrance",
+    "recitation",
+    "repetition"
+   ]
+  },
+  {
+   "pa": [
+    "ਅਰਦਾਸ"
+   ],
+   "en": "Ardas",
+   "accept": [
+    "Ardaas",
+    "prayer",
+    "supplication"
+   ]
+  },
+  {
+   "pa": [
+    "ਹੁਕਮਨਾਮਾ",
+    "ਹੁਕਮਨਾਮੇ"
+   ],
+   "en": "Hukamnama",
+   "accept": [
+    "Hukamnamah",
+    "edict"
+   ]
+  },
+  {
+   "pa": [
+    "ਅਖੰਡ ਪਾਠ"
+   ],
+   "en": "Akhand Path",
+   "accept": [
+    "Akhand Paath",
+    "unbroken reading"
+   ]
+  },
+  {
+   "pa": [
+    "ਸਹਿਜ ਪਾਠ"
+   ],
+   "en": "Sahaj Path",
+   "accept": [
+    "Sahaj Paath"
+   ]
+  },
+  {
+   "pa": [
+    "ਜਪੁਜੀ ਸਾਹਿਬ",
+    "ਜਪੁ ਜੀ ਸਾਹਿਬ",
+    "ਜਪੁਜੀ"
+   ],
+   "en": "Japji Sahib",
+   "accept": [
+    "Japji",
+    "Japuji"
+   ]
+  },
+  {
+   "pa": [
+    "ਰਹਿਰਾਸ"
+   ],
+   "en": "Rehras",
+   "accept": [
+    "Rahras",
+    "Rehraas"
+   ]
+  },
+  {
+   "pa": [
+    "ਸੁਖਮਨੀ"
+   ],
+   "en": "Sukhmani",
+   "accept": [
+    "Sukhmani Sahib"
+   ]
+  },
+  {
+   "pa": [
+    "ਨਿਤਨੇਮ"
+   ],
+   "en": "Nitnem",
+   "accept": [
+    "daily prayers",
+    "daily prayer"
+   ]
+  },
+  {
+   "pa": [
+    "ਗੁਰਪੁਰਬ"
+   ],
+   "en": "Gurpurab",
+   "accept": [
+    "Gurpurb"
+   ]
+  },
+  {
+   "pa": [
+    "ਖ਼ਾਲਸਾ",
+    "ਖਾਲਸਾ",
+    "ਖਾਲਸੇ"
+   ],
+   "en": "Khalsa",
+   "accept": []
+  },
+  {
+   "pa": [
+    "ਪੰਥ"
+   ],
+   "en": "Panth",
+   "accept": [
+    "community",
+    "Sikh nation"
+   ]
+  },
+  {
+   "pa": [
+    "ਧਰਮਸਾਲ",
+    "ਧਰਮਸਾਲਾ"
+   ],
+   "en": "Dharamsala",
+   "accept": [
+    "Dharamsal",
+    "Dharamshala"
+   ]
+  },
+  {
+   "pa": [
+    "ਸੰਤ"
+   ],
+   "en": "Sant",
+   "accept": [
+    "saint"
+   ]
+  },
+  {
+   "pa": [
+    "ਮਹਾਰਾਜ"
+   ],
+   "en": "Maharaj",
+   "accept": [],
+   "whole": true
+  },
+  {
+   "pa": [
+    "ਮਹਾਰਾਜਾ",
+    "ਮਹਾਰਾਜੇ"
+   ],
+   "en": "Maharaja",
+   "accept": [
+    "king"
+   ],
+   "whole": true
+  },
+  {
+   "pa": [
+    "ਸੇਵਾ"
+   ],
+   "en": "Sewa",
+   "accept": [
+    "Seva",
+    "service",
+    "served",
+    "serving",
+    "serve"
+   ],
+   "unless": [
+    "ਦੀ ਸੇਵਾ ਵਿੱਚ ਬੇਨਤੀ",
+    "ਦੀ ਸੇਵਾ ਵਿਚ ਬੇਨਤੀ",
+    "ਦੀ ਸੇਵਾ ਵਿੱਚ ਅਰਜ਼",
+    "ਦੀ ਸੇਵਾ ਵਿੱਚ ਹਾਜ਼ਰ"
+   ]
+  },
+  {
+   "pa": [
+    "ਵਾਹਿਗੁਰੂ"
+   ],
+   "en": "Waheguru",
+   "accept": [
+    "Vahiguru",
+    "Wahiguru"
+   ]
+  },
+  {
+   "pa": [
+    "ਗੁਰਬਾਣੀ",
+    "ਬਾਣੀ"
+   ],
+   "en": "Gurbani",
+   "accept": [
+    "Bani",
+    "Baani",
+    "scripture",
+    "hymn"
+   ]
+  },
+  {
+   "pa": [
+    "ਗੁਟਕਾ"
+   ],
+   "en": "Gutka",
+   "accept": [
+    "prayer book"
+   ]
+  },
+  {
+   "pa": [
+    "ਚੌਰ",
+    "ਚਵਰ"
+   ],
+   "en": "Chaur",
+   "accept": [
+    "Chauri",
+    "whisk",
+    "fly-whisk"
+   ]
+  },
+  {
+   "pa": [
+    "ਰੁਮਾਲਾ",
+    "ਰੁਮਾਲੇ"
+   ],
+   "en": "Rumala",
+   "accept": [
+    "Rumalla"
+   ]
+  },
+  {
+   "pa": [
+    "ਪਾਲਕੀ"
+   ],
+   "en": "Palki",
+   "accept": [
+    "palanquin"
+   ]
+  },
+  {
+   "pa": [
+    "ਨਿਸ਼ਾਨ ਸਾਹਿਬ"
+   ],
+   "en": "Nishan Sahib",
+   "accept": []
+  },
+  {
+   "pa": [
+    "ਦਮੜਾ",
+    "ਦਮੜੇ"
+   ],
+   "en": "damra",
+   "accept": [
+    "damre",
+    "damras",
+    "coin",
+    "paisa",
+    "pice",
+    "dammra"
+   ]
+  },
+  {
+   "pa": [
+    "ਗੁਰਮਤਿ"
+   ],
+   "en": "Gurmat",
+   "accept": [
+    "Gurmati",
+    "Guru's teaching"
+   ]
+  },
+  {
+   "pa": [
+    "ਗੁਰਮੁਖ"
+   ],
+   "en": "Gurmukh",
+   "accept": [
+    "Guru-oriented"
+   ]
+  },
+  {
+   "pa": [
+    "ਮਨਮੁਖ"
+   ],
+   "en": "Manmukh",
+   "accept": [
+    "self-willed"
+   ]
+  }
+ ]
+}

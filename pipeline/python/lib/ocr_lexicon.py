@@ -38,6 +38,8 @@ MIN_SEEN = 3
 DARPAN_MIN = 3
 _PUNCT = "।॥|.,;:!?\"'()[]{}-–—‘’“”"
 _NUMERIC = re.compile("^[0-9੦-੯.:/-]+$")
+_STACKED = re.compile("[\u0a3e-\u0a42\u0a47\u0a48\u0a4b\u0a4c]{2}")
+_NUKTA = "\u0a3c"
 # Modern Punjabi inflections a headword list does not carry: plural/oblique
 # endings that the Kosh's Gurbani-era stemmer does not know.
 _MODERN_SUFFIXES = ["ਾਂ", "ੀਂ", "ੁਂ", "ੇ", "ਾ", "ੀ", "ਿਆਂ", "ਿਆ"]
@@ -50,6 +52,9 @@ class Lexicon:
         self.modern: set[str] = set()
         self.english: set[str] = set()
         self.book: set[str] = set()
+        # how often a word occurs in the corpus (Gurbani and the Darpan's
+        # Punjabi): the corrector's tie-break between two equally near words
+        self.freq: Counter = Counter()
         self.sources: dict[str, int] = {}
 
     # ------------------------------------------------------------------ loading
@@ -66,7 +71,9 @@ class Lexicon:
             try:
                 from lib.gurmukhi_text import clean_gurmukhi
                 for (text,) in con.execute("SELECT gurmukhi_uni FROM lines"):
-                    lex.gurbani.update(words(clean_gurmukhi(text or "")))
+                    ws = words(clean_gurmukhi(text or ""))
+                    lex.gurbani.update(ws)
+                    lex.freq.update(ws)
                 lex.sources["gurbani"] = len(lex.gurbani)
                 counts: Counter = Counter()
                 try:
@@ -75,6 +82,7 @@ class Lexicon:
                 except sqlite3.OperationalError:
                     pass
                 lex.modern = {w for w, n in counts.items() if n >= DARPAN_MIN}
+                lex.freq.update(counts)
                 lex.sources["darpan"] = len(lex.modern)
             finally:
                 con.close()
@@ -87,15 +95,18 @@ class Lexicon:
         return lex
 
     @classmethod
-    def from_words(cls, gurbani=(), modern=(), english=(), kosh=None) -> "Lexicon":
+    def from_words(cls, gurbani=(), modern=(), english=(), kosh=None, freq=None) -> "Lexicon":
         lex = cls()
         lex.gurbani, lex.modern, lex.english, lex.kosh = set(gurbani), set(modern), set(english), kosh
+        lex.freq = Counter(freq or {})
         return lex
 
-    def add_book_vocab(self, agreed_lines: list[list[str]], min_seen: int = MIN_SEEN) -> int:
+    def add_book_vocab(self, agreed_lines: list[list[str]], min_seen: int = MIN_SEEN, refuse=None) -> int:
         """
         agreed_lines: per line, the readings of every engine. A word counts
-        once per line when at least two readings contain it.
+        once per line when at least two readings contain it. refuse(word):
+        a word the caller knows to be a shared misreading is not admitted,
+        whoever agrees on it.
         """
         counts: Counter = Counter()
         for readings in agreed_lines:
@@ -105,8 +116,9 @@ class Lexicon:
             seen: Counter = Counter()
             for s in sets:
                 seen.update(s)
-            counts.update(w for w, n in seen.items() if n >= 2)
-        self.book = {w for w, n in counts.items() if n >= min_seen}
+            # two vowel signs on one letter is a misreading whoever agrees on it
+            counts.update(w for w, n in seen.items() if n >= 2 and not _STACKED.search(w))
+        self.book = {w for w, n in counts.items() if n >= min_seen and not (refuse and refuse(w))}
         self.sources["book"] = len(self.book)
         return len(self.book)
 
@@ -122,8 +134,15 @@ class Lexicon:
             return True
         if w in self.gurbani or w in self.modern or w in self.book:
             return True
+        if "-" in w.strip("-"):
+            # a compound (ਕੜਾਹ-ਪ੍ਰਸ਼ਾਦ, ਛਕਦਿਆਂ-ਛਕਦਿਆਂ) is known when its parts are
+            return all(self.knows(p) for p in w.split("-") if p)
         if LATIN.search(w) and not GURMUKHI.search(w):
             return w.lower() in self.english
+        if _STACKED.search(w):
+            # two vowel signs on one letter (ਸੁੀ) is a misreading, not an
+            # inflection: known only if a source spells it so (Gurbani's ਲੋੁੜੀਐ)
+            return False
         if self.kosh is not None:
             entry, _ = self.kosh.lookup_word(w)
             if entry is not None:
@@ -135,6 +154,9 @@ class Lexicon:
                     return True
                 if self.kosh is not None and self.kosh.lookup_word(base)[0] is not None:
                     return True
+        if _NUKTA in w:
+            # the Kosh and Gurbani mostly write no nukta: ਪ੍ਰਸ਼ਾਦ is their ਪ੍ਰਸਾਦ
+            return self.knows(w.replace(_NUKTA, ""))
         return False
 
     def oov(self, text: str) -> tuple[float, list[str]]:

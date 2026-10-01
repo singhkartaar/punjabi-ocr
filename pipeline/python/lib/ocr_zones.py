@@ -53,6 +53,21 @@ RULE_MAX = 20              # px of dark columns tolerated inside the run (Santhy
 _LETTERS = re.compile("[A-Za-z0-9ਅ-ਹਖ਼-ਫ਼੦-੯ऀ-ॿ]{2,}")
 COLUMN_SHARE = 0.25        # each column must hold this share of the words
 BIN = 8                    # px, resolution of the start-position profile
+# A hairline rule down the page body is a gutter the printer drew, and is
+# believed over everything the engine's lines say: where Tesseract read across
+# it, those lines are the ones split_at_gutter is for, so the crossing test
+# above must not veto it. Shares of the page, not pixels, so a 200 dpi scan
+# and a 400 dpi one are judged alike (measured on the Santhya at 300 dpi: the
+# rule inks 30-40% of body rows over 3-15 px, with ~55 px of white either side).
+RULE_MAX_W = 0.01          # share of page width: wider than this is a bar, a picture edge or a text column
+RULE_MIN_RUN = 0.12        # share of page height one unbroken vertical stroke must span: text in a
+                           # column never runs longer than a line, a rule beside a paired band does
+RULE_GAP = 0.003           # share of page width of white that must touch the rule on each side
+                           # (Santhya p.201: 16 px on the left, 9 px on the right, then the columns'
+                           # text; p.208 sets its verse 7 px from the rule)
+RULE_GAP_INK = 0.08        # the most ink a column of that white may carry, over the rule's own rows
+RULE_BAND = (0.15, 0.85)   # share of page height the rule is looked for in (clear of header and footnotes)
+COLUMN_SHARE_RULE = 0.10   # with a rule, each side needs only this share of word starts (verse columns are narrow)
 
 STAMP = re.compile(r"^\s*(page\s+\d+(\s+of\s+\d+)?|www\.\S+|\S*sikhbookclub\S*)\s*$", re.I)
 STAMP_WORD = re.compile(r"sikhbookclub|^page\s+\d+", re.I)
@@ -73,13 +88,30 @@ def to_int(s: str) -> int | None:
     return int(digits) if digits else None
 
 
-def header_hints(text: str) -> dict:
+def header_hints(text: str, pattern=None) -> dict:
     """
     {"ang_from", "ang_to", "book_page", "section"} from a running header;
     every key present, None where the header does not say.
+
+    `pattern` is a book's own regular expression (the manifest's
+    header_pattern), with any of the four as named groups, for a header not
+    in the Santhya's shape; without one the Santhya's rules apply.
     """
     out = {"ang_from": None, "ang_to": None, "book_page": None, "section": None}
     if not text:
+        return out
+    if pattern is not None:
+        pat = re.compile(pattern) if isinstance(pattern, str) else pattern
+        m = pat.search(text)
+        if not m:
+            return out
+        g = m.groupdict()
+        out["ang_from"] = to_int(g["ang_from"]) if g.get("ang_from") else None
+        out["ang_to"] = to_int(g["ang_to"]) if g.get("ang_to") else out["ang_from"]
+        if out["ang_from"] and out["ang_to"] and out["ang_to"] < out["ang_from"]:
+            out["ang_to"] = out["ang_from"]
+        out["book_page"] = to_int(g["book_page"]) if g.get("book_page") else None
+        out["section"] = g["section"].strip() if g.get("section") else None
         return out
     m = ANG_RANGE.search(text)
     if m:
@@ -233,16 +265,120 @@ def columns_by_ink(img, words: list[dict], page_w: int, lines: list[dict] | None
     return [(0, at), (at, page_w)]
 
 
-def page_columns(words: list[dict], page_w: int, img=None, lines: list[dict] | None = None) -> list[tuple[int, int]]:
+def vertical_rule(img, page_w: int | None = None) -> dict | None:
     """
-    [(x_lo, x_hi), ...] for a two-column page, [] for one column.
-    With the page image the gutter is read from the ink (columns_by_ink);
-    without it, from where words BEGIN, as lib/writings_pdf.columns does.
+    {"x", "y0", "y1"}: the centre column of a hairline rule down the page
+    body with white either side, and the rows it spans; None where the page
+    has none.
+
+    A rule is a narrow run of dark pixel columns in which one unbroken
+    vertical stroke spans a good part of the page (RULE_MIN_RUN): a column
+    of text inks as much of the page as a short rule does, but never in one
+    stroke longer than a line. Of several candidates the longest stroke wins
+    -- a table's inner line or a picture's edge is shorter than a rule drawn
+    beside a whole band of verse. The rows matter as much as the column: in
+    the Santhya the rule runs beside the paired verse-and-arth band only, and
+    the prose above and below it spans the whole page (p.94, 216, 344).
     """
+    import numpy as np
+    h, w = img.shape[:2]
+    pw = page_w or w
+    ink = img < 128
+    lo, hi = int(pw * 0.2), min(int(pw * 0.8), w)
+    gap, max_w, min_run = max(2, int(pw * RULE_GAP)), max(1, int(pw * RULE_MAX_W)), int(h * RULE_MIN_RUN)
+    band = (int(h * RULE_BAND[0]), int(h * RULE_BAND[1]))
+
+    # The longest vertical stroke in every pixel column at once, a gap of up
+    # to three rows bridged (a rule's halo thins where the scan dithered it).
+    # Per column rather than over a run of dark columns: a rule set tight
+    # against a line of text shares that line's rows, and judged together
+    # they are one wide dark band.
+    n_cols = ink.shape[1]
+    run = np.zeros(n_cols, dtype=np.int32)
+    gaps = np.zeros(n_cols, dtype=np.int32)
+    start = np.zeros(n_cols, dtype=np.int32)
+    best_len = np.zeros(n_cols, dtype=np.int32)
+    best_r0 = np.zeros(n_cols, dtype=np.int32)
+    best_r1 = np.zeros(n_cols, dtype=np.int32)
+    for i, row in enumerate(ink):
+        fresh = row & (run == 0)
+        start = np.where(fresh, i, start)
+        run = np.where(row, np.where(fresh, 1, run + gaps + 1), run)
+        gaps = np.where(row, 0, gaps + 1)
+        run = np.where(gaps > 3, 0, run)
+        better = run > best_len
+        best_len = np.where(better, run, best_len)
+        best_r0 = np.where(better, start, best_r0)
+        best_r1 = np.where(better, i + 1, best_r1)
+
+    def white_beside(profile, at: int, step: int) -> int:
+        # the white touching the rule, its halo (a few grey columns where the
+        # scan dithered the stroke) stepped over first
+        x = at
+        skipped = 0
+        while 0 <= x < w and profile[x] >= RULE_GAP_INK and skipped < 4:
+            skipped += 1
+            x += step
+        n = 0
+        while 0 <= x < w and profile[x] < RULE_GAP_INK:
+            n += 1
+            x += step
+        return n
+
+    best: tuple[int, int, int, int] | None = None
+    x = lo
+    while x < hi:
+        if best_len[x] < min_run:
+            x += 1
+            continue
+        end = x + 1
+        while end < hi and best_len[end] >= min_run:
+            end += 1
+        width = end - x
+        if width <= max_w:
+            c = x + width // 2
+            # the rows: the union over the rule's columns, since the scan
+            # breaks the stroke in one column and not the next
+            stroke = int(best_len[x:end].max())
+            r0, r1 = int(best_r0[x:end].min()), int(best_r1[x:end].max())
+            # white touching the rule on both sides (a halo of a pixel or two
+            # excused), judged over the rule's own rows: beside a rule that
+            # runs down half the page, the other half's text says nothing
+            # about the gutter
+            beside = ink[r0:r1].mean(axis=0)
+            if (r1 > band[0] and r0 < band[1]
+                    and white_beside(beside, x - 1, -1) >= gap and white_beside(beside, end, 1) >= gap):
+                if best is None or stroke > best[0]:
+                    best = (stroke, c, r0, r1)
+        x = end
+    return {"x": best[1], "y0": best[2], "y1": best[3]} if best else None
+
+
+def find_vertical_rule(img, page_w: int | None = None) -> int | None:
+    """The centre column of the page's hairline rule, or None (vertical_rule without the rows)."""
+    rule = vertical_rule(img, page_w)
+    return rule["x"] if rule else None
+
+
+def page_columns_with_source(words: list[dict], page_w: int, img=None, lines: list[dict] | None = None,
+                             rule_x: int | None = None) -> tuple[list[tuple[int, int]], str | None]:
+    """
+    ([(x_lo, x_hi), ...], how) for a two-column page, ([], None) for one
+    column; `how` is "rule" (a hairline the printer drew, find_vertical_rule),
+    "ink" (an empty band read off the image, columns_by_ink) or "words" (a
+    band no word begins in, as lib/writings_pdf.columns does).
+    """
+    if rule_x is not None:
+        xs = [w["bbox"][0] for w in words if _LETTERS.search(w.get("text", ""))]
+        left = sum(1 for x in xs if x < rule_x)
+        # a rule with words on both sides of it is a gutter, whatever the
+        # engine's line boxes say: lines across it are what split_at_gutter cuts
+        if len(xs) >= 10 and min(left, len(xs) - left) >= COLUMN_SHARE_RULE * len(xs):
+            return [(0, rule_x), (rule_x, page_w)], "rule"
     if img is not None:
         found = columns_by_ink(img, words, page_w, lines)
         if found:
-            return found
+            return found, "ink"
         # the word-start profile may still find it (a rule read as ink on a
         # dark scan); the line-crossing test decides either way
         found = page_columns(words, page_w)
@@ -251,8 +387,22 @@ def page_columns(words: list[dict], page_w: int, img=None, lines: list[dict] | N
             body_lines = [ln for ln in lines if ln.get("text", "").strip() and ln.get("zone") in (None, "body")]
             crossing = sum(1 for ln in body_lines if ln["bbox"][0] < at - 20 and ln["bbox"][2] > at + 20)
             if body_lines and crossing > CROSSING_MAX * len(body_lines):
-                return []
-        return found
+                return [], None
+        return found, ("words" if found else None)
+    found = page_columns(words, page_w)
+    return found, ("words" if found else None)
+
+
+def page_columns(words: list[dict], page_w: int, img=None, lines: list[dict] | None = None,
+                 rule_x: int | None = None) -> list[tuple[int, int]]:
+    """
+    [(x_lo, x_hi), ...] for a two-column page, [] for one column.
+    With the page image the gutter is read from the ink (columns_by_ink);
+    without it, from where words BEGIN, as lib/writings_pdf.columns does;
+    a hairline rule (rule_x) is believed before either.
+    """
+    if img is not None or rule_x is not None:
+        return page_columns_with_source(words, page_w, img, lines, rule_x)[0]
     # the vertical rule of a gutter is read as "|" (or "I", "l", "।") on every
     # line; those tokens BEGIN inside the gutter and would close it
     xs = sorted(w["bbox"][0] for w in words if _LETTERS.search(w.get("text", "")))
@@ -285,14 +435,95 @@ def page_columns(words: list[dict], page_w: int, img=None, lines: list[dict] | N
     return [(0, at), (at, page_w)]
 
 
-def header_of(lines: list[dict]) -> dict:
+def header_of(lines: list[dict], pattern=None) -> dict:
     """Hints from every header-zone line on a page, first non-empty value wins."""
     out = {"ang_from": None, "ang_to": None, "book_page": None, "section": None}
     for ln in lines:
         if ln.get("zone") != "header":
             continue
-        h = header_hints(ln.get("text", ""))
+        h = header_hints(ln.get("text", ""), pattern)
         for k, v in h.items():
             if out[k] is None and v is not None:
                 out[k] = v
+    return out
+
+
+HINT_WINDOW = 3            # known pages either side a page's ang is judged against
+HINT_SLACK = 3             # angs a page may differ from what its neighbours predict, at least
+
+
+def smooth_hints(by_page: dict, window: int = HINT_WINDOW, slack: int = HINT_SLACK) -> dict:
+    """
+    The pages' header hints with the misread angs put right.
+
+    A running header is read by the same OCR as the body, and a digit
+    misread turns ang ੧੨ into ੯੨ on one page in five of the Santhya (84 of
+    437 headers): the ang is the window the corpus match looks in, so on
+    those pages the match was looking 80 angs away. Angs advance steadily
+    through a book, so each page's ang is judged against what its nearest
+    known neighbours predict at the book's own rate (angs per page): a value
+    off by more than `slack` (or three times what the rate says the window
+    spans) is replaced by the interpolation between the trusted neighbours,
+    and a page with no header takes the same. Each page says how it came by
+    its ang: "header" (as read), "smoothed" (put right or filled in), or
+    None (nothing to go on). book_page is fixed the same way, by the modal
+    offset between it and the scan's page number. Running it twice changes
+    nothing.
+
+    @param by_page  {page: hints} as header_of() returns them
+    @returns        {page: hints} with ang_from, ang_to, book_page, ang_source set
+    """
+    import statistics
+    pages = sorted(by_page)
+    known = [(p, by_page[p]["ang_from"]) for p in pages if by_page[p].get("ang_from")]
+    out = {p: dict(by_page[p]) for p in pages}
+    if not known:
+        for p in pages:
+            out[p]["ang_source"] = None
+        return out
+    # the book's rate: angs per page over consecutive known pages that advance
+    steps = [(a2 - a1) / float(p2 - p1) for (p1, a1), (p2, a2) in zip(known, known[1:]) if 0 <= a2 - a1 <= 10 and p2 > p1]
+    rate = statistics.median(steps) if steps else 0.0
+    tolerance = max(slack, int(round(3 * rate * window)))
+    trusted: dict = {}
+    for i, (p, a) in enumerate(known):
+        neighbours = known[max(0, i - window):i] + known[i + 1:i + 1 + window]
+        if not neighbours:
+            trusted[p] = a
+            continue
+        predicted = statistics.median(aq + rate * (p - q) for q, aq in neighbours)
+        if abs(a - predicted) <= tolerance:
+            trusted[p] = a
+    keys = sorted(trusted)
+    for p in pages:
+        h = out[p]
+        if p in trusted:
+            # a value this pass agrees with stays what it was: read from the
+            # header, or filled in by an earlier pass
+            h["ang_source"] = "smoothed" if h.get("ang_source") == "smoothed" else "header"
+            if not h.get("ang_to") or h["ang_to"] < h["ang_from"] or h["ang_to"] - h["ang_from"] > tolerance:
+                h["ang_to"] = h["ang_from"]
+            continue
+        before = [q for q in keys if q < p]
+        after = [q for q in keys if q > p]
+        if before and after:
+            a, b = before[-1], after[0]
+            value = int(trusted[a] + (trusted[b] - trusted[a]) * (p - a) / float(b - a))
+        elif before or after:
+            q = before[-1] if before else after[0]
+            value = int(round(trusted[q] + rate * (p - q)))
+        else:
+            value = None
+        h["ang_from"] = h["ang_to"] = value
+        h["ang_source"] = "smoothed" if value is not None else None
+    # the book's own page number runs one ahead per scan page: its offset from
+    # the scan's numbering is one number for the whole book, and a misread
+    # page number is the one that breaks it
+    offsets = [p - out[p]["book_page"] for p in pages if out[p].get("book_page")]
+    if offsets:
+        mode = statistics.mode(offsets)
+        for p in pages:
+            bp = out[p].get("book_page")
+            if bp is None or abs((p - bp) - mode) > 2:
+                out[p]["book_page"] = p - mode
     return out

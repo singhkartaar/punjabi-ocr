@@ -17,6 +17,19 @@ Engines: sarvam and indictrans2 as in 26_translate_writings.py; "existing"
 reads the translations already in data/writings/<work>.en.jsonl (whatever
 engine made them), so a finished run is scored without repeating it.
 
+A row can name a variant of an engine: "sarvam:rules" asks with the rules
+prompt (26 --prompt rules), "sarvam:terms" writes the paragraph's terms in
+English into the Punjabi (26 --prompt terms), ":raw" keeps the model's
+glosses (no strip_glosses), "+self" sends what the checks refuse to the same
+model asked the other way (26 --arbiter self). With --glossary each row also gets a
+term hit rate (present terms rendered by an accepted form / present terms,
+over the raw answers) and its refusals by reason. A model is loaded once for
+all of its rows.
+
+--reference manual writes the sample without references and stops, for a
+person to fill in "reference" per paragraph (translating from the Punjabi,
+never from a model's English); --reference cached then scores against it.
+
 The sample is stratified by length (short, medium, long thirds) with a fixed
 seed, so two runs compare the same paragraphs. The five lowest-scoring pairs
 per engine are printed: a number says how far, the pairs say why.
@@ -71,6 +84,19 @@ def score(hyps: list[str], refs: list[str], srcs: list[str]) -> dict:
             "ratio": round(ratio, 2), "scored": len(pairs), "per_pair": per_pair}
 
 
+def parse_label(label: str) -> tuple[str, str, bool, bool]:
+    """"sarvam:rules:raw+self" -> ("sarvam", "rules", strip False, arbiter True)."""
+    arbiter = label.endswith("+self")
+    base = label[:-len("+self")] if arbiter else label
+    parts = base.split(":")
+    name, mods = parts[0], set(parts[1:])
+    prompt = "rules" if "rules" in mods else "terms" if "terms" in mods else "stock"
+    unknown = mods - {"rules", "terms", "stock", "raw"}
+    if unknown:
+        raise SystemExit("unknown variant %s in %r (rules, terms, stock, raw, +self)" % (", ".join(sorted(unknown)), label))
+    return name, prompt, "raw" not in mods, arbiter
+
+
 def existing_translations(work: str) -> dict[str, str]:
     path = os.path.join(WRITINGS, work + ".en.jsonl")
     return {r["unit_id"]: r["en"] for r in read_jsonl(path) if r.get("unit_id")}
@@ -88,12 +114,16 @@ def main():
                          "llama=http://127.0.0.1:8081")
     ap.add_argument("--as", dest="labels", action="append", default=[], metavar="ENGINE=LABEL",
                     help="the row name to record, e.g. llama=gemma3-12b (one llama-server model per run)")
-    ap.add_argument("--reference", default="vertex", choices=["vertex", "cached"])
+    ap.add_argument("--reference", default="vertex", choices=["vertex", "cached", "manual"])
+    ap.add_argument("--glossary", help="the book's terms (lib/mt_glossary): the prompt for :rules rows, "
+                                       "the term check and the term hit rate")
     ap.add_argument("--budget-usd", type=float, default=1.0)
     ap.add_argument("--src-lang", choices=sorted(tw.LANG_NAME))
     ap.add_argument("--styles", default="body")
-    ap.add_argument("--sarvam-path", default=tw.SARVAM)
-    ap.add_argument("--indictrans2-path", default=tw.INDICTRANS2)
+    # the weights under vendor/models when they are there, as 26 finds them;
+    # the hub id made this fetch 8 GB it already had
+    ap.add_argument("--sarvam-path", default=tw.local_weights(tw.SARVAM))
+    ap.add_argument("--indictrans2-path", default=tw.local_weights(tw.INDICTRANS2))
     ap.add_argument("--dry-run", action="store_true", help="print the sample and the reference cost, run nothing")
     args = ap.parse_args()
 
@@ -127,6 +157,16 @@ def main():
         for s in sample[:5]:
             print("  %s: %s" % (s["unit_id"], s["text"][:100]))
         return
+    if args.reference == "manual":
+        result = {"work": args.work, "language": lang, "seed": args.seed,
+                  "reference": (cached or {}).get("reference") or {"engine": "human", "model": "fill in who"},
+                  "sample": sample, "engines": (cached or {}).get("engines", {})}
+        os.makedirs(RAW, exist_ok=True)
+        with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(result, fh, ensure_ascii=False, indent=1)
+        print("-> %s: fill in \"reference\" for the %d paragraphs without one, then --reference cached"
+              % (os.path.relpath(out_path, ROOT), len(need)))
+        return
     if need and args.reference == "cached":
         # a reference the checks rejected stays missing; those paragraphs are
         # simply not scored, the same as when the reference was fetched
@@ -156,34 +196,74 @@ def main():
     paths.setdefault("sarvam", args.sarvam_path)
     paths.setdefault("indictrans2", args.indictrans2_path)
     labels = dict(kv.split("=", 1) for kv in args.labels)
-    for name in [e.strip() for e in args.engines.split(",") if e.strip()]:
+    from lib.mt_glossary import accepted, load as load_glossary, present
+    glossary = load_glossary(args.glossary)
+    loaded: dict = {}
+    for label in [e.strip() for e in args.engines.split(",") if e.strip()]:
         t0 = time.time()
-        row = labels.get(name, name)
+        name, prompt, strip, arbiter = parse_label(label)
+        row = labels.get(label, label)
         if name == "existing":
             have = existing_translations(args.work)
-            hyps = [have.get(s["unit_id"], "") for s in sample]
+            raws = [have.get(s["unit_id"], "") for s in sample]
             desc = "data/writings/%s.en.jsonl" % args.work
+            engine = None
         else:
-            engine = tw.make_engine(name, paths.get(name), lang)
+            if name not in loaded:
+                loaded.clear()                   # one model on the card at a time
+                loaded[name] = tw.make_engine(name, paths.get(name), lang)
+            engine = loaded[name]
             desc = engine.model_desc()
-            hyps = []
-            for b in range(0, len(texts), 8):
-                hyps.extend(engine.translate_many(texts[b:b + 8], lang_name))
-            del engine
-        reasons = [tw.check(h, s, lang) for h, s in zip(hyps, texts)]
+            tw.set_prompt(engine, prompt, glossary, lang_name)
+            raws = []
+            asked = [tw.prepare(prompt, glossary, t) for t in texts]
+            for b in range(0, len(asked), 8):
+                raws.extend(tw.translate_batch(engine, asked[b:b + 8], lang_name))
+        hits = total = 0
+        for h, t in zip(raws, texts):
+            for term in present(glossary, t):
+                total += 1
+                hits += bool(h) and accepted(term, h)
+        hyps, reasons, why_count = [], [], {}
+        for h, t in zip(raws, texts):
+            if not h:
+                hyps.append(""); reasons.append("empty"); continue
+            if strip:
+                en, why, _ = tw.answer(h, t, lang, glossary)
+            else:
+                en = " ".join(h.split())
+                why = tw.check(en, t, lang, glossary)
+            hyps.append(en or ""); reasons.append(why)
+        if arbiter and engine is not None:
+            again = [i for i, why in enumerate(reasons) if why]
+            recs = [{"unit_id": sample[i]["unit_id"], "text": texts[i]} for i in again]
+            second = tw.arbiter_prompt(engine, prompt)
+            for i, (_, en, why) in zip(again, tw.arbitrate(engine, recs, lang, glossary, lang_name, second)):
+                if not why:
+                    hyps[i], reasons[i] = en, None
+            tw.set_prompt(engine, prompt, glossary, lang_name)
+        for why in reasons:
+            if why:
+                key = why.split(":")[0]
+                why_count[key] = why_count.get(key, 0) + 1
         rejected = sum(1 for r in reasons if r)
         for s, h, why in zip(sample, hyps, reasons):
             if why:
                 print("   rejected %s: %s\n     %s: %s" % (s["unit_id"], why, row, (h or "")[:160]))
         hyps = [h if not why else "" for h, why in zip(hyps, reasons)]
         sc = score(hyps, refs, texts)
-        result["engines"][row] = {"model": desc, "chrf": sc["chrf"], "bleu": sc["bleu"], "ratio": sc["ratio"],
-                                   "scored": sc["scored"], "rejected": rejected,
+        result["engines"][row] = {"model": desc, "prompt": prompt, "strip": strip, "arbiter": arbiter,
+                                   "chrf": sc["chrf"], "bleu": sc["bleu"], "ratio": sc["ratio"],
+                                   "scored": sc["scored"], "rejected": rejected, "rejected_by": why_count,
+                                   "terms": {"present": total, "hit": hits,
+                                             "rate": round(hits / total, 3) if total else None},
                                    "seconds": round(time.time() - t0, 1),
                                    "translations": {s["unit_id"]: h for s, h in zip(sample, hyps)},
+                                   "raw": {s["unit_id"]: h for s, h in zip(sample, raws)},
                                    "per_pair": sc["per_pair"]}
-        print("%-12s chrF %5.1f  BLEU %5.1f  len x%.2f  scored %d  rejected %d  %.0fs  (%s)"
-              % (row, sc["chrf"], sc["bleu"], sc["ratio"], sc["scored"], rejected, time.time() - t0, desc))
+        print("%-18s chrF %5.1f  BLEU %5.1f  len x%.2f  scored %d  rejected %d %s  terms %s  %.0fs  (%s)"
+              % (row, sc["chrf"], sc["bleu"], sc["ratio"], sc["scored"], rejected, json.dumps(why_count),
+                 ("%d/%d" % (hits, total)) if total else "-", time.time() - t0, desc))
         scored = [(s, h) for s, h in zip(sample, hyps) if h and s.get("reference")]   # the pairs score() saw
         worst = sorted(zip(sc["per_pair"], [s for s, _ in scored], [h for _, h in scored]), key=lambda t: t[0])[:5]
         for pp, s, h in worst:

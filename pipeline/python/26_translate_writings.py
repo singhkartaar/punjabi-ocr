@@ -106,9 +106,11 @@ class SarvamTranslateEngine:
     def model_desc(self) -> str:
         return self.model_path
 
+    instruct = None           # text -> system message (--prompt rules); None: the model's trained one
+
     def _prompt(self, text: str, tgt: str) -> str:
-        messages = [{"role": "system", "content": "Translate the text below to %s." % tgt},
-                    {"role": "user", "content": text}]
+        system = self.instruct(text) if self.instruct else "Translate the text below to %s." % tgt
+        messages = [{"role": "system", "content": system}, {"role": "user", "content": text}]
         return self.tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
     def translate(self, text: str, src: str = "Punjabi", tgt: str = "English") -> str:
@@ -319,13 +321,16 @@ class LlamaServerEngine:
         """One request per paragraph; the server holds one slot."""
         return [self.translate(t, src, tgt) for t in texts]
 
+    instruct = None
+
     def translate(self, text: str, src: str = "Punjabi", tgt: str = "English") -> str:
         import urllib.request
+        system = self.instruct(text) if self.instruct else (
+            "Translate the %s text you are given into plain %s. Keep names and technical terms; do not add or "
+            "omit sentences; do not explain. Answer with the translation only." % (src, tgt))
         body = {
             "messages": [
-                {"role": "system", "content": "Translate the %s text you are given into plain %s. Keep names and "
-                                              "technical terms; do not add or omit sentences; do not explain. "
-                                              "Answer with the translation only." % (src, tgt)},
+                {"role": "system", "content": system},
                 {"role": "user", "content": text},
             ],
             "temperature": 0.0, "max_tokens": 48 + 3 * max(1, len(text) // 3),
@@ -364,14 +369,16 @@ class VertexTranslateEngine:
     def cost_usd(self, chars: int) -> float:
         return round(chars / 1000.0 * VERTEX_USD_PER_1K_CHARS, 6)
 
+    instruct = None
+
     def translate(self, text: str, src: str = "Punjabi", tgt: str = "English") -> str:
         cost = self.cost_usd(len(text))
         if not self.budget.allows(cost):
             raise SystemExit("vertex: the monthly cap would be exceeded (spent %.4f)" % self.budget.spent_this_month())
         config = self.types.GenerateContentConfig(
-            system_instruction="Translate the %s commentary you are given into plain %s. "
-                               "Keep names and technical terms; do not add or omit sentences. "
-                               "Answer with the translation only." % (src, tgt),
+            system_instruction=self.instruct(text) if self.instruct else (
+                "Translate the %s commentary you are given into plain %s. Keep names and technical terms; "
+                "do not add or omit sentences. Answer with the translation only." % (src, tgt)),
             temperature=0.0)
         resp = self.client.models.generate_content(model=self.model, contents=text, config=config)
         self.budget.charge("vertex-translate", "writings", 0, cost, note="%d chars" % len(text))
@@ -395,11 +402,13 @@ def repeats(en: str, window: int = REPEAT_WINDOW, times: int = 3) -> bool:
     return False
 
 
-def check(en: str, src: str = "", lang: str = "pa") -> str | None:
+def check(en: str, src: str = "", lang: str = "pa", glossary: dict | None = None) -> str | None:
     """Why an answer is not a translation, or None. A 4B model given a
     fragment of OCR noise sometimes answers with its own boilerplate
     ("This is the translation of the given Punjabi text to English:")
-    repeated until the token cap; length and repetition catch that."""
+    repeated until the token cap; length and repetition catch that. With a
+    glossary (lib/mt_glossary), a term the source uses that the English
+    renders by none of its accepted forms is a reason too: "term: bhog"."""
     en = " ".join((en or "").split())
     if not en:
         return "empty"
@@ -411,28 +420,192 @@ def check(en: str, src: str = "", lang: str = "pa") -> str | None:
         return "%.0fx longer than the %s" % (len(en) / max(1, len(src)), LANG_NAME.get(lang, "source"))
     if repeats(en):
         return "repeats itself"
+    if glossary and src:
+        from lib.mt_glossary import missing
+        gone = missing(glossary, src, en)
+        if gone:
+            return "term: %s" % gone[0]["en"]
     return None
+
+
+PROMPTS = ("stock", "rules", "terms")
+ARBITERS = ("none", "self", "llama", "vertex")
+# Measured by 28_translate_bench.py on 30 paragraphs of the Sant Attar Singh
+# biography against references written from the Punjabi (2026-09-30):
+#   stock  chrF 53.9, 27 of 30 accepted, 57 of 61 Sikh terms rendered
+#   rules  chrF 55.8 on the 19 it answered; 10 copied back in Punjabi, 44 terms
+#   terms  chrF 55.4, 27 accepted, 58 terms; with --arbiter self all 30, chrF 55.0
+# Without a glossary terms is stock, so it is the default for every work.
+DEFAULT_PROMPT = "terms"
+
+
+def rules_prompt(glossary: dict, text: str, tgt: str = "English", pairs: bool = True) -> str:
+    """
+    --prompt rules: the model's own instruction, the glossary's rule, the
+    terms THIS paragraph uses (lib/mt_glossary.prompt_lines; a small model
+    given forty pairs drifts), and the one thing a 4B model had to be told
+    twice: no explanations and no brackets of its own.
+
+    pairs=False is one line of English: sarvam-translate is tuned on a single
+    system line, and given the rule and "ਭੋਗ = bhog" pairs on lines of their
+    own it translated the instruction itself into Punjabi (29 of 30 answers
+    on the Sant Attar Singh bench). An instruction-following engine (llama,
+    vertex) gets the pairs.
+    """
+    from lib.mt_glossary import present, prompt_lines
+    terms = present(glossary, text)
+    if not pairs:
+        line = "Translate the text below to %s." % tgt
+        if terms:
+            line += " Keep these Sikh terms as they are: %s." % ", ".join(t["en"] for t in terms)
+        return line + " Do not add explanations or brackets."
+    parts = ["Translate the text below to %s." % tgt]
+    if glossary.get("rule"):
+        parts.append(glossary["rule"])
+    lines = prompt_lines(terms, text)
+    if lines:
+        parts.append("Terms:\n" + "\n".join(lines))
+    parts.append("Do not add explanations, notes or brackets. Answer with the translation only.")
+    return "\n".join(parts)
+
+
+def prepare(prompt: str, glossary: dict, text: str) -> str:
+    """
+    The text the engine is given: the paragraph, or with --prompt terms the
+    paragraph with its glossary terms written in English inside it
+    (lib/mt_glossary.inline_terms). A tuned translator like sarvam-translate
+    follows no instruction beyond its trained one -- given more it copied the
+    Punjabi back or translated the instruction -- but keeps a Latin word.
+    """
+    if prompt == "terms" and glossary.get("terms"):
+        from lib.mt_glossary import inline_terms
+        return inline_terms(glossary, text)[0]
+    return text
+
+
+def arbiter_prompt(engine, prompt: str) -> str:
+    """What the arbiter asks with: a prompt that engine follows, other than the one that failed."""
+    if isinstance(engine, SarvamTranslateEngine):
+        return "stock" if prompt == "terms" else "terms"
+    return "rules"
+
+
+def set_prompt(engine, prompt: str, glossary: dict, tgt: str = "English") -> None:
+    """Point an engine at the rules prompt, or back at its own (stock, terms)."""
+    if prompt == "terms":
+        prompt = "stock"                                  # the instruction is the model's own
+    if hasattr(engine, "instruct"):
+        pairs = not isinstance(engine, SarvamTranslateEngine)
+        engine.instruct = (lambda text: rules_prompt(glossary, text, tgt, pairs)) if prompt == "rules" else None
+    elif prompt == "rules":
+        raise SystemExit("%s takes no instruction: --prompt rules needs sarvam, llama or vertex" % engine.name)
+
+
+def answer(en: str | None, src: str, lang: str, glossary: dict) -> tuple[str | None, str | None, int]:
+    """(cleaned English, why it is refused or None, glosses stripped)."""
+    if en is None:
+        return None, "out of memory alone", 0
+    stripped = 0
+    if glossary.get("terms"):
+        from lib.mt_glossary import present, strip_glosses
+        en, stripped = strip_glosses(en, src, present(glossary, src))
+    en = " ".join(en.split())
+    return en, check(en, src, lang, glossary), stripped
+
+
+def arbitrate(arbiter, recs: list[dict], lang: str, glossary: dict, tgt: str,
+              prompt: str = "rules") -> list[tuple[dict, str | None, str | None]]:
+    """
+    A second engine, or the same one asked another way (arbiter_prompt), for
+    the paragraphs the first answers were refused for: [(record, English or
+    None, why)]. What it cannot fix either is refused twice and not written.
+    """
+    set_prompt(arbiter, prompt, glossary, tgt)
+    out = []
+    for rec in recs:
+        try:
+            raw = translate_batch(arbiter, [prepare(prompt, glossary, rec["text"])], tgt)[0]
+        except SystemExit:
+            raise
+        except Exception as err:                  # noqa: BLE001
+            out.append((rec, None, "arbiter: %s" % err))
+            continue
+        en, why, _ = answer(raw, rec["text"], lang, glossary)
+        out.append((rec, en, why))
+    return out
+
+
+def work_meta(path: str) -> dict:
+    """The _meta of a writings file, or {} where it has none."""
+    with open(path, encoding="utf-8") as fh:
+        head = fh.readline()
+    try:
+        return json.loads(head).get("_meta") or {}
+    except json.JSONDecodeError:
+        return {}
 
 
 def work_language(path: str) -> str | None:
     """The _meta.language of a writings file, if it states one."""
-    with open(path, encoding="utf-8") as fh:
-        head = fh.readline()
+    return work_meta(path).get("language")
+
+
+def local_weights(hf_id: str) -> str:
+    """
+    vendor/models/<name> when the weights are already on disk there, else the
+    Hugging Face id (which the hub would fetch, 8 GB for sarvam-translate).
+    The runbook puts the weights under vendor/models by the id's last part.
+    """
+    local = os.path.join(ROOT, "vendor", "models", hf_id.rsplit("/", 1)[-1])
+    return local if os.path.isdir(local) else hf_id
+
+
+def translate_batch(engine, texts: list[str], tgt: str) -> list[str | None]:
+    """
+    One batch through the engine; when the card runs out of memory on it
+    (a batch of long paragraphs on an 8 GB card with the weights split to the
+    host), the batch is retried one paragraph at a time after the cache is
+    dropped, and only a paragraph that fails alone comes back as None.
+    Before this a whole batch of eight was rejected for one allocation.
+    """
+    if not hasattr(engine, "translate_many"):
+        return [engine.translate(t, tgt) for t in texts]
     try:
-        return (json.loads(head).get("_meta") or {}).get("language")
-    except json.JSONDecodeError:
-        return None
+        return engine.translate_many(texts, tgt)
+    except Exception as err:                     # noqa: BLE001
+        if "out of memory" not in str(err).lower() or len(texts) == 1:
+            raise
+    torch = getattr(engine, "torch", None)
+    if torch is not None and torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    out: list[str | None] = []
+    for t in texts:
+        try:
+            out.append(engine.translate_many([t], tgt)[0])
+        except Exception as err:                 # noqa: BLE001
+            if "out of memory" not in str(err).lower():
+                raise
+            out.append(None)
+            if torch is not None and torch.cuda.is_available():
+                torch.cuda.empty_cache()
+    return out
 
 
-def make_engine(name: str, model_path: str | None = None, src: str = "pa", budget_usd: float = 2.0):
-    """One of the translation engines by its --engine name."""
+def make_engine(name: str, model_path: str | None = None, src: str = "pa", budget_usd: float = 2.0,
+                device: str = "auto"):
+    """
+    One of the translation engines by its --engine name. `device` is where a
+    local causal model loads: "cuda", "cpu", or "auto" (accelerate splits the
+    weights between the card and the host memory: sarvam-translate's 8.1 GB in
+    bf16 do not fit an 8 GB card whole).
+    """
     if name == "vertex":
         from lib.ocr_route import Budget
         return VertexTranslateEngine(budget=Budget(OCR_COSTS, budget_usd))
     if name == "indictrans2":
-        return IndicTrans2Engine(model_path or INDICTRANS2, src=src)
+        return IndicTrans2Engine(model_path or local_weights(INDICTRANS2), src=src)
     if name == "sarvam":
-        return SarvamTranslateEngine(model_path or SARVAM, src=src)
+        return SarvamTranslateEngine(model_path or local_weights(SARVAM), src=src, device=device)
     if name in ("madlad", "nllb"):
         # MT_DEVICE=cpu runs a seq2seq model in fp32 on the CPU: MADLAD 3B in
         # bf16 on the GPU ran away (dots to the token cap, invented sentences),
@@ -452,38 +625,88 @@ def main():
                     % ", ".join("%s: %s" % kv for kv in DEFAULT_MODEL.items()))
     ap.add_argument("--src-lang", choices=sorted(LANG_NAME), help="default: the work's _meta.language, else pa")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--only", help="comma-separated unit_ids to (re)translate, whatever is done")
     ap.add_argument("--print", dest="show", type=int, default=0)
     ap.add_argument("--budget-usd", type=float, default=2.0)
     ap.add_argument("--styles", default="body,heading,footnote")
     ap.add_argument("--batch", type=int, default=8, help="paragraphs per generate() call (local engines)")
+    ap.add_argument("--device", default="auto", choices=["auto", "cuda", "cpu"],
+                    help="where sarvam loads: auto fills the card and puts the rest in host memory (8.1 GB of "
+                         "weights on an 8 GB card ran at 0.35 s a paragraph); cuda insists on the card")
+    ap.add_argument("--glossary", help="the book's terms (lib/mt_glossary); 27 passes the manifest's `glossary`")
+    ap.add_argument("--prompt", choices=PROMPTS, default=DEFAULT_PROMPT,
+                    help="stock: the model's trained instruction; rules: the glossary's rule and the paragraph's "
+                         "terms as well (llama, vertex); terms: the stock instruction with the paragraph's terms "
+                         "written in English inside the Punjabi (sarvam) (default %s, from 28's measurement)"
+                         % DEFAULT_PROMPT)
+    ap.add_argument("--arbiter", choices=ARBITERS, default="none",
+                    help="who retranslates a paragraph the checks refused, asked another way (arbiter_prompt): self "
+                         "(the same local model), llama (a llama-server), vertex (metered by --arbiter-budget-usd)")
+    ap.add_argument("--arbiter-budget-usd", type=float, default=1.0)
+    ap.add_argument("--src", default=WRITINGS,
+                    help="the folder of <work>.jsonl (default data/writings; a manifest's `corpus` puts it elsewhere)")
+    ap.add_argument("--out", help="write here instead of <src>/<work>.en.jsonl (a comparison run)")
     args = ap.parse_args()
 
-    src = os.path.join(WRITINGS, args.work + ".jsonl")
-    dst = os.path.join(WRITINGS, args.work + ".en.jsonl")
+    folder = args.src if os.path.isabs(args.src) else os.path.join(ROOT, args.src)
+    src = os.path.join(folder, args.work + ".jsonl")
+    dst = args.out or os.path.join(folder, args.work + ".en.jsonl")
     if not os.path.exists(src):
         sys.exit("no %s (12_ingest_writings.py)" % src)
-    lang = args.src_lang or work_language(src) or "pa"
+    meta = work_meta(src)
+    lang = args.src_lang or meta.get("language") or "pa"
+    if meta.get("translate") is False:
+        # asked for by name, so done; but the manifest meant this work for its
+        # own language only, and 27's plan will not carry the English on
+        print("note: %s's manifest says translate: false (a work for display in %s); translating as asked"
+              % (args.work, LANG_NAME.get(lang, lang)))
     if lang not in LANG_NAME:
         sys.exit("%s is in %r; this translates %s" % (args.work, lang, " or ".join(LANG_NAME.values())))
+    from lib.mt_glossary import load as load_glossary
+    glossary = load_glossary(args.glossary)
+    if args.prompt == "rules" and not glossary["terms"]:
+        print("note: --prompt rules without --glossary names no terms; only the no-brackets instruction is added")
     styles = set(args.styles.split(","))
     records = [r for r in read_jsonl(src) if r.get("style") in styles and r.get("lang", lang) != "en"]
     done = done_ids(dst)
-    todo = [r for r in records if r["unit_id"] not in done]
+    if args.only:
+        want = {u.strip() for u in args.only.split(",")}
+        todo = [r for r in records if r["unit_id"] in want]
+    else:
+        todo = [r for r in records if r["unit_id"] not in done]
     if args.limit:
         todo = todo[:args.limit]
-    print("%s (%s): %d paragraphs, %d done, %d to translate" % (args.work, LANG_NAME[lang], len(records), len(done), len(todo)))
+    print("%s (%s): %d paragraphs, %d done, %d to translate; prompt %s, glossary %d terms, arbiter %s"
+          % (args.work, LANG_NAME[lang], len(records), len(done), len(todo), args.prompt, len(glossary["terms"]),
+             args.arbiter))
     if not todo:
         return
 
-    engine = make_engine(args.engine, args.model_path, lang, args.budget_usd)
+    engine = make_engine(args.engine, args.model_path, lang, args.budget_usd, device=args.device)
+    set_prompt(engine, args.prompt, glossary, LANG_NAME[lang])
     print("engine:", engine.model_desc())
 
-    rejected = 0
+    why_count: dict[str, int] = {}
+    refused: list[dict] = []
+    stripped = shown = written = 0
     t0 = time.time()
+
+    def write(fh, rec, en, eng, prompt, arbiter=False):
+        nonlocal shown, written
+        fh.write(json.dumps({"id": rec["unit_id"], "unit_id": rec["unit_id"], "en": en, "engine": eng.name,
+                             "model": eng.model_desc(), "prompt": prompt, **({"arbiter": True} if arbiter else {})},
+                            ensure_ascii=False) + "\n")
+        written += 1
+        if shown < args.show:
+            shown += 1
+            print("  %s:" % lang.upper(), rec["text"][:160])
+            print("  EN:", en[:200])
+
     with open(dst, "a", encoding="utf-8", newline="\n") as fh:
-        if not done:
-            fh.write(json.dumps({"_meta": {"work": args.work, "engine": engine.name, "model": engine.model_desc()}},
-                                ensure_ascii=False) + "\n")
+        if fh.tell() == 0:                             # a new file: its header first
+            fh.write(json.dumps({"_meta": {"work": args.work, "engine": engine.name, "model": engine.model_desc(),
+                                           "prompt": args.prompt, "glossary": os.path.basename(args.glossary or "") or None,
+                                           "arbiter": args.arbiter}}, ensure_ascii=False) + "\n")
         # paragraphs of a similar length share a batch so little of it is padding
         size = max(1, args.batch) if hasattr(engine, "translate_many") else 1
         order = sorted(range(len(todo)), key=lambda i: len(todo[i]["text"]))
@@ -491,32 +714,51 @@ def main():
         for b in range(0, len(order), size):
             batch = [todo[i] for i in order[b:b + size]]
             try:
-                if size > 1:
-                    answers = engine.translate_many([r["text"] for r in batch], LANG_NAME[lang])
-                else:
-                    answers = [engine.translate(batch[0]["text"], LANG_NAME[lang])]
+                answers = translate_batch(engine, [prepare(args.prompt, glossary, r["text"]) for r in batch],
+                                          LANG_NAME[lang])
             except SystemExit:
                 raise
             except Exception as err:                     # noqa: BLE001
                 print("  %s: %s" % (batch[0]["unit_id"], err))
-                rejected += len(batch)
+                for rec in batch:
+                    why_count["error"] = why_count.get("error", 0) + 1
+                    refused.append(rec)
                 continue
-            for rec, en in zip(batch, answers):
+            for rec, raw in zip(batch, answers):
                 n += 1
-                why = check(en, rec["text"], lang)
+                en, why, k = answer(raw, rec["text"], lang, glossary)
+                stripped += k
                 if why:
-                    rejected += 1
-                    print("  rejected %s: %s" % (rec["unit_id"], why))
+                    key = why.split(":")[0] if why.startswith("term") else why
+                    why_count[key] = why_count.get(key, 0) + 1
+                    print("  refused %s: %s" % (rec["unit_id"], why))
+                    refused.append(rec)
                     continue
-                fh.write(json.dumps({"id": rec["unit_id"], "unit_id": rec["unit_id"], "en": " ".join(en.split()),
-                                     "engine": engine.name, "model": engine.model_desc()}, ensure_ascii=False) + "\n")
-                if n <= args.show:
-                    print("  %s:" % lang.upper(), rec["text"][:160])
-                    print("  EN:", en[:200])
+                write(fh, rec, en, engine, args.prompt)
             fh.flush()
             if (b // size) % 10 == 0:
                 print("  %d/%d (%.2fs each)" % (n, len(todo), (time.time() - t0) / max(n, 1)), flush=True)
-    print("done: %d translated, %d rejected, %.0fs -> %s" % (len(todo) - rejected, rejected, time.time() - t0, dst))
+
+        twice = 0
+        if refused and args.arbiter != "none":
+            if args.arbiter == "self":
+                arbiter = engine
+            elif args.arbiter == "vertex":
+                arbiter = make_engine("vertex", None, lang, args.arbiter_budget_usd)
+            else:
+                arbiter = make_engine("llama", None, lang)
+            again = arbiter_prompt(arbiter, args.prompt)
+            print("arbiter %s: %d refused paragraphs, prompt %s" % (arbiter.model_desc(), len(refused), again))
+            for rec, en, why in arbitrate(arbiter, refused, lang, glossary, LANG_NAME[lang], again):
+                if why:
+                    twice += 1
+                    print("  refused twice %s: %s" % (rec["unit_id"], why))
+                    continue
+                write(fh, rec, en, arbiter, again, arbiter=True)
+            fh.flush()
+    print("done: %d written, %d refused (%s), %d refused twice, %d glosses stripped, %.0fs -> %s"
+          % (written, len(refused), ", ".join("%s %d" % kv for kv in sorted(why_count.items())) or "none",
+             twice, stripped, time.time() - t0, dst))
 
 
 if __name__ == "__main__":

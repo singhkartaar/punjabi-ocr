@@ -42,7 +42,22 @@ GLUE = re.compile(r"[a-z][A-Z]|[a-z][0-9]|[0-9][A-Za-z]")
 # a sentence ends on Latin punctuation or, in Punjabi, a danda
 ENDS_SENTENCE = re.compile("[.!?:;\u2013\u2014\u201d\u2019\")\u0964\u0965]\\s*$")
 ANG_TAIL = re.compile(r"(?:^|[^0-9])([0-9]{2,4})\s*$")
-QUOTE_KEYS = ("line_ids", "shabad_id", "ang", "match_score", "match_method")
+QUOTE_KEYS = ("line_ids", "line_from", "line_to", "shabad_id", "ang", "source", "match_score", "match_method")
+# a verse and the explanation beside or after it share a pair number, and the
+# explanation names the lines it explains (lib/writings_ocr)
+PAIR_KEYS = ("pair", "explains")
+
+
+def work_angs(metas: list[dict]) -> list[int] | None:
+    """
+    The angs a work covers, across all its parts: the first part's first to
+    the last part's last. The Santhya's seven volumes are one work; taking the
+    first volume's [1, 53] for all seven put 5,746 of its links "outside".
+    """
+    spans = [m["angs"] for m in metas if m.get("angs")]
+    if not spans:
+        return None
+    return [min(a[0] for a in spans), max(a[-1] for a in spans)]
 
 
 def read_source(path: str, meta: dict, furniture: bool = False, italic_quotes: bool = True,
@@ -58,7 +73,9 @@ def read_source(path: str, meta: dict, furniture: bool = False, italic_quotes: b
     reader = meta.get("reader") or "pdf-text"
     if reader == "ocr":
         from lib.writings_ocr import read_ocr_book
-        return read_ocr_book(os.path.join(OCR_DIR, meta["book"]))
+        return read_ocr_book(os.path.join(OCR_DIR, meta["book"]),
+                             layout=meta.get("layout") or "auto", kind=meta.get("kind") or "essay",
+                             angs=meta.get("angs"))
     if reader == "legacy-font":
         from lib.writings_legacy import read_legacy_pdf
         return read_legacy_pdf(path)
@@ -102,7 +119,7 @@ def read_one(path: str, manifest: dict | None = None, roster: dict | None = None
                 rec["section"] = meta["section"]
             # what the OCR merge already knew about a quoted verse travels
             # with the paragraph (lib/writings_ocr.py); a text layer has none
-            for k in QUOTE_KEYS:
+            for k in QUOTE_KEYS + PAIR_KEYS:
                 if para.get(k) is not None:
                     rec[k] = para[k]
             if para.get("routed"):
@@ -332,6 +349,8 @@ def measure(records: list[dict]) -> dict:
         "quotes_with_line_ids": with_ids,
         "quotes_with_line_ids_pct": round(100.0 * with_ids / max(len(quotes), 1), 1),
         "routed": sum(1 for r in records if r.get("routed")),
+        "paired": sum(1 for r in records if r.get("pair")),
+        "explains": sum(1 for r in records if r.get("explains")),
     }
 
 
@@ -405,7 +424,12 @@ def main():
     # beside the corpus, not in one fixed place: a second author must not
     # overwrite the first author's gate report. A manifest's books share the
     # default folder with the essays, so their report is named for the author.
-    if args.out != OUT_DIR:
+    if args.out != OUT_DIR and manifest is not None:
+        # a scanned book joining a roster's corpus (manifest `corpus`) must not
+        # overwrite the roster run's report beside it
+        report_path = os.path.join(args.out, "report-%s.json" % re.sub(
+            r"[^a-z0-9]+", "-", os.path.basename(os.path.abspath(args.src)).lower()).strip("-"))
+    elif args.out != OUT_DIR:
         report_path = os.path.join(args.out, "report.json")
     elif manifest is not None:
         report_path = REPORT.replace(
@@ -473,28 +497,43 @@ def main():
         head_meta = {"work": work, "title": title, "author": work_author, "original": original,
                      "quote_policy": policy, "files": sorted(m["file"] for m in metas),
                      "language": metas[0].get("language", "en"), "licence": metas[0].get("licence"),
-                     "source": metas[0].get("reader") or "pdf-text"}
+                     "source": metas[0].get("reader") or "pdf-text",
+                     # what the work is to the scripture and how far it goes (lib/writings_manifest)
+                     "kind": metas[0].get("kind", "essay"), "translate": bool(metas[0].get("translate", False)),
+                     "layout": metas[0].get("layout", "auto"), "angs": work_angs(metas)}
+        # a Gurmukhi title carries its English beside it (14 copies it to every unit)
+        title_en = next((m["title_en"] for m in metas if m.get("title_en")), None)
+        if title_en:
+            head_meta["title_en"] = title_en
         with open(os.path.join(args.out, work + ".jsonl"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(json.dumps({"_meta": head_meta}, ensure_ascii=False) + "\n")
             for r in records:
                 fh.write(json.dumps(r, ensure_ascii=False) + "\n")
-        works.append({"work": work, "title": title, "author": work_author,
+        works.append({"work": work, "title": title, **({"title_en": title_en} if title_en else {}),
+                      "author": work_author, "source": head_meta["source"],
                       "parts": sorted(p for p in {m["part"] for m in metas} if p),
                       "files": len(metas), "folder": metas[0]["folder"],
                       "original": original, "quote_policy": policy,
                       "language": head_meta["language"], "licence": head_meta["licence"],
+                      "kind": head_meta["kind"], "translate": head_meta["translate"],
                       **measure(records)})
 
     # works.json holds every author's works in this folder: this run replaces
     # its own authors' entries and keeps the others, so a manifest's books and
-    # the essays can share data/writings without one run erasing the other
+    # the essays can share data/writings without one run erasing the other.
+    # A scanned book can also join a roster's corpus under the roster's banner
+    # (manifest `corpus`; Baru Sahib): the same author, so an entry read another
+    # way -- OCR against the roster's PDF text -- is the other run's to replace.
     listing_path = os.path.join(args.out, "works.json")
     listing: dict = {"author": author, "works": []}
     if os.path.exists(listing_path):
         with open(listing_path, encoding="utf-8") as fh:
             listing = json.load(fh)
     mine = {w["author"] for w in works}
-    kept = [w for w in listing.get("works", []) if w.get("author") not in mine]
+    ours = {w["work"] for w in works}
+    sources_read = {w["source"] for w in works}
+    kept = [w for w in listing.get("works", []) if w.get("work") not in ours
+            and (w.get("author") not in mine or w.get("source", next(iter(sources_read))) not in sources_read)]
     listing_works = kept + works
     with open(listing_path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump({"author": listing.get("author") or author,

@@ -345,6 +345,43 @@ class LegacyFontTests(unittest.TestCase):
             self.assertEqual(strip_legacy_words(english), english)
 
 
+class LinkTranslationTests(unittest.TestCase):
+    """A translation of a bani, linked to its shabads in order (29_link_translations.py)."""
+
+    def link(self):
+        return import_module("29_link_translations")
+
+    def test_the_path_never_goes_back_and_moving_costs_something(self):
+        seg = self.link().segment
+        # paragraph 2 reads slightly more like shabad 0 again: noise, not a return
+        sim = [[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.12, 0.1, 0.0], [0.0, 0.0, 0.5]]
+        self.assertEqual(seg(sim, 0.15), [0, 1, 1, 2])
+        path = seg([[0.3, 0.2], [0.2, 0.3], [0.3, 0.2]], 0.0)
+        self.assertEqual(path, sorted(path))
+        # a single paragraph's small preference does not pay for a move
+        self.assertEqual(seg([[0.5, 0.0], [0.0, 0.05], [0.5, 0.0]], 0.15), [0, 0, 0])
+
+    def test_two_renderings_of_one_line_share_their_content_words(self):
+        words = self.link().words
+        a = set(words("By bowing the head what is achieved, when at heart one goes about impure?"))
+        b = set(words("What can be achieved by bowing the head, when the man goes with filthy heart?"))
+        self.assertTrue({"bow", "head", "achiev", "heart"} <= a & b)
+        self.assertNotIn("the", a)
+
+    def test_a_translation_aligns_to_its_bani_in_order(self):
+        m = self.link()
+        corpus = {1: "fear of the lord the wind blows rivers flow fire works",
+                  2: "the clay of the muslim falls into the potter lump bricks burned",
+                  3: "bowing the head achieves nothing when the heart is impure filthy"}
+        space = m.Space({k: m.words(v) for k, v in corpus.items()})
+        dv = {k: space.vec(m.words(v)) for k, v in corpus.items()}
+        book = ["In fear the wind blows and the rivers flow", "In fear the fire does its work",
+                "The clay of a Mussulman finds its way into the potter's lump",
+                "What is the use of bowing the head, when the heart is impure?"]
+        sim = [[m.cos(space.vec(m.words(t)), dv[k]) for k in (1, 2, 3)] for t in book]
+        self.assertEqual(m.segment(sim, 0.05), [0, 0, 1, 2])
+
+
 class GroupLinesTests(unittest.TestCase):
     def test_runs_at_the_same_height_become_one_line_in_reading_order(self):
         lines = group_lines([run(491.1, "e stops", y=526.3), run(412.3, "mother's love, or h", y=526.3),
@@ -479,6 +516,17 @@ class ResolveTests(unittest.TestCase):
         # a shabad can run over a page break, so the cited ang can be one off
         span = {"ang": 480, "text": "Some are made beggars and some are given great kingdoms to rule over"}
         self.assertEqual(resolve_lexical(span, self.by_ang())["shabad_id"], 1781)
+
+
+class CorpusIndexTests(unittest.TestCase):
+    """lib/citations.corpus_by_ang on the scripture database that ships."""
+
+    def test_a_corpus_without_translations_indexes_nothing_and_fails_nowhere(self):
+        import sqlite3
+        from lib.citations import corpus_by_ang
+        con = sqlite3.connect(":memory:")
+        con.execute("CREATE TABLE lines (line_id INTEGER, shabad_id INTEGER, ang INTEGER, kind TEXT)")
+        self.assertEqual(corpus_by_ang(con), {})
 
 
 class KeepSpanTests(unittest.TestCase):
@@ -706,6 +754,88 @@ class UnitTests(unittest.TestCase):
         self.assertNotIn("text_src", self.build(records[:1], target=100)[0])
 
 
+    # -- a verse and the prose that explains it (a translation, a commentary) --
+
+    @staticmethod
+    def explains(pair, shabad, line_from, line_to, ang=3, source="G"):
+        return {"pair": pair, "shabad_id": shabad, "line_from": line_from, "line_to": line_to,
+                "ang": ang, "source": source, "score": 0.9, "method": "ocr-corpus-match"}
+
+    @staticmethod
+    def cite(shabad, line_from, line_to, ang=3, source="G"):
+        return {"shabad_id": shabad, "line_id": line_from, "line_from": line_from, "line_to": line_to,
+                "ang": ang, "source": source, "role": "quotes", "score": 0.9,
+                "method": "ocr-corpus-match", "span": ""}
+
+    def test_a_verse_with_an_explanation_after_it_links_forward_to_that_explanation(self):
+        # the Santhya's page: the preface, then a verse and its arth beside it.
+        # The preface did not lead into the verse; the arth is about it.
+        records = [self.para("The preface says what this pauri is about.", no=1),
+                   self.para("ਮੂਲ", style="heading", no=2),
+                   {**self.para("ਸੋਚੈ ਸੋਚਿ ਨ ਹੋਵਈ ਜੇ ਸੋਚੀ ਲਖ ਵਾਰ ॥", style="quote", no=3), "pair": 1},
+                   {**self.para("Sochai: by washing, cleanliness of mind does not come.", no=4),
+                    "pair": 1, "explains": [self.explains(1, 5, 10, 10)]}]
+        cites = {"w:1:1:3": [self.cite(5, 10, 10)]}
+        units = self.build(records, cites, target=100)
+        self.assertEqual(len(units), 2)
+        self.assertEqual(units[0]["cites"], [])
+        self.assertEqual([(c["shabad_id"], c["role"]) for c in units[1]["cites"]], [(5, "explains")])
+        self.assertIn("Sochai", units[1]["text"])
+
+    def test_a_verse_no_prose_explains_is_still_the_previous_passage_s_quotation(self):
+        # an essay quotes a tuk in passing: the pair number alone changes nothing
+        records = [self.para("As the Guru says of washing -", no=1),
+                   {**self.para("ਸੋਚੈ ਸੋਚਿ ਨ ਹੋਵਈ ॥", style="quote", no=2), "pair": 1},
+                   self.para("and the essay carries on with its argument here.", no=3)]
+        units = self.build(records, {"w:1:1:2": [self.cite(5, 10, 10)]}, target=100)
+        self.assertEqual(len(units), 1)
+        self.assertEqual([(c["shabad_id"], c["role"]) for c in units[0]["cites"]], [(5, "quotes")])
+
+    def test_two_explanations_of_one_shabad_in_one_passage_widen_the_range(self):
+        records = [{**self.para("First tuk explained.", no=1), "pair": 1, "explains": [self.explains(1, 5, 10, 11)]},
+                   {**self.para("Second tuk explained.", no=2), "pair": 2, "explains": [self.explains(2, 5, 12, 13)]},
+                   {**self.para("A quotation of the same shabad, in another role.", no=3)},
+                   {**self.para("ਤੁਕ ॥", style="quote", no=4)}]
+        cites = {"w:1:1:4": [self.cite(5, 20, 20)]}
+        units = self.build(records, cites, target=100)
+        self.assertEqual(len(units), 1)
+        by_role = {c["role"]: (c["line_from"], c["line_to"]) for c in units[0]["cites"]}
+        self.assertEqual(by_role, {"explains": (10, 13), "quotes": (20, 20)})
+
+    def test_an_explanation_of_a_verse_the_merge_could_not_place_links_nothing_yet(self):
+        records = [{**self.para("ਤੁਕ ॥", style="quote", no=1), "pair": 1},
+                   {**self.para("Its explanation, three words long enough.", no=2), "pair": 1,
+                    "explains": [{"pair": 1, "unmatched": True}]}]
+        units = self.build(records, target=100)
+        self.assertEqual(len(units), 1)
+        self.assertEqual(units[0]["cites"], [])
+
+    def test_an_explanation_running_on_from_the_page_before_links_to_the_same_verse(self):
+        # page 2 opens with prose that continues page 1's arth (writings_ocr
+        # marks it `continues`): it is about the same verse
+        records = [{**self.para("ਤੁਕ ॥", style="quote", no=1), "pair": 1},
+                   {**self.para("The arth begins on this page.", style="body", page=1, no=2), "pair": 1,
+                    "explains": [self.explains(1, 5, 10, 10)]},
+                   self.para("A heading between", style="heading", page=2, no=1),
+                   {**self.para("and the arth carries on over the page.", page=2, no=2), "pair": 2,
+                    "explains": [{**self.explains(1, 5, 10, 10), "pair": 2, "continues": True}]}]
+        units = self.build(records, {"w:1:1:1": [self.cite(5, 10, 10)]}, target=100)
+        self.assertEqual(len(units), 2)
+        self.assertEqual([[(c["shabad_id"], c["role"]) for c in u["cites"]] for u in units],
+                         [[(5, "explains")], [(5, "explains")]])
+
+
+class SmallCorpusTests(unittest.TestCase):
+    """14_embed_writings.py on a work of a few pages."""
+
+    def test_a_corpus_smaller_than_the_index_keeps_as_many_dimensions_as_it_has_units(self):
+        mod = import_module("14_embed_writings")
+        self.assertEqual(mod.index_dim_for(3198, 384), 256)
+        self.assertEqual(mod.index_dim_for(77, 384), 77)               # a twenty-page bench sample
+        self.assertEqual(mod.index_dim_for(1, 384), 1)
+        self.assertEqual(mod.index_dim_for(500, 128), 128)
+
+
 class OutputContractTests(unittest.TestCase):
     """
     The shape of what the pipeline writes, which a server reads without asking.
@@ -739,12 +869,14 @@ class OutputContractTests(unittest.TestCase):
                        "text_lang", "query_scripts", "files"}
     COLUMNS = {
         "works": ["work_id", "title", "title_en", "author", "folder", "original", "quote_policy",
-                  "parts", "files", "units", "language", "licence"],
+                  "parts", "files", "units", "language", "licence", "kind", "translate", "ang_from", "ang_to"],
         "units": ["unit_row", "unit_id", "work_id", "part", "page", "para_no", "marker", "text", "text_src"],
         "citations": ["unit_row", "shabad_id", "line_id", "ang", "score", "method", "span"],
+        "links": ["unit_row", "source", "shabad_id", "line_from", "line_to", "ang", "role", "kind",
+                  "method", "score", "page"],
         "meta": ["key", "value"],
     }
-    META_KEYS = {"corpus", "author", "authors", "units", "works", "citations", "built"}
+    META_KEYS = {"corpus", "author", "authors", "units", "works", "citations", "links", "built"}
     RECORD_KEYS = {"unit_id", "work", "part", "essay", "page", "para_no", "marker",
                    "style", "italic", "text", "lang"}
     UNIT_KEYS = {"unit_row", "unit_id", "work", "part", "page", "para_no", "marker", "text",
@@ -767,16 +899,25 @@ class OutputContractTests(unittest.TestCase):
 
         # one work: a heading, a paragraph that leads into a verse, the verse,
         # and enough prose that every paragraph closes a unit of its own
-        def rec(no, text, style="body"):
+        def rec(no, text, style="body", **extra):
             page, para = no // 10 + 1, no % 10 + 1
             return {"unit_id": "book:1:%d:%d" % (page, para), "work": "book", "part": 1, "essay": None,
                     "page": page, "para_no": para, "marker": None, "style": style,
-                    "italic": style == "quote", "text": text, "lang": "en"}
+                    "italic": style == "quote", "text": text, "lang": "en", **extra}
         records = [rec(0, "The Opening", style="heading"),
                    rec(1, "The Guru says this of the Name, as the verse below shows."),
                    rec(2, "By the Name alone is one carried across. 468", style="quote")]
         records += [rec(i, "Passage number %d speaks of the Name and nothing else." % i)
                     for i in range(3, cls.N + 2)]
+        # a paired page (lib/writings_ocr): a verse, then the prose that explains
+        # it, the two sharing a pair; the prose says which lines it explains
+        records.append(rec(cls.N + 2, "ਸੋਚੈ ਸੋਚਿ ਨ ਹੋਵਈ ਜੇ ਸੋਚੀ ਲਖ ਵਾਰ ॥", style="quote", pair=1))
+        records.append(rec(cls.N + 3, "By washing, cleanliness of the mind does not come, though one wash a lakh times.",
+                           pair=1, explains=[{"pair": 1, "shabad_id": 9, "line_from": 300, "line_to": 301, "ang": 1,
+                                              "source": "G", "score": 0.9, "method": "ocr-corpus-match"}]))
+        # a verse of another scripture, matched by the OCR merge (source D, its
+        # own id space), quoted after the last prose
+        records.append(rec(cls.N + 4, "ਦਸਮ ਬਾਣੀ ਦੀ ਇਕ ਤੁਕ ॥", style="quote"))
         with open(os.path.join(src, "book.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(json.dumps({"_meta": {
                 "work": "book", "title": "A Book", "author": "An Author", "original": True,
@@ -789,6 +930,14 @@ class OutputContractTests(unittest.TestCase):
             fh.write(json.dumps({"unit_id": records[2]["unit_id"], "shabad_id": 1712, "line_id": 20101,
                                  "ang": 468, "score": 0.91, "method": "lexical_ang",
                                  "span": "By the Name alone is one carried across."}) + "\n")
+            fh.write(json.dumps({"unit_id": records[-3]["unit_id"], "shabad_id": 9, "line_id": 300,
+                                 "line_ids": [300, 301], "line_from": 300, "line_to": 301, "source": "G",
+                                 "ang": 1, "score": 0.9, "method": "ocr-corpus-match",
+                                 "span": "ਸੋਚੈ ਸੋਚਿ ਨ ਹੋਵਈ ਜੇ ਸੋਚੀ ਲਖ ਵਾਰ ॥"}) + "\n")
+            fh.write(json.dumps({"unit_id": records[-1]["unit_id"], "shabad_id": 3, "line_id": 50,
+                                 "line_ids": [50, 51], "line_from": 50, "line_to": 51, "source": "D",
+                                 "ang": 12, "score": 0.95, "method": "ocr-corpus-match",
+                                 "span": "ਦਸਮ ਬਾਣੀ ਦੀ ਇਕ ਤੁਕ ॥"}) + "\n")
 
         embed = import_module("14_embed_writings")
         build = import_module("15_build_writings_db")
@@ -848,7 +997,7 @@ class OutputContractTests(unittest.TestCase):
                 self.assertEqual([c for c in wanted if c not in have], [])
         # works and units are inserted by position: the columns a reader knows
         # come first and in this order, and anything new goes after them
-        for table in ("works", "units", "citations"):
+        for table in ("works", "units", "citations", "links"):
             with self.subTest(order=table):
                 have = [r[1] for r in self.con.execute("PRAGMA table_info(%s)" % table)]
                 self.assertEqual(have[:len(self.COLUMNS[table])], self.COLUMNS[table])
@@ -874,9 +1023,44 @@ class OutputContractTests(unittest.TestCase):
         self.assertEqual(work, [("book", "A Book", "An Author", "verbatim", "en", "public-domain",
                                  len(self.units))])
 
+    def test_a_match_against_another_scripture_keeps_its_source_and_stays_out_of_citations(self):
+        last = self.units[-1]
+        other = [c for c in last["cites"] if c.get("source") == "D"]
+        self.assertEqual(len(other), 1)
+        self.assertEqual((other[0]["line_from"], other[0]["line_to"], other[0]["shabad_id"], other[0]["role"]),
+                         (50, 51, 3, "quotes"))
+        # the Guru Granth Sahib cite says so too, by default
+        self.assertTrue(all(c.get("source") == "G" for u in self.units[:-1] for c in u["cites"]))
+        # citations.line_id is a Guru Granth Sahib id and nothing else goes in that column
+        self.assertEqual(self.con.execute("SELECT count(*) FROM citations WHERE line_id = 50").fetchone()[0], 0)
+        self.assertEqual(self.con.execute("SELECT count(*) FROM citations").fetchone()[0], 2)
+
+    def test_a_verse_with_its_explanation_after_it_is_linked_to_the_explanation(self):
+        # the verse's own citation and the prose's `explains` are one link, in
+        # the explains role, on the passage that explains it -- not on the
+        # passage before the verse, which was about something else
+        (row,) = self.con.execute("SELECT unit_row FROM units WHERE text LIKE '%lakh times%'").fetchone()
+        rows = self.con.execute(
+            "SELECT unit_row, role, line_from, line_to FROM links WHERE shabad_id = 9").fetchall()
+        self.assertEqual(rows, [(row, "explains", 300, 301)])
+        self.assertEqual(self.units[row - 1]["cites"], [])
+
+    def test_every_link_between_a_passage_and_the_scripture_is_in_links(self):
+        rows = self.con.execute(
+            "SELECT source, shabad_id, line_from, line_to, ang, role, kind, method FROM links ORDER BY source, shabad_id").fetchall()
+        self.assertEqual(rows, [("D", 3, 50, 51, 12, "quotes", "essay", "ocr-corpus-match"),
+                                ("G", 9, 300, 301, 1, "explains", "essay", "ocr-corpus-match"),
+                                ("G", 1712, 20101, 20101, 468, "quotes", "essay", "lexical_ang")])
+        self.assertEqual(self.con.execute("SELECT value FROM meta WHERE key='links'").fetchone()[0], "3")
+        self.assertEqual(self.manifest["links"], 3)
+        # the work says what it is, how far it goes, and which angs it covers: the
+        # verses it explains (ang 1), not the one it quotes in passing (468)
+        self.assertEqual(self.con.execute("SELECT kind, translate, ang_from, ang_to FROM works").fetchall(),
+                         [("essay", 0, 1, 1)])
+
     def test_the_verse_is_a_citation_on_the_passage_that_led_into_it(self):
         rows = self.con.execute(
-            "SELECT unit_row, shabad_id, line_id, ang, method FROM citations").fetchall()
+            "SELECT unit_row, shabad_id, line_id, ang, method FROM citations WHERE shabad_id = 1712").fetchall()
         self.assertEqual(len(rows), 1)
         unit_row, shabad_id, line_id, ang, method = rows[0]
         self.assertEqual((shabad_id, line_id, ang, method), (1712, 20101, 468, "lexical_ang"))
@@ -917,6 +1101,140 @@ class OutputContractTests(unittest.TestCase):
         # what the OCR merge matched travels with the verse, under these names
         self.assertEqual((verse["line_ids"], verse["shabad_id"], verse["ang"]), ([20101, 20102], 1712, 468))
         self.assertNotIn("line_ids", prose)
+
+
+class SharedCitationsTests(unittest.TestCase):
+    def test_one_works_citations_are_replaced_and_the_folders_others_kept(self):
+        import tempfile
+        cite = import_module("13_resolve_citations")
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "citations.jsonl")
+            with open(path, "w", encoding="utf-8") as fh:
+                for r in ({"_meta": {}}, {"unit_id": "sikh-faith:0:12:3", "shabad_id": 1},      # the legacy resolver's
+                          {"unit_id": "jiwan:1:4:2", "work": "jiwan", "shabad_id": 2}):
+                    fh.write(json.dumps(r) + "\n")
+            kept = cite.kept_citations(path, {"jiwan"})
+            self.assertEqual([r["shabad_id"] for r in kept], [1])
+            self.assertEqual(cite.kept_citations(os.path.join(d, "none.jsonl"), {"jiwan"}), [])
+
+
+class LineCommentaryTests(unittest.TestCase):
+    """30_line_commentary.py: a commentary printed line by line, as a teeka."""
+
+    def test_each_line_gets_the_prose_that_explains_it_and_nothing_else(self):
+        lc = import_module("30_line_commentary")
+        def rec(no, text, style="body", line=None, ang=5, part=1):
+            ex = [{"pair": no, "shabad_id": 26, "line_from": line, "line_to": line, "ang": ang, "source": "G"}] if line else []
+            return {"part": part, "page": 143, "para_no": no, "style": style, "text": text, "explains": ex}
+        records = [rec(1, "ਅਮੁਲ ਆਵਹਿ ਅਮੁਲ ਲੈ ਜਾਹਿ ॥", style="quote"),
+                   rec(2, "(ਫੇਰ ਮਾਨ ਦਾਅਵੇ ਦਾ ਤਿਆਗ ਕਰਕੇ) ਮੁੱਲ ਰਹਿਤ ਆਉਂਦੇ ਹਨ", line=243),
+                   rec(3, "ਤੇ ਅਮੁਲ ਲੈ ਜਾਂਦੇ ਹਨ।", line=243),
+                   rec(4, "2੭", line=244),                                   # a stray numeral, not prose
+                   rec(5, "ਸ਼ਬਦ ਦਾ ਭਾਵ", style="footnote", line=244),
+                   rec(6, "ਓਅੰਕਾਰ ਤੋਂ ਵੇਦ ਰਚੇ ਗਏ।", line=40000, ang=929)]    # quoted in passing
+        lines, seen = lc.line_texts(records, {1: [1, 53]})
+        self.assertEqual(list(lines), [243])
+        self.assertEqual(lines[243]["text"], "(ਫੇਰ ਮਾਨ ਦਾਅਵੇ ਦਾ ਤਿਆਗ ਕਰਕੇ) ਮੁੱਲ ਰਹਿਤ ਆਉਂਦੇ ਹਨ ਤੇ ਅਮੁਲ ਲੈ ਜਾਂਦੇ ਹਨ।")
+        self.assertEqual(lines[243]["pages"], ["1:143"])
+        self.assertEqual((seen["not prose"], seen["outside the volume's angs"], seen["taken"]), (1, 1, 2))
+        self.assertIn(40000, lc.line_texts(records)[0])                        # unbounded without the manifest
+
+
+class KeepTests(unittest.TestCase):
+    """
+    14 --keep: a scanned book joins a corpus whose other works were built on
+    another machine (Baru Sahib's PDFs), carried over from its database.
+    """
+
+    def test_the_built_works_are_kept_as_they_were_and_the_book_is_added_after_them(self):
+        import contextlib
+        import io
+        import sqlite3
+        import tempfile
+        import numpy as np
+
+        embed = import_module("14_embed_writings")
+        build = import_module("15_build_writings_db")
+        with tempfile.TemporaryDirectory() as d:
+            # the published database: no links table, files a count, a pooled article's section
+            old = os.path.join(d, "old.sqlite")
+            con = sqlite3.connect(old)
+            con.executescript("""
+                CREATE TABLE works (work_id TEXT PRIMARY KEY, title TEXT, title_en TEXT, author TEXT, folder TEXT,
+                  original INTEGER, quote_policy TEXT, parts TEXT, files INTEGER, units INTEGER, language TEXT, licence TEXT);
+                CREATE TABLE units (unit_row INTEGER PRIMARY KEY, unit_id TEXT, work_id TEXT, part INTEGER, page INTEGER,
+                  para_no INTEGER, marker TEXT, text TEXT, text_src TEXT, section TEXT);
+                CREATE TABLE citations (unit_row INTEGER, shabad_id INTEGER, line_id INTEGER, ang INTEGER, score REAL,
+                  method TEXT, span TEXT);""")
+            con.executemany("INSERT INTO works VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
+                ("articles", "Articles", None, "Banner", "root", 1, "verbatim", "[]", 17, 2, "en", None),
+                ("old-book", "An Old Book", None, "Banner", "root", 1, "verbatim", "[]", 1, 1, "en", None)])
+            con.executemany("INSERT INTO units VALUES (?,?,?,?,?,?,?,?,?,?)", [
+                (0, "articles:1:1:1", "articles", 1, 1, 1, None, "Aim of life.", None, "Aim of Life, by X"),
+                (1, "articles:2:1:1", "articles", 2, 1, 1, None, "Grammar of life.", None, "Grammar of Life"),
+                (2, "old-book:0:4:2", "old-book", None, 4, 2, None, "Rebuilt from src, not kept.", None, None)])
+            con.execute("INSERT INTO citations VALUES (1, 1712, 20101, 468, 0.9, 'lexical_ang', 'carried across')")
+            con.commit()
+            con.close()
+
+            src = os.path.join(d, "src")
+            os.makedirs(src)
+
+            def write(name, meta, recs):
+                with open(os.path.join(src, name), "w", encoding="utf-8") as fh:
+                    if meta:
+                        fh.write(json.dumps({"_meta": meta}, ensure_ascii=False) + "\n")
+                    for r in recs:
+                        fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+            def rec(work, page, text, lang):
+                return {"unit_id": "%s:1:%d:1" % (work, page), "work": work, "part": 1, "essay": None, "page": page,
+                        "para_no": 1, "marker": None, "style": "body", "italic": False, "text": text, "lang": lang}
+            write("jiwan.jsonl", {"work": "jiwan", "title": "ਜੀਵਨ", "title_en": "The Life", "author": "Banner",
+                                  "original": True, "quote_policy": "summarise", "files": ["v1.pdf", "v2.pdf"],
+                                  "language": "pa", "licence": "copyright", "source": "ocr"},
+                  [rec("jiwan", 1, "ਸੰਤ ਜੀ ਆਏ।", "pa"), rec("jiwan", 2, "ਕੀਰਤਨ ਹੋਇਆ।", "pa")])
+            write("jiwan.en.jsonl", {"work": "jiwan"},
+                  [{"unit_id": "jiwan:1:1:1", "en": "Sant Ji came."}, {"unit_id": "jiwan:1:2:1", "en": "Kirtan was sung."}])
+            write("old-book.jsonl", {"work": "old-book", "title": "An Old Book", "author": "Banner", "original": True,
+                                     "quote_policy": "verbatim", "files": ["b.pdf"], "language": "en"},
+                  [rec("old-book", 4, "The old book, read again.", "en")])
+
+            rng = np.random.default_rng(0)
+            real = (embed.Embedder, embed.embed_long, sys.argv)
+            embed.Embedder = lambda name, max_len=256: object()
+            embed.embed_long = lambda emb, texts, max_len: (rng.standard_normal((len(texts), 384)).astype(np.float32), 0)
+            units_path, db = os.path.join(src, "units.jsonl"), os.path.join(d, "new.sqlite")
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    sys.argv = ["14", "--src", src, "--out-dir", os.path.join(d, "vec"), "--corpus", "banner-en",
+                                "--model", "bge-small-en-v1.5", "--translations", "--keep", old,
+                                "--target-tokens", "1", "--hard-tokens", "40"]
+                    embed.main()
+                    sys.argv = ["15", "--units", units_path, "--out", db]
+                    build.main()
+            finally:
+                embed.Embedder, embed.embed_long, sys.argv = real
+
+            con = sqlite3.connect(db)
+            rows = con.execute("SELECT unit_row, unit_id, work_id, text, text_src, section FROM units "
+                               "ORDER BY unit_row").fetchall()
+            # the kept articles first, as built; then the src works, the stale copy of old-book not among them
+            self.assertEqual(rows[0], (0, "articles:1:1:1", "articles", "Aim of life.", None, "Aim of Life, by X"))
+            self.assertEqual(rows[1][1:4], ("articles:2:1:1", "articles", "Grammar of life."))
+            self.assertEqual([r[2] for r in rows], ["articles", "articles", "jiwan", "jiwan", "old-book"])
+            self.assertNotIn("Rebuilt from src, not kept.", [r[3] for r in rows])
+            self.assertEqual(rows[2][3:5], ("Sant Ji came.", "ਸੰਤ ਜੀ ਆਏ।"))
+            # the kept citation stays on its passage
+            self.assertEqual(con.execute("SELECT unit_row, shabad_id, span FROM citations").fetchall(),
+                             [(1, 1712, "carried across")])
+            works = {w[0]: w[1:] for w in con.execute(
+                "SELECT work_id, title_en, original, quote_policy, files, units, language FROM works")}
+            self.assertEqual(works["articles"], (None, 1, "verbatim", 17, 2, "en"))
+            # a machine's English is not the author's own
+            self.assertEqual(works["jiwan"], ("The Life", 0, "summarise", 2, 2, "pa"))
+            self.assertEqual(os.path.getsize(os.path.join(d, "vec", "units.scale.f32")), 5 * 4)
+            con.close()
 
 
 class IngestedCorpusTests(unittest.TestCase):

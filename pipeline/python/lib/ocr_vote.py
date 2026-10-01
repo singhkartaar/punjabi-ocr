@@ -32,20 +32,54 @@ H_OVERLAP = 0.3
 DEFAULT_CONF = 0.8         # an engine with no confidence votes at this
 
 
-def _overlap(a: list, b: list) -> tuple[float, float]:
+def box_overlap(a: list, b: list) -> tuple[float, float]:
+    """(vertical, horizontal) overlap of two boxes, each as a share of the smaller extent."""
     iy = max(0, min(a[3], b[3]) - max(a[1], b[1]))
     ix = max(0, min(a[2], b[2]) - max(a[0], b[0]))
     return iy / max(1, min(a[3] - a[1], b[3] - b[1])), ix / max(1, min(a[2] - a[0], b[2] - b[0]))
 
 
+_overlap = box_overlap
+
+
+WIDER = 1.3   # an other-engine line this much wider than the pivot's is cut to the pivot's span by its words
+
+
+def clip_to(p: dict, o: dict) -> dict | None:
+    """
+    An other-engine line cut to the pivot line's horizontal span by its word
+    boxes, or None when none of its words lie there.
+
+    A pivot line split at the gutter is half a row; the other engine may
+    have read the row whole, and its whole text voted onto the half -- the
+    right half of "ਗਾਵੈ ਕੋ ਤਾਣੁ | ਕੋਈ ਜਿਸ ਨੂੰ" came out carrying the verse
+    too, and a two-word piece a rule fooled the segmenter into took a
+    sentence. Only a line wider than the pivot's by WIDER, with words to cut
+    by, is touched.
+    """
+    pw = max(1, p["bbox"][2] - p["bbox"][0])
+    ws = o.get("words") or []
+    if not ws or (o["bbox"][2] - o["bbox"][0]) <= WIDER * pw:
+        return o
+    tol = 0.5 * (p["bbox"][3] - p["bbox"][1])
+    inside = [w for w in ws if p["bbox"][0] - tol <= (w["bbox"][0] + w["bbox"][2]) / 2.0 <= p["bbox"][2] + tol]
+    if not inside:
+        return None
+    return {**o, "bbox": [min(w["bbox"][0] for w in inside), min(w["bbox"][1] for w in inside),
+                          max(w["bbox"][2] for w in inside), max(w["bbox"][3] for w in inside)],
+            "text": " ".join(w["text"] for w in inside), "words": inside, "clipped": True}
+
+
 def align_boxes(pivot: list[dict], other: list[dict]) -> dict[int, list[dict]]:
-    """{pivot index: [other lines overlapping it, left to right]}."""
+    """{pivot index: [other lines overlapping it, left to right]}, each cut to the pivot line's span (clip_to)."""
     out: dict[int, list[dict]] = defaultdict(list)
     for i, p in enumerate(pivot):
         for o in other:
             v, h = _overlap(p["bbox"], o["bbox"])
             if v >= V_OVERLAP and h >= H_OVERLAP:
-                out[i].append(o)
+                c = clip_to(p, o)
+                if c is not None:
+                    out[i].append(c)
         out[i].sort(key=lambda ln: ln["bbox"][0])
     return out
 

@@ -194,6 +194,12 @@ def corpus_by_ang(con, translators=("ssk", "bdb", "ms")) -> dict:
     from what ships but is still the closest match for a good share of these
     quotations.
     """
+    # the public scripture database (core.gurbani.sqlite, the Gurmukhi lines
+    # alone) has no translations: an English quotation cannot be resolved
+    # against it, and a Punjabi book's quotations were matched by the merge
+    # already, so an empty index is the right answer, not an error
+    if not con.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='translations'").fetchone():
+        return {}
     marks = ",".join("?" * len(translators))
     rows = con.execute(
         "SELECT l.ang, l.shabad_id, l.line_id, t.text FROM lines l "
@@ -242,8 +248,9 @@ def resolve_lexical(span: dict, by_ang: dict) -> dict | None:
         return None
     if score - second < MARGIN:
         return {"ambiguous": True, "score": round(score, 3), "runner_up": round(second, 3)}
-    return {"shabad_id": shabad_id, "line_id": line_id, "score": round(score, 3),
-            "margin": round(score - second, 3), "method": "lexical_ang"}
+    # the English translations are of the Guru Granth Sahib only: source G
+    return {"shabad_id": shabad_id, "line_id": line_id, "line_ids": [line_id], "source": "G",
+            "score": round(score, 3), "margin": round(score - second, 3), "method": "lexical_ang"}
 
 
 def precomputed(records: list[dict]) -> list[dict]:
@@ -265,5 +272,7 @@ def precomputed(records: list[dict]) -> list[dict]:
                     "page": rec["page"], "para_no": rec["para_no"], "ang": rec.get("ang"),
                     "text": rec["text"], "how": "ocr-corpus-match",
                     "shabad_id": rec.get("shabad_id"), "line_id": ids[0], "line_ids": list(ids),
+                    "line_from": rec.get("line_from", min(ids)), "line_to": rec.get("line_to", max(ids)),
+                    "source": rec.get("source") or "G",
                     "score": rec.get("match_score"), "method": "ocr-corpus-match"})
     return out

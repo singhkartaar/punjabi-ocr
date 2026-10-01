@@ -37,6 +37,9 @@ POINTS_PER_PX = 72.0 / 300.0
 BOLD_RATIO = 1.06             # the bold mode must be this much wider than the regular one
 MIN_WEIGHT_LINES = 3      # lines of each weight a page needs before its split is believed
 MIN_INK = 30                  # px of ink for a stroke estimate to mean anything
+SIZE_BAND = 0.12              # an OCR line box within this of the page's body height IS the body height:
+                              # boxes vary with ascenders and descenders, and the paragraph rules,
+                              # written for a PDF's exact font sizes, broke a paragraph at every line
 
 
 def stroke_width(img, bbox: list) -> float | None:
@@ -79,6 +82,11 @@ def bold_split(widths: list[float]) -> float | None:
         return None
     if statistics.mean(hi) < BOLD_RATIO * statistics.mean(lo):
         return None
+    # No test for a gap between the modes: the Santhya's real two weights are
+    # as close as a grey scan's noise (measured over 442 pages, the gap
+    # against the modes' own spread ran from 0.02 to 3.8, and a rule at 1.0
+    # lost 1,400 of its verse lines). What a bold line MEANS is decided
+    # downstream, from what the merge made of it (as_runs).
     return (max(lo) + min(hi)) / 2.0
 
 
@@ -91,60 +99,135 @@ def as_runs(lines: list[dict], page_h: int, scale: float = POINTS_PER_PX) -> lis
     out = []
     for ln in lines:
         x0, y0, x1, y1 = ln["bbox"]
+        # A quoted verse is what the merge classified as one (matched, or bold
+        # with a verse mark) or as a heading (short and bold). A long bold line
+        # the merge left as commentary is prose with a heavy face -- on a grey
+        # 120 dpi scan half of every page's prose reads "bold" from stroke
+        # width alone -- and must not open a quotation or break a paragraph.
+        kind = str(ln.get("kind", ""))
         out.append({"x": x0 * scale, "y": (page_h - y1) * scale, "size": (y1 - y0) * scale,
-                    "italic": bool(ln.get("bold")) or str(ln.get("kind", "")).startswith("gurbani"),
+                    "italic": kind.startswith("gurbani") or kind == "heading"
+                    or (bool(ln.get("bold")) and not kind),
                     "text": ln.get("text", ""), "_line": ln})
     return out
 
 
-def page_paragraphs(lines: list[dict], page_h: int, columns: list[tuple] | None) -> list[dict]:
-    """
-    Paragraphs of one page, left column then right. Each paragraph carries
-    "lines": the merged line records it was built from, so a quote's
-    line_ids travel with it.
-    """
-    runs = as_runs([ln for ln in lines if ln.get("zone", "body") == "body" and ln.get("text", "").strip()], page_h)
-    if columns:
-        bands = [(lo * POINTS_PER_PX, hi * POINTS_PER_PX) for lo, hi in columns]
-        cols = [[r for r in runs if lo <= r["x"] < hi] for lo, hi in bands]
-    else:
-        cols = [runs]
+def _column_paragraphs(lines: list[dict], page_h: int) -> list[dict]:
+    """One column's (or band's) lines as paragraphs, each carrying its "lines"."""
+    col = as_runs([ln for ln in lines if ln.get("zone", "body") == "body" and ln.get("text", "").strip()], page_h)
+    if not col:
+        return []
+    grouped = group_lines(col)
+    # group_lines keeps the run objects; carry our line records along
+    for g in grouped:
+        g["_lines"] = [r["_line"] for r in g["runs"]]
+    sizes = [g["size"] for g in grouped if len(g["text"]) > 20]
+    body = statistics.median(sizes) if sizes else (grouped[0]["size"] if grouped else 10.0)
+    for g in grouped:
+        if abs(g["size"] - body) <= SIZE_BAND * body:
+            g["size"] = body
+    paras = paragraphs(grouped, body, left_margin(grouped))
+    # paragraphs() concatenates text; map paragraphs back to their lines by
+    # walking the grouped lines in order and matching accumulated text
     out = []
-    for col in cols:
-        if not col:
-            continue
-        grouped = group_lines(col)
-        # group_lines keeps the run objects; carry our line records along
-        for g in grouped:
-            g["_lines"] = [r["_line"] for r in g["runs"]]
-        sizes = [g["size"] for g in grouped if len(g["text"]) > 20]
-        body = statistics.median(sizes) if sizes else (grouped[0]["size"] if grouped else 10.0)
-        paras = paragraphs(grouped, body, left_margin(grouped))
-        # paragraphs() concatenates text; map paragraphs back to their lines by
-        # walking the grouped lines in order and matching accumulated text
-        gi = 0
-        for p in paras:
-            members = []
-            acc = ""
-            while gi < len(grouped) and len(acc) < len(p["text"]):
-                acc = (acc + " " + grouped[gi]["text"]).strip()
-                members.extend(grouped[gi]["_lines"])
-                gi += 1
-            p["lines"] = members
-            out.append(p)
+    gi = 0
+    for p in paras:
+        members = []
+        acc = ""
+        while gi < len(grouped) and len(acc) < len(p["text"]):
+            acc = (acc + " " + grouped[gi]["text"]).strip()
+            members.extend(grouped[gi]["_lines"])
+            gi += 1
+        p["lines"] = members
+        out.append(p)
+    return out
+
+
+def _verse_paragraph(lines: list[dict], page_h: int) -> dict:
+    """The verse lines beside one explanation, as one quote paragraph."""
+    lines = sorted(lines, key=lambda l: (l["bbox"][1], l["bbox"][0]))
+    x0 = min(ln["bbox"][0] for ln in lines) * POINTS_PER_PX
+    size = statistics.median((ln["bbox"][3] - ln["bbox"][1]) * POINTS_PER_PX for ln in lines)
+    return {"x0": x0, "size": size, "italic": True, "style": "quote",
+            "text": " ".join(ln.get("text", "").strip() for ln in lines if ln.get("text", "").strip()),
+            "lines": lines, "verse": True}
+
+
+def page_paragraphs(lines: list[dict], page_h: int, columns: list[tuple] | None,
+                    layout: str = "columns", typical_h: float | None = None) -> list[dict]:
+    """
+    Paragraphs of one page, in reading order. Each paragraph carries "lines":
+    the merged line records it was built from, so a quote's line_ids travel
+    with it.
+
+    `layout` "columns" reads the left column whole and then the right, as
+    every corpus before the paired reader was built; "auto" and
+    "paired-columns" read a two-column page in bands (lib/ocr_pairs): prose
+    across the page in order, and in a paired band each explanation
+    preceded by the verse lines printed beside it, the two sharing a `pair`
+    number and the prose carrying those lines as "explains_lines".
+    """
+    body = [ln for ln in lines if ln.get("zone", "body") == "body" and ln.get("text", "").strip()]
+    if not columns or layout == "columns":
+        cols = [[ln for ln in body if lo <= (ln["bbox"][0] + ln["bbox"][2]) / 2.0 < hi] for lo, hi in columns] if columns else [body]
+        out = []
+        for col in cols:
+            out.extend(_column_paragraphs(col, page_h))
+        return out
+    from lib.ocr_pairs import assign_verse, bands, prose_groups, typical_height
+    h = typical_h or typical_height(body)
+    out = []
+    pair = 0
+    for band in bands(body, columns, h, force=(layout == "paired-columns")):
+        if band["mode"] == "full":
+            out.extend(_column_paragraphs(band["lines"], page_h))
+        elif band["mode"] == "columns":
+            for col in band["cols"]:
+                out.extend(_column_paragraphs(col, page_h))
+        else:
+            prose = []
+            for group in prose_groups(band["prose"], band["verse"], h):
+                prose.extend(_column_paragraphs(group, page_h))
+            beside = assign_verse(band["verse"], prose, h)
+            placed = {id(ln) for group in beside for ln in group}
+            stray = [ln for ln in band["verse"] if id(ln) not in placed]
+            for p, verse_lines in zip(prose, beside):
+                pair += 1
+                if verse_lines:
+                    v = _verse_paragraph(verse_lines, page_h)
+                    v["pair"] = pair
+                    out.append(v)
+                p["pair"] = pair
+                p["explains_lines"] = verse_lines
+                out.append(p)
+            if stray:
+                pair += 1
+                v = _verse_paragraph(stray, page_h)
+                v["pair"] = pair
+                out.append(v)
     return out
 
 
 def quote_meta(par: dict) -> dict:
-    """line_ids and the majority shabad/ang of a quote paragraph's lines."""
-    ids, shabads, angs, scores = [], [], [], []
+    """
+    line_ids, their range, and the majority shabad/ang/source of a quote
+    paragraph's lines.
+
+    `source` is the scripture the ids belong to (BaniDB codes: G the Guru
+    Granth Sahib, D Dasam Bani, B Bhai Gurdas), and it travels with the ids
+    from here on: a line_id of Dasam Bani is a number in another id space,
+    and without the source beside it a reader would open the wrong verse.
+    """
+    ids, shabads, angs, scores, sources = [], [], [], [], []
     for ln in par.get("lines", []):
         for m in ln.get("matches", []) or ([ln["match"]] if ln.get("match") else []):
             ids.append(m["line_id"])
             shabads.append(m["shabad_id"])
             angs.append(m["ang"])
             scores.append(m["score"])
+            sources.append(m.get("source") or "G")
     if not ids:
         return {}
-    return {"line_ids": ids, "shabad_id": statistics.mode(shabads), "ang": statistics.mode(angs),
+    return {"line_ids": ids, "line_from": min(ids), "line_to": max(ids),
+            "shabad_id": statistics.mode(shabads), "ang": statistics.mode(angs), "source": statistics.mode(sources),
             "match_score": round(min(scores), 3), "match_method": "ocr-corpus-match"}

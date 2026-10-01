@@ -2,6 +2,8 @@
 Ground truth for a book: a stratified sample of lines, and the crops to check them against.
 
   23_ocr_gt.py --book santhya-vol-1 --sample 30 --seed 0 --draft-engine tesseract
+  23_ocr_gt.py --book santhya-vol-1 --coverage-sample 30 --merged-name merged-cov
+  23_ocr_gt.py --book santhya-vol-1 --count-pages 10
   23_ocr_gt.py --book santhya-vol-1 --check
   23_ocr_gt.py --book santhya-vol-1 --promote
 
@@ -11,6 +13,22 @@ gt/review.html that shows every crop beside its draft. A person (or the
 assistant, reading the crops) edits "text" in candidates.jsonl and sets
 "verified": true. Where the draft matched a corpus line the draft IS the corpus
 text ("source": "corpus") and only the match has to be confirmed.
+
+That sample is drawn from lines the engine FOUND, so it can never hold a
+line the engine skipped, and a merge that misses lines scores as well as one
+that does not. Two samples see what --sample cannot:
+
+--coverage-sample draws from what the merge's coverage pass did with the ink
+its lines left uncovered (22_ocr_merge.py --coverage): lines it recovered,
+with their reading as the draft, and regions it refused, with an empty draft.
+The reviewer types what the crop says, or sets "not_text": true where it is a
+rule, an ornament or noise. 24_ocr_eval.py then scores recovered lines apart
+and counts a recovery on a not-text crop as false.
+
+--count-pages draws whole pages, half of them two-column, and writes a
+half-size PNG of each; the reviewer counts the printed body and footnote
+lines, per column on a two-column page, into gt/page-counts.candidates.jsonl.
+That count is the one measure of lines missed altogether, by any engine.
 
 The sample is stratified so the measurement says something about each kind of
 line -- Gurbani, commentary, footnotes, headings -- and each third of the page,
@@ -37,7 +55,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib.ocr_engines import read_page
 from lib.ocr_match import CorpusIndex, match_text
 from lib.ocr_text import GURMUKHI, LATIN, normalise, script_of, words
-from lib.ocr_zones import classify_zones, footnote_rule_y, header_of, page_columns
+from lib.ocr_zones import classify_zones, find_vertical_rule, footnote_rule_y, header_of, page_columns
 from lib.paths import CORPUS_DB, OCR_DIR
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -100,7 +118,8 @@ def page_lines(book_dir: str, engine: str, page_rec: dict, lang: str, index: Cor
     lines = classify_zones(lines, meta["page_w"], meta["page_h"], page_rec.get("stamps"), rule)
     hints = header_of(lines)
     wordboxes = [w for ln in lines for w in ln.get("words", [])] or lines
-    cols = page_columns(wordboxes, meta["page_w"], img, lines)
+    rule_x = find_vertical_rule(img, meta["page_w"]) if img is not None else None
+    cols = page_columns(wordboxes, meta["page_w"], img, lines, rule_x)     # for the layout label only: no split here
     layout = "two-column" if cols else "single"
     out = []
     for ln in lines:
@@ -168,15 +187,35 @@ def review_html(rows: list[dict], path: str):
              "A record with source=corpus shows the corpus line; confirm the crop shows that line.</p><table>"]
     for r in rows:
         cls = "pa" if GURMUKHI.search(r["text"]) else ""
-        parts.append("<tr><td><code>%s</code><br>%s<br>%s<br>%s</td><td><img src='%s'><br><span class='%s'>%s</span></td></tr>"
-                     % (html.escape(r["id"]), r["kind"], r["layout"], r["source"],
+        origin = ("<br>coverage: %s%s" % (r["status"], (" (%s)" % r["why"]) if r.get("why") else "")
+                  if r.get("origin") == "coverage" else "")
+        parts.append("<tr><td><code>%s</code><br>%s<br>%s<br>%s%s</td><td><img src='%s'><br><span class='%s'>%s</span></td></tr>"
+                     % (html.escape(r["id"]), r["kind"], r["layout"], r["source"], origin,
                         html.escape(r["crop"].replace("\\", "/")), cls, html.escape(r["text"])))
     parts.append("</table>")
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(parts))
 
 
+def draft_engine(book_dir: str, wanted: str) -> str:
+    """
+    The engine whose reading is the draft: the one asked for when it has
+    output, else the first Tesseract variant that has (a Punjabi book has
+    tesseract-pan and tesseract-gurmukhi, never plain tesseract, and
+    29_bench_books.py --gt asked for plain tesseract and drew nothing).
+    """
+    ocr = os.path.join(book_dir, "ocr")
+    if os.path.isdir(os.path.join(ocr, wanted)) or not os.path.isdir(ocr):
+        return wanted
+    have = sorted(d for d in os.listdir(ocr) if d.startswith("tesseract"))
+    pick = next((d for d in ("tesseract-pan", "tesseract") if d in have), have[0] if have else wanted)
+    if pick != wanted:
+        print("no %s output; drafting from %s" % (wanted, pick))
+    return pick
+
+
 def do_sample(args, book_dir: str, meta: dict):
+    args.draft_engine = draft_engine(book_dir, args.draft_engine)
     lang = meta.get("language", "en")
     index = None
     corpus = args.corpus
@@ -223,6 +262,115 @@ def do_sample(args, book_dir: str, meta: dict):
                                     os.path.join(gt_dir, "candidates.jsonl")))
 
 
+def do_coverage_sample(args, book_dir: str, meta: dict):
+    """
+    Candidates from the coverage pass of one merge: recovered lines (their
+    reading as the draft) and refused regions (no draft), stratified by
+    status and column, each with a crop.
+    """
+    merged = os.path.join(book_dir, args.merged_name)
+    if not os.path.isdir(merged):
+        sys.exit("no %s; run 22_ocr_merge.py --coverage%s first"
+                 % (merged, "" if args.merged_name == "merged" else " --out-name " + args.merged_name))
+    by_page = {p["page"]: p for p in meta["pages"]}
+    pool: list[dict] = []
+    for path in sorted(glob.glob(os.path.join(merged, "*.jsonl"))):
+        pmeta, lines = read_page(path)
+        cov = pmeta.get("coverage") or {}
+        if not cov.get("on"):
+            continue
+        page = pmeta["page"]
+        for k, region in enumerate(cov.get("regions") or []):
+            if region["status"] == "recovered":
+                read = [ln for ln in lines if (ln.get("recovered") or {}).get("region") == k]
+                draft = " ".join(ln["text"] for ln in sorted(read, key=lambda l: l["bbox"][0]))
+                kind = next((ln.get("kind") for ln in read if ln.get("kind")), "commentary")
+            else:
+                draft, kind = "", "commentary"
+            pool.append({"page": page, "bbox": region["bbox"], "col": region.get("col", 0), "status": region["status"],
+                         "why": region.get("why"), "draft": draft, "kind": kind if kind != "gurbani-unmatched" else "gurbani",
+                         "layout": "two-column" if pmeta.get("columns") else "single"})
+    if not pool:
+        sys.exit("no coverage regions in %s: was the merge run with --coverage?" % merged)
+    rng = random.Random(args.seed)
+    rng.shuffle(pool)
+    chosen: list[dict] = []
+    # half recovered, half refused, each half spread over the columns, so the
+    # sample says how good the recovered lines are AND what the refusals hide
+    for status in ("recovered", "rejected"):
+        rows = [r for r in pool if r["status"] == status]
+        want = args.coverage_sample // 2 if status == "recovered" else args.coverage_sample - len(chosen)
+        cols = sorted({r["col"] for r in rows})
+        taken: list[dict] = []
+        while rows and len(taken) < want:
+            for col in cols:
+                nxt = next((r for r in rows if r["col"] == col), None)
+                if nxt is not None:
+                    rows.remove(nxt)
+                    taken.append(nxt)
+                if len(taken) >= want:
+                    break
+            if not any(r["col"] in cols for r in rows):
+                break
+        chosen.extend(taken)
+    chosen.sort(key=lambda r: (r["page"], r["bbox"][1], r["bbox"][0]))
+    out = []
+    for rec in chosen:
+        x0, y0 = rec["bbox"][0], rec["bbox"][1]
+        rid = "%s:%d:r%d-%d" % (args.book, rec["page"], y0, x0)
+        crop_rel = os.path.join("crops", "%04d-r%d-%d.png" % (rec["page"], y0, x0))
+        crop(book_dir, by_page[rec["page"]], rec["bbox"], os.path.join(book_dir, "gt", crop_rel))
+        out.append({"id": rid, "page": rec["page"], "bbox": rec["bbox"], "kind": rec["kind"], "layout": rec["layout"],
+                    "text": rec["draft"], "line_id": None, "source": "human", "verified": False,
+                    "origin": "coverage", "status": rec["status"], "why": rec["why"], "not_text": False,
+                    "draft_engine": args.merged_name, "draft": rec["draft"], "crop": crop_rel, "note": ""})
+    gt_dir = os.path.join(book_dir, "gt")
+    path = os.path.join(gt_dir, "candidates.jsonl")
+    existing = [r for r in read_jsonl(path) if r.get("origin") != "coverage"]
+    write_jsonl(path, existing + out)
+    review_html(existing + out, os.path.join(gt_dir, "review.html"))
+    print("sampled %d coverage regions (%s) -> %s" % (len(out), dict(Counter(r["status"] for r in out)), path))
+
+
+def do_count_pages(args, book_dir: str, meta: dict):
+    """Whole pages for a line count: half two-column where the merge saw any, with a half-size PNG each."""
+    import cv2
+    merged = os.path.join(book_dir, args.merged_name)
+    layout: dict[int, dict] = {}
+    for path in sorted(glob.glob(os.path.join(merged, "*.jsonl"))):
+        pmeta, lines = read_page(path)
+        body = [ln for ln in lines if ln.get("zone") in ("body", "footnote")
+                and (ln.get("text", "").strip() or ln.get("merged_into"))]
+        cols = pmeta.get("columns") or []
+        by_col = [sum(1 for ln in body if ln.get("col") == k) for k in range(len(cols))] if cols else None
+        layout[pmeta["page"]] = {"columns": len(cols), "body": len(body), "by_col": by_col,
+                                 "regions": len((pmeta.get("coverage") or {}).get("regions") or [])}
+    if not layout:
+        sys.exit("no %s; run 22_ocr_merge.py first" % merged)
+    rng = random.Random(args.seed)
+    two = [p for p, d in layout.items() if d["columns"]]
+    one = [p for p, d in layout.items() if not d["columns"]]
+    rng.shuffle(two)
+    rng.shuffle(one)
+    half = min(len(two), args.count_pages // 2)
+    pages = sorted(two[:half] + one[:args.count_pages - half])
+    by_page = {p["page"]: p for p in meta["pages"]}
+    rows = []
+    for page in pages:
+        img = cv2.imread(os.path.join(book_dir, "pages", by_page[page]["file"]), cv2.IMREAD_GRAYSCALE)
+        rel = os.path.join("crops", "page-%04d.png" % page)
+        os.makedirs(os.path.join(book_dir, "gt", "crops"), exist_ok=True)
+        cv2.imwrite(os.path.join(book_dir, "gt", rel), cv2.resize(img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA))
+        d = layout[page]
+        rows.append({"page": page, "layout": "two-column" if d["columns"] else "single", "columns": d["columns"],
+                     "draft": {"body": d["body"], "by_col": d["by_col"]}, "body_lines": None, "by_col": None,
+                     "verified": False, "image": rel, "note": ""})
+    path = os.path.join(book_dir, "gt", "page-counts.candidates.jsonl")
+    write_jsonl(path, rows)
+    print("%d pages to count (%d two-column) -> %s; fill body_lines (and by_col on a two-column page), set verified"
+          % (len(rows), half, path))
+
+
 def do_check(book_dir: str, meta: dict) -> int:
     rows = read_jsonl(os.path.join(book_dir, "gt", "candidates.jsonl"))
     lang = meta.get("language", "en")
@@ -231,6 +379,12 @@ def do_check(book_dir: str, meta: dict) -> int:
         if not r.get("verified"):
             continue
         t = r.get("text", "")
+        if r.get("not_text"):
+            # a crop the reviewer saw no text in: an empty text is the point
+            if t.strip():
+                print("NOTTEXT %s: not_text is set but text is not empty" % r["id"])
+                problems += 1
+            continue
         if not t.strip():
             print("EMPTY   %s" % r["id"])
             problems += 1
@@ -261,11 +415,22 @@ def do_promote(book_dir: str):
     for r in cands:
         if r.get("verified"):
             keep = {k: r[k] for k in ("id", "page", "n", "bbox", "kind", "layout", "text", "line_id",
-                                       "source", "verified", "draft_engine", "note") if k in r}
+                                       "source", "verified", "draft_engine", "note",
+                                       "origin", "status", "why", "not_text") if k in r}
             lines[r["id"]] = keep
             n += 1
-    write_jsonl(path, [lines[k] for k in sorted(lines, key=lambda i: (int(i.split(":")[1]), int(i.split(":")[2])))])
+    # by place on the page, not by the id: a coverage row has no line number
+    write_jsonl(path, sorted(lines.values(), key=lambda r: (r["page"], r["bbox"][1], r["bbox"][0])))
     print("promoted %d; %d ground-truth lines in %s" % (n, len(lines), path))
+    counts_path = os.path.join(book_dir, "gt", "page-counts.candidates.jsonl")
+    counted = [r for r in read_jsonl(counts_path) if r.get("verified") and r.get("body_lines") is not None]
+    if counted:
+        dst = os.path.join(book_dir, "gt", "page-counts.jsonl")
+        have = {r["page"]: r for r in read_jsonl(dst)}
+        for r in counted:
+            have[r["page"]] = {k: r[k] for k in ("page", "layout", "columns", "body_lines", "by_col", "verified", "note") if k in r}
+        write_jsonl(dst, [have[p] for p in sorted(have)])
+        print("promoted %d page counts; %d in %s" % (len(counted), len(have), dst))
 
 
 def main():
@@ -276,6 +441,10 @@ def main():
     ap.add_argument("--draft-engine", default="tesseract")
     ap.add_argument("--pages", help="restrict the sample to these pages, '1-20'")
     ap.add_argument("--corpus", default=CORPUS_DB)
+    ap.add_argument("--coverage-sample", type=int, default=0,
+                    help="draw this many regions of a merge's coverage pass (recovered lines and refusals)")
+    ap.add_argument("--count-pages", type=int, default=0, help="draw this many whole pages for a line count")
+    ap.add_argument("--merged-name", default="merged", help="which merge the coverage sample or page count reads")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--promote", action="store_true")
     ap.add_argument("--out", default=OCR_DIR)
@@ -284,6 +453,10 @@ def main():
     meta = load_json(os.path.join(book_dir, "pages.json"))
     if args.sample:
         do_sample(args, book_dir, meta)
+    if args.coverage_sample:
+        do_coverage_sample(args, book_dir, meta)
+    if args.count_pages:
+        do_count_pages(args, book_dir, meta)
     if args.check:
         if do_check(book_dir, meta):
             sys.exit(1)
@@ -291,7 +464,7 @@ def main():
         if do_check(book_dir, meta):
             sys.exit("fix the problems above before promoting")
         do_promote(book_dir)
-    if not (args.sample or args.check or args.promote):
+    if not (args.sample or args.coverage_sample or args.count_pages or args.check or args.promote):
         ap.print_help()
 
 

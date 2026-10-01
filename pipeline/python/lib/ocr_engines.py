@@ -143,6 +143,21 @@ def gurmukhi_fix(text: str) -> str:
         return text
 
 
+# 21_ocr_run.py names a Tesseract variant's output directory after its
+# --tess-lang ("script/Gurmukhi" -> tesseract-gurmukhi); this is the way back,
+# for the merge to rebuild the engine that read a page when it needs a crop
+# read by the same model
+TESS_LANG_OF = {"tesseract": None, "tesseract-pan": "pan", "tesseract-gurmukhi": "script/Gurmukhi",
+                "tesseract-eng": "eng", "tesseract-hin": "hin"}
+
+
+def tess_lang_of(engine_key: str) -> str | None:
+    """The --tess-lang behind an engine directory name; None for the default per language."""
+    if engine_key in TESS_LANG_OF:
+        return TESS_LANG_OF[engine_key]
+    return engine_key[len("tesseract-"):] if engine_key.startswith("tesseract-") else None
+
+
 class TesseractEngine(Engine):
     name = "tesseract"
     LANGS = {"pa": "pan+eng", "en": "eng", "hi": "hin+eng"}
@@ -187,10 +202,13 @@ class TesseractEngine(Engine):
         so callers still filter what comes back); `pad` widens the crop by
         that many pixels on each side (0: the bbox as given). Each line
         carries the `psm` it was read with. The notation grid reader uses
-        it for a row strip or a single cell.
+        it for a row strip or a single cell; the merge's coverage pass for
+        ink the page-level layout left uncovered (psm 7 for a line, 6 for a
+        region taller than one) -- never for whole pages, where the page
+        layout reads a line better than a crop does (docs/ocr-ingestion.md).
         """
         from PIL import Image
-        x0, y0, x1, y1 = [int(v) for v in bbox]
+        x0, y0, x1, y1 = [int(round(v)) for v in bbox]
         if hasattr(img, "shape"):
             h, w = img.shape[:2]
             x0, y0, x1, y1 = max(0, x0 - pad), max(0, y0 - pad), min(w, x1 + pad), min(h, y1 + pad)

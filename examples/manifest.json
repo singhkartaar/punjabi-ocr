@@ -5,13 +5,15 @@
   "licence": "public-domain",
   "original": true,
   "quote_policy": "verbatim",
+  "kind": "commentary",
   "works": [
     {
       "file": "santhya-vol-1.pdf",
       "work": "santhya",
       "part": 1,
       "title": "Santhya Sri Guru Granth Sahib Ji, Vol. 1",
-      "book": "santhya-vol-1"
+      "book": "santhya-vol-1",
+      "angs": [1, 53]
     },
     {
       "file": "ten-masters.pdf",

@@ -1,6 +1,6 @@
 # Changelog -- punjabi-ocr
 
-## 1.2.0
+## 1.3.0
 
 Keertan notation books. A work declared `kind: notation` (a book of
 shabads set to raag and taal in Bhatkhande notation) takes its own route
@@ -24,6 +24,108 @@ raags, taals and symbols (`lib/notation_vocab.json`) and the renderer
   writes one review page across them: the original page, the crops, the
   grid as read.
 - Hindi books move to 1.3.
+
+## 1.2.0
+
+A book is linked to the scripture it explains, a two-column page is read as
+verse beside its explanation, no line is dropped without a record of it,
+and a new book is one command to a scorecard.
+
+- **Voters**: a Tesseract variant beside a Tesseract pivot always votes; the
+  90% bar is for engines of another family (`docs/engines.md`).
+- **Manifest** (`docs/manifest.md`): `kind` (essay, translation,
+  word-meaning, commentary, reference), `translate` per work, `layout`
+  (auto, paired-columns, columns), `angs`, `header_pattern` (now
+  implemented), `coverage`.
+- **Output** (`docs/output-format.md`): a `links` table -- every relation
+  between a passage and the scripture with its `source`, line range and
+  `role` (`explains` or `quotes`); `works` gains `kind`, `translate`,
+  `ang_from`, `ang_to`; `citations` keeps its shape and only Guru Granth
+  Sahib rows. Records gain `pair`, `explains`, `source`, `line_from`,
+  `line_to`; pages `layout` and `ang_source`.
+- **Reader**: a two-column page is read in bands (`lib/ocr_pairs.py`); a
+  verse and the prose beside it share a `pair`, the prose says which lines
+  it `explains`; on a single-column page the prose after a verse explains
+  it for a translation, word-meaning or commentary, when the verse lies
+  inside the work's `angs` (a quotation from elsewhere explains nothing).
+  `layout: columns` is the old reading. The embedder links a verse forward
+  to what explains it. On the Santhya's first volume: 245 of 530 pages read
+  as paired, 3,448 paragraphs explain a verse, and the corpus carries 910
+  `explains` and 684 `quotes` links over 155 shabads of angs 1-53
+  (`docs/design.md`, "Linked, measured").
+- **Merge**: a hairline rule is the gutter (`_meta.columns_source`); an
+  orphan is judged in its column; running-header hints are smoothed over
+  the book (`_meta.hints`, `hints_raw`, `ang_source`); `--coverage` reads
+  the ink the layout left uncovered, one crop at a time, recording every
+  region and why (`_meta.coverage`, `recovered` on a line). On by default:
+  on the Santhya it finds 441 of 440 counted printed lines where the merge
+  without it found 406 and Tesseract alone 398, at unchanged word accuracy,
+  with the recovered lines 89.4% right and no false recovery in 19 non-text
+  crops (`docs/design.md`, "The coverage pass, measured"). A crop the
+  segmenter reads as empty is read again in raw mode. `--out-name` writes a
+  merge beside another for comparison.
+- **Merge, besides**: the other engines' lines are cut at the gutter where
+  the pivot's were, and a voter's wider line is cut to the pivot line's span,
+  so a whole row is no longer voted onto half of it; a bar read out of the
+  rule belongs to neither half; fragments of the rule the split leaves
+  behind are dropped; a line's column is where its centre falls.
+- **Correction on a grey scan**: the corrector compares a conjunct as one
+  cluster and prices marks one by one, reads an aunkar or dulainkar stacked
+  on a vowel sign as the subjoined ra it is, folds the nukta when it looks a
+  word up (the Kosh's ਪ੍ਰਸਾਦ is the book's ਪ੍ਰਸ਼ਾਦ) and keeps the book's,
+  breaks a tie by corpus frequency, corrects a word without its punctuation
+  and a compound part by part, and no longer cuts its candidates at 1,000.
+  The merge learns the book's own vocabulary from what two engines agree on,
+  refusing a shared misreading. `correct_agreed` (manifest, `22
+  --correct-agreed`) puts back a subjoined ra both engines lost. On the Sant
+  Attar Singh biography's 120 dpi scan the words carrying a subjoined ra went
+  from 23 right and 22 wrong to 42 and 3, unknown words from 40% to 14%, with
+  no wrong correction on its ground truth; the Santhya is unchanged
+  (`docs/design.md`, "A grey scan's conjuncts, measured"). A prose book needs
+  the Mahan Kosh (`00_fetch_mahankosh.py`).
+- **Evaluation**: `24 --merged a,b --eval-out` scores merges side by side,
+  recovered lines apart from the page's (`by_provenance`), and line recall
+  against a reviewer's count of the printed lines (`23 --count-pages`,
+  `23 --coverage-sample`). Every correction the merge made on a ground-truth
+  line is judged right, wrong or unsure (`corrections`).
+- **Reader, besides**: an OCR line box within 12% of the page's body
+  height is the body height (the paragraph rules were written for a PDF's
+  exact font sizes and cut a grey scan's paragraphs at every line); a long
+  bold line the merge left as prose is prose; a recovered line sits where
+  its ink is, not where its crop was; a shabad quoted with its raag title
+  is one quotation.
+- **Embedding**: a corpus with fewer units than the index's 256 dimensions
+  (a work of a few pages, a bench sample) keeps as many dimensions as it
+  has units; the manifest's `index_dim` says which.
+- **Translation**: `26` finds sarvam-translate's weights under
+  `vendor/models` before asking the hub, loads them across the card and
+  host memory when they do not fit (`--device auto`, the default), and
+  retries a batch the card cannot hold one paragraph at a time.
+- **Translation, terms**: a book's Sikh terms are data (`glossary` in the
+  manifest, `examples/glossary.json`, `lib/mt_glossary.py`). `--prompt terms`
+  (the default; the stock prompt when there is no glossary) writes each term
+  a paragraph uses in English into the Punjabi, because sarvam-translate
+  follows no instruction beyond its trained line; `--prompt rules` states
+  them in the instruction, for engines that follow one. The model's
+  bracketed explanations are stripped, never more brackets than the source
+  has; a term rendered by none of its accepted forms is a refusal reason;
+  `--arbiter self|llama|vertex` asks again, another way, for what was
+  refused. On the Sant Attar Singh biography: all 30 bench paragraphs
+  answered, 58 of 61 terms rendered against 57 before, chrF 55.0 against
+  52.5 for the old translations, and "a canopy for the Guru's funeral"
+  became "a canopy for Sri Guru Granth Sahib" (`docs/design.md`, "Terms, measured").
+  `28_translate_bench.py` scores prompt variants as rows, a term hit rate,
+  refusals by reason, and a reference a person writes (`--reference manual`);
+  26 takes `--only` and `--out` for such runs.
+- **Driver**: `27 --translate` / `--no-translate` override the works'
+  `translate`; the English corpus is built only when some work wants it.
+  The manifest's `glossary`, `prompt`, `arbiter` and `correct_agreed` reach
+  the steps that use them.
+- **Bench**: `29_bench_books.py --src <folder>` runs a sample of pages of
+  every work and prints one scorecard row per book (`docs/design.md`, "The
+  bench"); the runbook's "A first look" says how to read it.
+- `GEMINI.md` and the contract tests are unchanged in intent; the contract
+  tests now also state the `links` table and the `works` columns.
 
 ## 1.1.3
 
@@ -125,7 +227,7 @@ Measured on the books it was built with: Punjabi commentary merged at 94.9%
 word accuracy with every quoted verse matched and none falsely, English at
 99.1%; see `docs/engines.md`.
 
-## 1.2 (planned)
+## 1.4 (planned)
 
 - **Hindi.** The plumbing is in place (`language: "hi"`, Tesseract `hin`,
   Devanagari checks in the translator) and was measured only on a synthetic

@@ -71,8 +71,16 @@ and run those two engines with it.
 `CORPUS_DB` at a database with a `lines(line_id, shabad_id, ang, gurmukhi_uni, kind)`
 table; the `gurbani.sqlite` that `gurbani-search-api`'s data pack downloads
 is one. Quoted lines are then found in it and tagged with their ids rather
-than corrected. `MAHANKOSH_DB` adds the Mahan Kosh to the lexicon. Without
-either, the pipeline runs unchanged and says which steps it skipped.
+than corrected. Without it, the pipeline runs unchanged and says which
+steps it skipped.
+
+**The Mahan Kosh, for a prose book.** `python 00_fetch_mahankosh.py` builds
+`data/mahankosh.sqlite` (two minutes, 57 MB, from
+redroyals/mahan-kosh-multilingual, CC BY 4.0; `MAHANKOSH_DB` points
+elsewhere). The corrector only proposes words its lexicon knows: without the
+Kosh that is Gurbani's vocabulary alone, and on a biography 40% of the words
+were unknown to it (14% with the Kosh), so a misread ਪ੍ਰਸ਼ਾਦ could never be
+put right. Its first line says which sources it loaded.
 
 ## 1. Describe the book
 
@@ -103,9 +111,26 @@ engines (`21`; Punjabi runs Tesseract `pan` and `script/Gurmukhi` and lets
 the merge vote, English `eng`, Hindi `hin`), evaluate if there is ground
 truth (`24`), merge (`22`); then for the folder: paragraphs (`12`), citations
 (`13`, skipped without a scripture database), embeddings (`14`), the
-database (`15`); then translation for a Punjabi or Hindi book (`26`) and the
-English corpus (`14 --lang en --translations`, `15`). A failed step names the
-`--from` value that resumes the run.
+database (`15`); then translation (`26`) for each Punjabi or Hindi work whose
+manifest `translate` is on (the default for a work not in English) and the
+English corpus (`14 --lang en --translations`, `15`). A work for display in
+its own language, such as a commentary shown beside the verse, sets
+`"translate": false` and stops at the Punjabi corpus; `--translate` and
+`--no-translate` override the manifest for every work. A failed step names
+the `--from` value that resumes the run.
+
+For a book you have not read before, bench it first: `29_bench_books.py
+--src /path/to/books` runs the steps up to the merge on about twenty pages of
+each work (the first twelve and eight spread over the rest; `--pages` to
+choose) and prints one row per book -- how the columns were found, lines by
+kind, what the coverage pass recovered and what it could not read, pages read
+as paired / columns / single, paragraphs linked to a verse, the ang range the
+headers give against the manifest's `angs`, word accuracy where there is
+ground truth, and which manifest keys the book already sets. What a bad row
+means and which key fixes it is in `docs/design.md` ("The bench"); `--gt 20`
+samples ground-truth lines at the same time. Fix a book through its manifest
+entry (`layout`, `header_pattern`, `angs`, `coverage`, `bleed`, `scripture`,
+`kind`), bench again, then run it whole.
 
 ## 3. Ground truth, so the numbers are yours
 
@@ -132,6 +157,8 @@ at 90% or better.
 ```bash
 $py 26_translate_writings.py --work santhya --limit 40 --print 5       # a look
 $py 26_translate_writings.py --work santhya                             # sarvam-translate, resumable
+#   weights under vendor/models/sarvam-translate are used before the hub is asked; --device auto (the
+#   default) splits them between the card and host memory when they do not fit (8.1 GB bf16 on an 8 GB card)
 $py 28_translate_bench.py --work santhya --reference vertex --dry-run   # what a paid reference would cost (cents)
 $py 28_translate_bench.py --work santhya --engines sarvam --reference vertex --budget-usd 1
 $py 28_translate_bench.py --work santhya --engines llama --path llama=http://127.0.0.1:8080 --as llama=gemma3-12b --reference cached
