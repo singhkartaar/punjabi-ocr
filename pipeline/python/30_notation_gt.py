@@ -193,7 +193,7 @@ function merged(c) {
 function update() {
   let v = 0;
   for (const c of DATA.candidates) {
-    const el = document.getElementById('c-' + CSS.escape(c.notation_id));
+    const el = document.getElementById('c-' + c.notation_id);        // a literal id: no selector escaping
     const s = state[c.notation_id] || {};
     if (!el) continue;
     el.classList.toggle('verified', !!s.verified);

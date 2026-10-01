@@ -701,6 +701,9 @@ class ReviewLedgerTests(unittest.TestCase):
                 base = "http://127.0.0.1:%d" % srv.server_address[1]
                 page = urllib.request.urlopen(base + "/").read().decode("utf-8")
                 self.assertIn("test-book/1248/gujri/teentaal#1", page); self.assertIn("textarea", page); self.assertIn("Accept (a)", page)
+                # the button's id is the card's id: looked up literally (getElementById takes no selector escaping)
+                self.assertIn('id="c-test-book:0170:1"', page); self.assertIn('data-vid="test-book:0170:1"', page)
+                self.assertIn("getElementById('c-' + id)", page); self.assertNotIn("CSS.escape", page)
                 req = urllib.request.Request(base + "/verdict", data=json.dumps({"notation_id": "test-book:0170:1", "key": a["review_key"], "status": "accepted", "comment": ""}).encode(),
                                              headers={"content-type": "application/json"}, method="POST")
                 got = json.loads(urllib.request.urlopen(req).read())

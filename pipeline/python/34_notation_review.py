@@ -90,7 +90,7 @@ section.card.focus{outline:3px solid #4a90d9}
 REVIEW_JS = r"""
 const DATA = JSON.parse(document.getElementById('cands').textContent);
 const KEYS = DATA.keys;
-function card(id) { return document.getElementById('c-' + CSS.escape(id)); }
+function card(id) { return document.getElementById('c-' + id); }   // a literal id, not a selector
 function setState(id, status, comment) {
   const el = card(id); if (!el) return;
   el.classList.remove('done-accepted', 'done-backlog', 'done-rejected');
