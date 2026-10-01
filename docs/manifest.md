@@ -37,7 +37,7 @@ reads it; nothing else knows a book by name.
 | `bleed` | `true` | suppress show-through from the reverse side (thin paper, low dpi) |
 | `scripture` | `G`, `D`, `B`, `K` | the source the quoted verse belongs to when it is not the Guru Granth Sahib (BaniDB codes); only matters with a scripture database that holds those sources |
 | `kind` | `prose`, `notation` | a keertan notation book (shabads set to raag and taal in Bhatkhande notation) takes the notation route: `29_notation_parse.py` .. `32_build_notations_db.py` instead of the prose ingest. Default `prose` |
-| `style` | an object | how a notation book prints its grids, merged over the defaults: `swar_row` (`above`/`below` the bol row), `shabad_position` (`before`/`after`/`either` the grid), `matra_row` (bool), `marker_row` (`below`/`above`/`none`), `table` (`bars`/`ruled`/`none`), `labels` (bool: a ਸਰਗਮ/ਸ਼ਬਦ label column), `script` (`gurmukhi`). Top-level for the folder, per work to override |
+| `style` | an object | how a notation book prints its grids, merged over the defaults: `swar_row` (`above`/`below` the bol row), `shabad_position` (`before`/`after`/`either` the grid), `matra_row` (bool), `marker_row` (`below`/`above`/`none`), `table` (`bars`/`ruled`/`none`), `labels` (bool: a ਸਰਗਮ/ਸ਼ਬਦ label column), `script` (`gurmukhi`), `running_header` (the text the book prints at the top of its pages, or a list; dropped before linking). Top-level for the folder, per work to override |
 | `header_pattern` | a regular expression | how this book's running header states the page's ang range, with named groups `ang_from`, `ang_to`, `book_page`, `section`; the default fits the Santhya's `section (page) bani-ਗੁਰੂ ਗ੍ਰੰਥ ਪੰਨਾ 12-14` |
 
 A folder without a manifest is read in the essays convention

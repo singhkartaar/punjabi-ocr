@@ -137,6 +137,7 @@ def ensure_manifest(folder: str, author: str, works: list[dict]) -> None:
 
 
 PLACES = {"middle": 0.45, "end": 0.82, "start": 0.15}
+LOOKAHEAD = 2               # 27_ingest_book.NOTATION_LOOKAHEAD: pages read past each window
 
 
 def windows_for(n_pages: int, k: int, width: int, rng: random.Random, places: list[str] | None = None) -> list[tuple[int, int]]:
@@ -224,7 +225,8 @@ def main() -> None:
             folder = os.path.join(args.keertan_dir, b["author_slug"])
             ensure_manifest(folder, b["author"], by_author[b["author"]])
         wins = windows_for(b["pages"], args.per_book, args.window, rng, places)
-        plan.append({**b, "folder": folder, "windows": wins, "pages_arg": ",".join("%d-%d" % w for w in wins)})
+        plan.append({**b, "folder": folder, "windows": wins, "pages_arg": ",".join("%d-%d" % w for w in wins),
+                     "read": ",".join("%d-%d" % (a, c + LOOKAHEAD) for a, c in wins)})
     print("%d book(s), %s, %d pages a place" % (len(plan), (", ".join(places) if places else "%d random place(s)" % args.per_book), args.window))
 
     results = []
@@ -239,7 +241,7 @@ def main() -> None:
         if os.path.exists(path):
             _, all_recs = read_jsonl(path)
             wanted = {p for a, c in b["windows"] for p in range(a, c + 1)}
-            recs = [r for r in all_recs if any(p in wanted for p in r["pages"])]
+            recs = [r for r in all_recs if r["pages"][0] in wanted]       # the notations that begin in a window
         # every notation the windows hold, the resolved ones first, up to --show
         recs.sort(key=lambda r: (r["shabad"].get("shabad_id") is None, not r.get("sections"), r["pages"][0]))
         chosen = recs[: args.show]

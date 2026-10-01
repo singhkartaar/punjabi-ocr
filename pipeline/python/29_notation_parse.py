@@ -152,6 +152,82 @@ def borrow_shabads(records: list[dict]) -> int:
     return filled
 
 
+def read_index(book_dir: str, con) -> dict:
+    """
+    The book's index from the merged OCR of its first pages (when those were
+    read): {"pages", "entries", "matched", "credible", "by_number"}. An
+    index that the corpus does not bear out (a table of shrutis, a list of
+    taals) is reported and not used.
+    """
+    from lib.notation_index import FRONT_PAGES, credible, find_index, match_entries
+    pages: dict[int, list[dict]] = {}
+    for p in range(1, FRONT_PAGES + 1):
+        f = os.path.join(book_dir, "merged", "%04d.jsonl" % p)
+        if os.path.exists(f):
+            _, lines = load_jsonl(f)
+            pages[p] = lines
+    if not pages:
+        return {"pages": [], "entries": [], "matched": 0, "credible": False, "front_pages_read": 0}
+    idx = find_index(pages)
+    matched = 0
+    if idx["entries"] and con is not None:
+        from lib.ocr_match import match_text
+        matched = match_entries(idx["entries"], corpus_index(con), match_text)
+    idx.update({"matched": matched, "credible": credible(idx, matched), "front_pages_read": len(pages)})
+    return idx
+
+
+def index_shabads(records: list[dict], index: dict, con) -> dict:
+    """
+    The index applied to the records: a numbered notation with no shabad
+    takes the shabad of its index entry (method "index", flag
+    shabad-by-index); a resolved one whose entry names another shabad is
+    flagged index-conflict and left as it is. Returns the counts.
+    """
+    from lib.notation_index import by_number
+    from lib.notation_resolve import corpus_facts
+    from lib.notation_vocab import raag_key_from_corpus
+    out = {"filled": 0, "conflicts": 0, "agreed": 0}
+    if not index.get("credible"):
+        return out
+    numbered = by_number(index["entries"])
+    for rec in records:
+        num = (rec.get("heading") or {}).get("number")
+        entry = numbered.get(num) if num is not None else None
+        if not entry or entry.get("shabad_id") is None:
+            continue
+        sid = rec["shabad"].get("shabad_id")
+        if sid is None:
+            facts = corpus_facts(con, entry["shabad_id"]) if con is not None else {}
+            sh = dict(rec["shabad"])
+            sh.update({"shabad_id": entry["shabad_id"], "method": "index", "confidence": round(0.6 * float(entry.get("score") or 0.8), 3),
+                       "source": "G", "line_ids": [], "ang": facts.get("ang"), "writer": facts.get("writer"),
+                       "first_line": facts.get("first_line"), "raag": facts.get("raag")})
+            rec["shabad"] = sh
+            rec["raag_shabad"] = raag_key_from_corpus(facts.get("raag"))
+            used = (rec.get("heading") or {}).get("raag") or {}
+            rec["raag_differs"] = bool(rec["raag_shabad"] and used.get("key") and used.get("key") != rec["raag_shabad"]
+                                       and used.get("parent_key") != rec["raag_shabad"])
+            flags = set(rec["flags"]) - {"unresolved-shabad", "weak-shabad"}
+            flags.add("shabad-by-index")
+            if flags & {"weak-shabad"}:
+                pass
+            flags.add("weak-shabad")                       # the index named it, the page did not: weak until a reader confirms
+            if rec["raag_differs"]:
+                flags.add("raag-differs")
+            rec["flags"] = sorted(flags)
+            if rec["kind"] == "non-gurbani":
+                rec["kind"] = "partial"
+            rec["source"]["content_hash"] = notation.content_hash(rec)
+            out["filled"] += 1
+        elif sid != entry["shabad_id"]:
+            rec["flags"] = sorted(set(rec["flags"]) | {"index-conflict"})
+            out["conflicts"] += 1
+        else:
+            out["agreed"] += 1
+    return out
+
+
 def raag_records(descriptions: list[dict], book: str, book_dir: str, images_dir: str, page_files: dict[int, str]) -> list[dict]:
     """
     What a book says about a raag, cut from the page: one record a description,
@@ -482,6 +558,7 @@ def main():
     ap.add_argument("--no-grid", action="store_true", help="layout, shabad and crops; leave the grids unread")
     ap.add_argument("--no-images", action="store_true")
     ap.add_argument("--force", action="store_true", help="recompute cached page layouts")
+    ap.add_argument("--no-index", action="store_true", help="do not read the book's index for the numbered notations")
     args = ap.parse_args()
 
     book_dir = os.path.join(args.out, args.book)
@@ -562,6 +639,15 @@ def main():
         all_images.extend({**im, "notation_id": rec["notation_id"]} for im in images)
 
     borrowed = borrow_shabads(records)
+    index = {"pages": [], "entries": [], "matched": 0, "credible": False, "front_pages_read": 0}
+    index_use = {"filled": 0, "conflicts": 0, "agreed": 0}
+    if not args.no_index:
+        index = read_index(book_dir, con)
+        index_use = index_shabads(records, index, con)
+        if index["entries"] or index["front_pages_read"]:
+            with open(os.path.join(out_dir, "index.json"), "w", encoding="utf-8", newline="\n") as fh:
+                json.dump({"book": args.book, "pages": index["pages"], "credible": index["credible"], "matched": index["matched"],
+                           "front_pages_read": index["front_pages_read"], "entries": index["entries"]}, fh, ensure_ascii=False, indent=1)
     raag_notes = raag_records(raag_descriptions(layouts), args.book, book_dir, images_dir, page_files)
     with open(os.path.join(out_dir, "raags.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps({"_meta": {"book": args.book, "raag_notes": len(raag_notes)}}, ensure_ascii=False) + "\n")
@@ -584,6 +670,9 @@ def main():
     report = {"book": args.book, "pages": len(pages), "spans": len(spans), "notations": len(records), "kinds": kinds,
               "resolved": meta["resolved"], "problems": problems,
               "dropped": dropped, "dropped_pages": sorted({p for d in dropped for p in d["pages"]}),
+              "index": {"pages": index["pages"], "front_pages_read": index["front_pages_read"], "credible": index["credible"],
+                        "entries": len(index["entries"]), "shabad_entries": sum(1 for e in index["entries"] if e["kind"] == "shabad"),
+                        "matched": index["matched"], **index_use},
               "flags": _count([f for r in records for f in r["flags"]]),
               "raags_used": _count([((r.get("heading") or {}).get("raag") or {}).get("key") for r in records]),
               "taals": _count([((r.get("heading") or {}).get("taal") or {}).get("key") for r in records]),
@@ -598,6 +687,11 @@ def main():
     print("%d pages -> %d spans -> %d records (%s), %d with a shabad; %d refused by the validator; %d part(s) without a shabad dropped"
           % (len(pages), len(spans), len(records), ", ".join("%s %d" % kv for kv in kinds.items()),
              meta["resolved"], len(problems), len(dropped)))
+    if index["front_pages_read"]:
+        print("  index: %s, %d shabad line(s) listed, %d known to the corpus%s; %d notation(s) named by it, %d agree, %d conflict"
+              % (("pages %s" % ",".join(map(str, index["pages"]))) if index["pages"] else "none found in %d front page(s)" % index["front_pages_read"],
+                 sum(1 for e in index["entries"] if e["kind"] == "shabad"), index["matched"], "" if index["credible"] else " (not believed)",
+                 index_use["filled"], index_use["agreed"], index_use["conflicts"]))
     for p in problems[:5]:
         print("  refused %s: %s" % (p["notation_id"], "; ".join("%s at %s" % (e["code"], e["path"]) for e in p["errors"][:3])))
     print("  -> %s  and  %s" % (out_dir, report_path))

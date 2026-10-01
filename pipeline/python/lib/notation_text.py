@@ -154,6 +154,8 @@ def is_heading_like(text: str) -> bool:
     t = (text or "").strip()
     if not t or len(t.split()) > 14 or is_note_like(t):
         return False
+    if not re.search(r"[\u0a05-\u0a39\u0a59-\u0a5e]{2}", t):
+        return False                                 # 'N..O" \'': no two Gurmukhi letters together, no heading
     if section_label(t):
         return True
     words = len(t.split())

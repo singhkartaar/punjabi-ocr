@@ -454,9 +454,12 @@ class LayoutTests(unittest.TestCase):
                               _line(5, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 560)])
         self.assertEqual([r["role"] for r in p4["regions"]][:2], ["heading", "text"])
         dropped = []
-        spans = link_pages([p1, p2, p3, p4], merge_style(None), dropped)
-        self.assertEqual(len(spans), 2)
-        self.assertEqual([d["pages"] for d in dropped], [[170]])
+        p0 = self._page(169, [_line(1, "ਤਬਲੇ ਦੇ ਕੁਝ ਕਾਇਦੇ ਅਤੇ ਰੇਲੇ", 300)])
+        spans = link_pages([p0, p4], merge_style(None), dropped)     # at the start of a book, no shabad before it
+        self.assertEqual((len(spans), [d["pages"] for d in dropped]), (0, [[169, 170]]))
+        # after a shabad, a numbered notation with no verse of its own is that shabad set again
+        spans = link_pages([p1, p2, p3, p4], merge_style(None), dropped := [])
+        self.assertEqual((len(spans), dropped, spans[2]["inherited"]), (3, [], True))
         # ... but a notation the book numbers with a raag and a taal is kept, its shabad to be found
         p4b = self._page(170, [_line(1, "੨੦. ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਦਾਦਰਾ", 200, bold=True),
                           _line(3, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 400),
@@ -473,6 +476,141 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(len(spans), 3)
         self.assertTrue(spans[2]["inherited"])
         self.assertEqual(spans[2]["shabad"][0][1]["text"], spans[1]["shabad"][0][1]["text"])
+
+
+class LinkerRuleTests(unittest.TestCase):
+    """The rules the first-cut comments brought (1 October 2026), one case each."""
+
+    def _page(self, page, lines, style=None, page_h=2650):
+        lay = page_layout(lines, 1760, page_h, style or merge_style(None), page)
+        lay["page_w"], lay["page_h"] = 1760, page_h          # as 29's layouts_for records them
+        return lay
+
+    def _shabad(self, page, sid, y=300):
+        m = [{"shabad_id": sid, "line_id": sid * 10 + i, "score": 0.95, "source": "G"} for i in range(2)]
+        return [_line(2, "ਮਾਈ ਮੈ ਕਿਹਿ ਬਿਧਿ ਲਖਉ ਗੁਸਾਈ ॥", y, kind="gurbani", matches=[m[0]]),
+                _line(3, "ਮਹਾ ਮੋਹ ਅਗਿਆਨਿ ਤਿਮਰਿ ਮੋ ਮਨੁ ਰਹਿਓ ਉਰਝਾਈ ॥੧॥ ਰਹਾਉ ॥", y + 80, kind="gurbani", matches=[m[1]])]
+
+    def _grids(self, n0, y):
+        return [_line(n0, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y), _line(n0 + 1, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", y + 80),
+                _line(n0 + 2, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 160)]
+
+    def test_a_running_header_is_known_by_its_repetition_however_the_ocr_spells_it(self):
+        p1 = self._page(84, [_line(1, "ਰੀ ਗੁਰੂ ਤੇਗ ਬਹਾਦਰ ਰਾਗ ਰਤਨਾਵਲੀ", 160)] + self._shabad(84, 2399, 500)
+                        + [_line(9, "ਰਾਗ ਸੋਰਠਿ ਤਿੰਨਤਾਲ", 1500, bold=True)] + self._grids(10, 1650))
+        p2 = self._page(85, [_line(1, "70 ਸ੍ਰੀ ਗੁਰੂ ਤੇਗ ਬਹਾਦਰ ਰਾਗ ਰਤਨਾਵਲੀ", 140)] + self._grids(2, 300))
+        spans = link_pages([p1, p2], merge_style(None))
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0]["pages"], [84, 85])
+        self.assertEqual(spans[0]["heading"]["text"], "ਰਾਗ ਸੋਰਠਿ ਤਿੰਨਤਾਲ")
+        # named in the manifest, a header is dropped even when it stands on one page alone
+        style = merge_style({"running_header": "ਗੁਰੂ ਤੇਗ ਬਹਾਦਰ ਰਾਗ ਰਤਨਾਵਲੀ"})
+        spans = link_pages([self._page(84, p1 and [_line(1, "ਰੀ ਗੁਰੂ ਤੇਗ ਬਹਾਦਰ ਰਾਗ ਰਤਨਾਵਲੀ", 160)] + self._shabad(84, 2399, 500)
+                                       + self._grids(10, 1650), style)], style)
+        self.assertEqual(len(spans), 1)
+        self.assertIsNone(spans[0]["heading"])
+
+    def test_a_raag_with_a_page_number_at_the_top_of_a_page_does_not_close_the_notation(self):
+        p1 = self._page(317, self._shabad(317, 3285, 1100) + [_line(9, "ਰਾਗੁ ਰਾਮਕਲੀ ਤਿੰਨ ਤਾਲ", 1890, bold=True)] + self._grids(10, 2100))
+        p2 = self._page(318, [_line(1, "ਰਾਗ ਰਾਮਕਲੀ ਰ 299", 170)] + self._grids(2, 300))
+        spans = link_pages([p1, p2], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [[317, 318]])
+
+    def test_the_verse_count_line_and_a_marker_before_the_grids_do_not_end_the_shabad(self):
+        self.assertEqual(classify_line(_line(4, "੨ ॥ ੬ ॥", 1340, x0=700, x1=1260)), "gurbani")
+        p1 = self._page(84, self._shabad(84, 2399, 500) + [_line(4, "x 2 0 3", 1340, x0=700, x1=1260),
+                                                            _line(9, "ਰਾਗ ਸੋਰਠਿ ਤਿੰਨਤਾਲ", 1500, bold=True)] + self._grids(10, 1650))
+        spans = link_pages([p1], merge_style(None))
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0]["heading"]["text"], "ਰਾਗ ਸੋਰਠਿ ਤਿੰਨਤਾਲ")
+        self.assertEqual(len(spans[0]["sections"][0]["grids"]), 1)
+
+    def test_the_lead_in_of_the_next_shabad_leaves_loose_text_with_the_notation_before(self):
+        p1 = self._page(78, self._shabad(78, 4151, 300) + [_line(9, "ਰਾਗ ਭੈਰਉ ਤਾਲ ਦਾਦਰਾ", 640, bold=True)] + self._grids(10, 700)
+                        + [_line(13, "ਹਸ ਤ ਖੋ5 ਲਤ ਤੇ ਰੇ ਦੇ$ ਹੁ58 ਭਰੇ ਆ 8 ਇਆ", 1290), _line(14, "ਦੁਧੁ ਦੁ ਦੁ ਨੀਨੀ ਸਾਂ ਸਾਂ ਰੇਸਾਂ ਨੀਸਾਂ ਰੁੇ ਸਾਂ ਦੁ ਪ ਪ", 1365)]
+                        + [_line(20, "ਭਗਤਿ ਕਰਤ ਨਾਮਾ ਪਕਰਿ ਉਠਾਇਆ ॥੧॥", 1430, kind="gurbani", matches=[{"shabad_id": 4152, "line_id": 1, "score": 0.9, "source": "G"}]),
+                           _line(21, "ਹੀਨੜੀ ਜਾਤਿ ਮੇਰੀ ਜਾਦਿਮ ਰਾਇਆ ॥", 1510, kind="gurbani", matches=[{"shabad_id": 4152, "line_id": 2, "score": 0.9, "source": "G"}])]
+                        + [_line(22, "੧੯.", 1600, x0=800, x1=860)])
+        spans = link_pages([p1], merge_style(None))
+        self.assertEqual(len(spans), 2)
+        self.assertGreaterEqual(spans[0]["extent"][78][3], 1365 + 60)      # the two loose rows stay with the first
+        self.assertEqual(spans[1]["extent"][78][1], 1430)
+
+    def test_a_line_with_no_two_gurmukhi_letters_is_not_a_heading(self):
+        self.assertFalse(is_heading_like("N..O\" '"))
+        self.assertEqual(classify_line(_line(5, "N..O\" '", 2021, x0=984, x1=1127)), "text")
+
+
+class SectionTaalTests(unittest.TestCase):
+    def test_a_section_taal_is_written_as_its_key_and_validates(self):
+        rec = _record()
+        rec["sections"][0]["taal"] = "teentaal"
+        self.assertEqual(validate(rec), [])
+        rec["sections"][0]["taal"] = "no-such-taal"
+        self.assertEqual([e["code"] for e in validate(rec)], ["vocab.key"])
+
+
+class IndexTests(unittest.TestCase):
+    """The book's index: found among the front pages, parsed, matched, applied to the numbered notations."""
+
+    def _index_lines(self, page_no=True):
+        rows = [("ਤਤਕਰਾ", 269, 727, None), ("9. ਰਾਗ ਸੋਰਠਿ ਪਰਿਚਯ ਅਤੇ ਸੁਰ ਵਿਸਤਾਰ 56", 1925, 200, None),
+                ("ਰੇ ਮਨ ਰਾਮ ਸਿਉ ਕਰਿ ਪ੍ਰੀਤਿ 58", 1998, 300, None), ("ਮਨ ਕੀ ਮਨ ਹੀ ਮਾਹਿ ਰਹੀ 60", 2059, 298, None),
+                ("ਮਾਈ ਮੈ ਕਿਹਿ ਬਿਧਿ ਲਖਉ ਗੁਸਾਈ", 177, 355, "74"), ("ਮਾਈ ਮਨੁ ਮੇਰੋ ਬਸਿ ਨਾਹਿ", 228, 356, "76"),
+                ("ਇਹ ਜਗਿ ਮੀਤ ਨ ਦੇਖਿਓ ਕੋਈ", 326, 347, "78"), ("ਜੋ ਨਰੁ ਦੂਖ ਮੈ ਦੁਖੁ ਨਹੀ ਮਾਨੈ", 420, 354, "80"),
+                ("੧੨. ਬਿਰਥੀ ਸਾਕਤ ਕੀ ਆਰਜਾ 167", 480, 300, None), ("੧੩. ਮਨ ਕਹਾ ਲੁਭਾਈਐ ਆਨ ਕਉ 170", 540, 300, None)]
+        lines = []
+        for k, (text, y, x, num) in enumerate(rows):
+            lines.append(_line(2 * k + 1, text, y, x0=x, x1=x + 700, h=44))
+            if num:
+                lines.append(_line(2 * k + 2, num, y + 8, x0=1500, x1=1540, h=30))
+        return lines
+
+    def test_an_index_page_is_read_into_entries(self):
+        from lib.notation_index import find_index, by_number
+        prose = [_line(n, "ਗੁਰਬਾਣੀ ਸੰਗੀਤ ਦੇ ਇਸ ਸੰਗ੍ਰਹਿ ਵਿਚ ਆਪ ਨੇ ਆਧੁਨਿਕ ਠਾਟ ਪੱਧਤੀ ਨੂੰ ਅਪਣਾਇਆ ਹੈ ।", 300 + 60 * n) for n in range(12)]
+        idx = find_index({3: prose, 4: self._index_lines(), 5: prose})
+        self.assertEqual(idx["pages"], [4])
+        self.assertTrue(idx["titled"])
+        kinds = [(e["kind"], e["number"], e["page_printed"]) for e in idx["entries"]]
+        self.assertIn(("section", 9, 56), kinds)
+        self.assertIn(("shabad", None, 58), kinds)
+        self.assertIn(("shabad", None, 74), kinds)                 # the page number read as its own line at the right
+        self.assertIn(("shabad", 12, 167), kinds)                 # Dyal Singh numbers the notations themselves
+        self.assertEqual(sorted(by_number(idx["entries"])), [12, 13])
+        under = [e for e in idx["entries"] if e["kind"] == "shabad" and e["page_printed"] in (58, 60)]
+        self.assertEqual({e.get("section") for e in under}, {9})
+        self.assertEqual(find_index({3: prose, 5: prose}), {"pages": [], "entries": []})
+
+    def test_a_table_with_a_number_on_every_line_is_not_believed_without_the_corpus(self):
+        from lib.notation_index import credible
+        idx = {"entries": [{"kind": "shabad"}] * 19, "titled": False}
+        self.assertFalse(credible(idx, 0))
+        self.assertFalse(credible(idx, 2))
+        self.assertTrue(credible(idx, 5))
+        self.assertTrue(credible({"entries": [{"kind": "shabad"}] * 100, "titled": True}, 3))
+
+    def test_a_numbered_notation_without_its_verse_takes_the_index_shabad_and_a_conflict_is_flagged(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("parse29", os.path.join(HERE, "29_notation_parse.py"))
+        p29 = importlib.util.module_from_spec(spec); spec.loader.exec_module(p29)
+        index = {"credible": True, "entries": [{"kind": "shabad", "number": 12, "text": "ਬਿਰਥੀ ਸਾਕਤ ਕੀ ਆਰਜਾ", "page_printed": 167, "shabad_id": 913, "score": 0.95},
+                                               {"kind": "shabad", "number": 13, "text": "ਮਨ ਕਹਾ ਲੁਭਾਈਐ ਆਨ ਕਉ", "page_printed": 170, "shabad_id": 4284, "score": 0.9}]}
+        bare = _record(shabad_id=None)
+        bare["heading"]["number"] = 12
+        bare["shabad"].update({"method": "none", "confidence": 0.0}); bare["flags"] = ["unresolved-shabad", "no-shabad-text"]
+        other = _record(shabad_id=913)
+        other["heading"]["number"] = 13
+        same = _record(shabad_id=4284)
+        same["heading"]["number"] = 13
+        got = p29.index_shabads([bare, other, same], index, None)
+        self.assertEqual(got, {"filled": 1, "conflicts": 1, "agreed": 1})
+        self.assertEqual((bare["shabad"]["shabad_id"], bare["shabad"]["method"]), (913, "index"))
+        self.assertIn("shabad-by-index", bare["flags"]); self.assertNotIn("unresolved-shabad", bare["flags"])
+        self.assertIn("index-conflict", other["flags"]); self.assertEqual(other["shabad"]["shabad_id"], 913)
+        self.assertEqual(p29.index_shabads([bare], {"credible": False, "entries": []}, None), {"filled": 0, "conflicts": 0, "agreed": 0})
+        for rec in (bare, other, same):
+            self.assertEqual(validate(rec), [])
 
 
 class ResolveTests(unittest.TestCase):

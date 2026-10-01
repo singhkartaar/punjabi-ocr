@@ -36,16 +36,17 @@ SECTION_KINDS = ("sthai", "antara", "sanchari", "abhog", "alaap", "taan", "tihai
 LINE_KINDS = ("avartan", "free")
 DIVS = (1, 2, 3, 4, 6, 8)
 SOURCES = ("G", "D", "B", "K", "N")
-RESOLVE_METHODS = ("stream+ref+bol", "stream+ref", "stream+bol", "stream", "ref-window", "ref+bol", "bol", "book-ref", "manual", "none")
+RESOLVE_METHODS = ("stream+ref+bol", "stream+ref", "stream+bol", "stream", "ref-window", "ref+bol", "bol", "book-ref", "index", "manual", "none")
 FLAGS = frozenset([
     "unresolved-shabad", "weak-shabad", "ref-conflict", "no-shabad-text", "no-section-label",
     "taal-mismatch", "taal-unknown", "raag-unknown", "style-contradiction", "continues-next-page",
     "continued-from-prev", "empty-beat", "unread-cell", "tick-on-non-ma", "diagonal-watermark",
     "partial-grid", "unmatched-text", "taal-changes", "raag-differs", "shabad-by-book-ref",
-    "shabad-inherited", "span-capped", "shabad-by-bol",
+    "shabad-inherited", "span-capped", "shabad-by-bol", "shabad-by-index", "index-conflict",
 ])
 DEFAULT_STYLE = {"swar_row": "above", "shabad_position": "before", "matra_row": False,
-                 "marker_row": "below", "table": "bars", "labels": False, "script": "gurmukhi"}
+                 "marker_row": "below", "table": "bars", "labels": False, "script": "gurmukhi",
+                 "running_header": None}      # the book's running header text (or a list), dropped at the top of a page
 STYLE_VALUES = {"swar_row": ("above", "below"), "shabad_position": ("before", "after", "either"),
                 "marker_row": ("below", "above", "none"), "table": ("ruled", "bars", "none"),
                 "script": SCRIPTS}
@@ -239,10 +240,13 @@ def validate(rec: dict) -> list[dict]:
             if key in seen:
                 err("section.n", sp + ".n", "duplicate %s %s" % key)
             seen[key] = si
-        sec_taal = sec.get("taal") or top_taal
+        # a section's taal (a partaal's override) is written as its key; a heading's taal is an object
+        own = sec.get("taal")
+        own_key = own.get("key") if isinstance(own, dict) else own
+        if own_key is not None and own_key not in TAALS:
+            err("vocab.key", sp + ".taal", str(own_key))
+        sec_taal = ({"key": own_key} if isinstance(own, str) else own) or top_taal
         taal_key = (sec_taal or {}).get("key")
-        if sec.get("taal") and sec["taal"].get("key") is not None and sec["taal"]["key"] not in TAALS:
-            err("vocab.key", sp + ".taal.key", sec["taal"]["key"])
         matras = TAALS[taal_key]["matras"] if taal_key in TAALS else (sec_taal or {}).get("matras")
         lines = sec.get("lines")
         if not isinstance(lines, list) or not lines:

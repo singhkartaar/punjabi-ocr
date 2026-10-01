@@ -105,15 +105,23 @@ def books_in(src: str, only: str | None) -> list[dict]:
     return metas
 
 
-def widen_pages(spec: str, by: int = 1) -> str:
-    """'165-176,200' -> '164-177,199-201': each range grown by `by` pages on either side (never below 1)."""
+NOTATION_LOOKAHEAD = 2      # pages read past a window, so a notation that runs over the window's end is whole
+NOTATION_FRONT_PAGES = 20   # the first pages, read with any window: the index there names the numbered notations
+
+
+def widen_pages(spec: str, by: int = 1, after: int | None = None) -> str:
+    """
+    '165-176,200' -> '164-177,199-201': each range grown by `by` pages before
+    and `after` (default `by`) pages after, never below 1.
+    """
+    after = by if after is None else after
     out = []
     for part in spec.split(","):
         part = part.strip()
         if not part:
             continue
         a, b = (part.split("-", 1) + [part])[:2] if "-" in part else (part, part)
-        lo, hi = max(1, int(a) - by), int(b) + by
+        lo, hi = max(1, int(a) - by), int(b) + after
         out.append("%d-%d" % (lo, hi))
     return ",".join(out)
 
@@ -136,10 +144,14 @@ def plan(src: str, metas: list[dict], *, engines: list[str] | None = None, gpu_e
             if n:
                 a, b = mid_window(n, NOTATION_GT_PAGES)
                 window = "%d-%d" % (a, b)
-        page_args = ["--pages", window] if window else []
-        # the page before and after a window are rendered (not read): the review page shows them
-        # beside a notation, so a reader can see nothing was cut off at either end
-        render_args = ["--pages", widen_pages(window)] if window else []
+        # a window is READ two pages past its end (a notation that begins on its last page
+        # runs on), and RENDERED a page wider still on each side: the review page shows the
+        # page before and after a notation, so a reader can see nothing was cut off
+        read = widen_pages(window, 0, NOTATION_LOOKAHEAD) if window else None
+        if read and not read.startswith("1-"):
+            read = "1-%d,%s" % (NOTATION_FRONT_PAGES, read)      # the index at the front names the numbered notations
+        page_args = ["--pages", read] if read else []
+        render_args = ["--pages", widen_pages(read)] if read else []
         out.append(("pages", [script("20_ocr_pages.py"), "--src", src, "--book", book, "--out", ocr_dir] + render_args
                     + (["--bleed"] if m.get("bleed") else [])))
         names = list(engines or DEFAULT_ENGINES.get(lang + "-notation") or DEFAULT_ENGINES.get(lang, ["tesseract"]))

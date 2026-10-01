@@ -549,7 +549,10 @@ def main() -> None:
     window, warn = None, None
     if args.pages:
         wanted = {i + 1 for i in parse_pages(args.pages, max(p for r in records for p in r["pages"]))}
-        chosen = [r for r in records if any(p in wanted for p in r["pages"])]
+        # the notations that BEGIN in the window (the driver reads two pages past it, so one that
+        # begins on the window's last page is whole); one that began before the window and runs
+        # into it belongs to the window before
+        chosen = [r for r in records if r["pages"][0] in wanted]
         window = (min(wanted), max(wanted))
     elif args.all:
         chosen = list(records)
