@@ -1255,6 +1255,24 @@ class DbTests(unittest.TestCase):
             self.assertEqual(dict(con.execute("SELECT key, value FROM meta"))["notations"], "3")
             con.close()
             self.assertTrue(os.path.exists(os.path.join(d, "artifacts", "notations-images.json")))
+            # the review state travels into the database: an auto build ships every record with its verdict
+            # (accepted, backlog, or none), a manual build (--accepted-only) the accepted alone
+            recs[0]["review"] = {"key": "test-book/1248/gujri/teentaal#1", "status": "accepted", "round": 3}
+            recs[0]["verified"] = True
+            recs[1]["review"] = {"key": "test-book/1248/gujri/teentaal#2", "status": "backlog", "comment": "cut short", "round": 3}
+            notation.write_jsonl(os.path.join(src, "notations.jsonl"), notation.meta_for({"book": "test-book", "author": "A", "title": "T"}), recs)
+            build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, True, False, None)
+            con = sqlite3.connect(out)
+            self.assertEqual(con.execute("SELECT review_status, review_comment FROM notations ORDER BY ordinal").fetchall(),
+                             [("accepted", None), ("backlog", "cut short"), (None, None)])
+            self.assertEqual(dict(con.execute("SELECT key, value FROM meta"))["review_mode"], "all")
+            con.close()
+            got = build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, False, False, None, accepted_only=True)
+            self.assertEqual(got["notations"], 1)
+            con = sqlite3.connect(out)
+            self.assertEqual(dict(con.execute("SELECT key, value FROM meta"))["review_mode"], "accepted")
+            self.assertEqual(con.execute("SELECT review_status FROM notations").fetchall(), [("accepted",)])
+            con.close()
             # a shabad the corpus does not have refuses the build
             recs[0]["shabad"]["shabad_id"] = 999999
             notation.write_jsonl(os.path.join(src, "notations.jsonl"), notation.meta_for({"book": "test-book", "author": "A", "title": "T"}), recs)

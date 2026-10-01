@@ -87,7 +87,10 @@
    "flags",
    "sargam_en",
    "image_count",
-   "grid"
+   "grid",
+   "review_status",
+   "review_comment",
+   "review_key"
   ],
   "images": [
    "notation_id",

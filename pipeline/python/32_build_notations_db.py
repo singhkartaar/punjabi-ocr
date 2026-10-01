@@ -66,7 +66,8 @@ CREATE TABLE notations (
   heading TEXT, sections INTEGER NOT NULL, beats INTEGER NOT NULL,
   resolve_method TEXT NOT NULL, resolve_score REAL, confidence REAL NOT NULL, confidences TEXT NOT NULL,
   verified INTEGER NOT NULL DEFAULT 0, flags TEXT NOT NULL, sargam_en TEXT,
-  image_count INTEGER NOT NULL, grid TEXT);
+  image_count INTEGER NOT NULL, grid TEXT,
+  review_status TEXT, review_comment TEXT, review_key TEXT);  -- the ledger's verdict as built: accepted | backlog | NULL (never looked at)
 CREATE TABLE images  (notation_id TEXT NOT NULL, n INTEGER NOT NULL, kind TEXT NOT NULL,
                       role TEXT NOT NULL, page INTEGER NOT NULL, path TEXT NOT NULL, url TEXT,
                       bbox TEXT, w INTEGER, h INTEGER, bytes INTEGER NOT NULL, sha256 TEXT NOT NULL,
@@ -144,6 +145,7 @@ def taal_row(key: str | None) -> dict:
 
 def notation_row(rec: dict, ordinal: int) -> dict:
     h = rec.get("heading") or {}
+    review = rec.get("review") or {}
     sh = rec.get("shabad") or {}
     raag = h.get("raag") or {}
     taal = h.get("taal") or {}
@@ -168,6 +170,10 @@ def notation_row(rec: dict, ordinal: int) -> dict:
         "verified": 1 if rec.get("verified") else 0, "flags": j(rec.get("flags") or []) or "[]",
         "sargam_en": text_english(rec) if sections else None,
         "image_count": len(rec.get("images") or []), "grid": j(sections) if sections else None,
+        # the review as it stood when this was built, so a build that ships everything (auto) still says
+        # what was accepted, what was commented and what nobody has looked at; the ledger is the record
+        "review_status": review.get("status"), "review_comment": review.get("comment") or None,
+        "review_key": rec.get("review_key") or review.get("key"),
     }
 
 
@@ -241,6 +247,7 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
     images_manifest: list[dict] = []
     totals = {"books": 0, "notations": 0, "images": 0, "published": 0, "verified": 0, "resolved": 0}
     problems: list[str] = []
+    skipped: list[str] = []
     built = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     parser_majors: set[str] = set()
     for d in dirs:
@@ -254,6 +261,10 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
         passed = bool(verdict and verdict.get("passed")) or (accepted_only and n_acc > 0)
         if accepted_only:
             records = [r for r in records if r.get("verified")]           # the reviewed notations only
+            if not records:
+                skipped.append(book)                                      # nothing accepted yet: not a problem, just not shipped
+                continue
+            passed = True                                                 # the acceptance is the review
         if not passed and not allow_unmeasured:
             problems.append("%s: %s; review it (30/31) or pass --allow-unmeasured"
                             % (book, "review under the bar: " + "; ".join(verdict.get("fails") or []) if verdict else "no review yet"))
@@ -343,6 +354,8 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
         totals["images"] += n_img
         totals["verified"] += n_ver
         totals["resolved"] += n_res
+    if skipped:
+        print("%d book(s) with nothing accepted yet, not shipped: %s" % (len(skipped), ", ".join(skipped[:6]) + (" ..." if len(skipped) > 6 else "")))
     if len(parser_majors) > 1:
         problems.append("parser major versions mixed in one build: %s" % sorted(parser_majors))
     if problems:
@@ -356,7 +369,9 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
     meta_rows = {"schema": str(SCHEMA_VERSION), "parser_version": PARSER_VERSION, "vocab_version": VOCAB_VERSION,
                  "columns_version": "1", "built": built, "books": str(totals["books"]), "notations": str(totals["notations"]),
                  "shabads": str(len(counts)), "images": str(totals["images"]), "images_published": str(totals["published"]),
-                 "images_release_base": release_base or "", "bars": j(_bars())}
+                 "images_release_base": release_base or "", "bars": j(_bars()),
+                 # accepted: only reviewed notations (manual); all: every record, with its review state per row (auto)
+                 "review_mode": "accepted" if accepted_only else "all"}
     for k, v in meta_rows.items():
         insert("meta", {"key": k, "value": v})
     con.commit()

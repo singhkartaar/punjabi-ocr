@@ -178,14 +178,16 @@ class TesseractEngine(Engine):
         return self.lines_from_data(d, lang)
 
     def recognise_region(self, img, bbox: list, lang: str, psm: int = 7, whitelist: str | None = None,
-                         pad: int = 6) -> list[dict]:
+                         pad: int = 0) -> list[dict]:
         """
         One region of a page image (a numpy array or a PIL image) through
         Tesseract: lines with their boxes offset back into page coordinates.
         psm 7 reads the region as one line, 6 as a block, 8 as one word;
         `whitelist` limits the characters (the LSTM only partly honours it,
-        so callers still filter what comes back). The notation grid reader
-        uses it for a row strip or a single cell.
+        so callers still filter what comes back); `pad` widens the crop by
+        that many pixels on each side (0: the bbox as given). Each line
+        carries the `psm` it was read with. The notation grid reader uses
+        it for a row strip or a single cell.
         """
         from PIL import Image
         x0, y0, x1, y1 = [int(v) for v in bbox]
@@ -211,6 +213,7 @@ class TesseractEngine(Engine):
             ln["bbox"] = [ln["bbox"][0] + x0, ln["bbox"][1] + y0, ln["bbox"][2] + x0, ln["bbox"][3] + y0]
             for wd in ln.get("words", []):
                 wd["bbox"] = [wd["bbox"][0] + x0, wd["bbox"][1] + y0, wd["bbox"][2] + x0, wd["bbox"][3] + y0]
+            ln["psm"] = int(psm)
         return lines
 
     @staticmethod

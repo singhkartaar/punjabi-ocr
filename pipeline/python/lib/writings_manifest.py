@@ -107,8 +107,8 @@ def parse_source(path: str, manifest: dict | None = None, roster: dict | None = 
     meta.setdefault("language", "en")
     meta.setdefault("scripture", "G")
     meta.setdefault("kind", "prose")
-    if meta["kind"] not in ("prose", "notation"):
-        raise ValueError("%s: kind must be prose or notation, not %r" % (name, meta["kind"]))
+    # "notation" takes the notation route (29-34); any other kind is a writings book, whatever
+    # finer kinds the writings pipeline gives them
     if meta["kind"] == "notation":
         from lib.notation import merge_style
         meta["style"] = merge_style(manifest.get("style"), entry.get("style"))
