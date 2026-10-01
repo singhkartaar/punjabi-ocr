@@ -116,6 +116,9 @@ book by book on this machine. What the agent does here, and does not:
   `NOTATION_ASSETS_REPO`; exit 3 means run it again, it resumes), then
   commit `notations/<book-key>/images.urls.json` in the data repository
   and push. Never pass `--prune` unless asked: it deletes public assets.
+  A whole round -- the images, then the database release -- is
+  `docs/runbook.md` §5b, step by step; the database release
+  (`gh release create notations-db-v<N>`) also only when asked.
 - **Never edit a record, a ledger line or a fixture by hand.** A wrong
   cut is a backlog comment through the review page; a reader fix is a
   rule in `lib/notation_layout.py` with a test in `LinkerRuleTests`

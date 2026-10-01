@@ -245,6 +245,51 @@ any of them, `33_notation_sample.py --library <folder of books> --books 20
 --per-book 2` reads a few pages at two random places in each and writes
 one review page for all of them (`data/ocr/_sample/review.html`).
 
+## 5b. Publishing a round of notation books
+
+The app shows the scan crops from GitHub release assets and reads
+everything else from one database, `artifacts/notations.sqlite`. A round
+publishes the images of the books it adds, then the database of every
+book published so far. The images are published on the machine that cut
+them (the crops are byte-identical only on the same kind of machine; the
+tool hashes each file and never uploads one that is not its record's
+bytes), so a round may take a run on two machines; the URLs meet in each
+book's `images.urls.json`, which travels with the records.
+
+Once per machine: Node 22.5 or newer and the GitHub CLI signed in with
+write access to a public assets repository, named in the environment:
+
+```
+export NOTATION_ASSETS_REPO=<owner>/<assets-repository>
+```
+
+From `pipeline/python`, with the data repository pulled first:
+
+```
+python 32_build_notations_db.py --book <key> [--book <key> ...] --allow-unmeasured --out $ARTIFACTS_DIR/notations.sqlite
+node ../../tools/publish-notation-images.mjs --dry-run      # per book: published, to upload, cut on another machine
+node ../../tools/publish-notation-images.mjs                # paced; exit 3 = run it again, it resumes
+```
+
+Commit every `notations/<book>/images.urls.json` the run changed in the
+data repository and push it. Then the round's database, of every book
+published so far, refused if any image the app shows has no URL:
+
+```
+python 32_build_notations_db.py --book <every book> ... --allow-unmeasured --require-urls \
+    --release-base https://github.com/$NOTATION_ASSETS_REPO/releases/download/ --out $ARTIFACTS_DIR/notations.sqlite
+node ../../tools/publish-notation-images.mjs --verify --sample 200
+cd $ARTIFACTS_DIR && shasum -a 256 notations.sqlite > notations.sqlite.sha256
+gh release create notations-db-v<N> notations.sqlite notations.sqlite.sha256 --repo $NOTATION_ASSETS_REPO \
+    --title "Notations database v<N>" --notes "<the books, the counts, the SHA-256>"
+```
+
+`--allow-unmeasured` without `--accepted-only` is the auto build: every
+notation ships, each row carrying its review state. A published release
+is never replaced; the next round is `v<N+1>`. GitHub limits how fast one
+account creates content: after a burst of a few thousand uploads it
+refuses for about an hour, which the tool waits out.
+
 ## 6. Paid services, only through a cap
 
 Every paid call (Google Vision for OCR, Gemini through Vertex for
