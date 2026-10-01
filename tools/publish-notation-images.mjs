@@ -185,7 +185,7 @@ async function main() {
     const elsewhereBefore = elsewhere, keptBefore = kept;
     for (const w of want.values()) {
       if (have.has(w.name)) { kept += 1; continue; }
-      if (!fs.existsSync(w.file)) { console.log(`  missing on disk: ${w.row.path} (29_notation_parse.py --recut --book ${book})`); continue; }
+      if (!fs.existsSync(w.file)) { continue; }        // counted below: not cut on this machine, or not re-cut yet
       // a crop is reproducible only on the kind of machine that cut it (the deskew rotation rounds differently on
       // Apple silicon and on x86): a file whose bytes are not the record's is never uploaded under the record's name
       if (sha256Of(w.file) !== w.row.sha256) { elsewhere += 1; continue; }
@@ -195,7 +195,8 @@ async function main() {
     orphans += stale.length;
     const gone = want.size - todo.length - (kept - keptBefore) - (elsewhere - elsewhereBefore);
     console.log(`${book}: ${want.size} image(s): ${kept - keptBefore} published, ${todo.length} to upload`
-                + `${elsewhere - elsewhereBefore ? `, ${elsewhere - elsewhereBefore} cut on another machine` : ''}${gone ? `, ${gone} not on disk` : ''}; `
+                + `${elsewhere - elsewhereBefore ? `, ${elsewhere - elsewhereBefore} cut on another machine` : ''}`
+                + `${gone ? `, ${gone} not on this machine (cut elsewhere, or 29_notation_parse.py --recut --book ${book})` : ''}; `
                 + `${shards.length} release(s)${stale.length ? `, ${stale.length} asset(s) no image names` : ''}`);
 
     let k = shards.length;
