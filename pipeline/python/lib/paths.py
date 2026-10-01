@@ -30,6 +30,10 @@ TESSDATA = os.environ.get("TESSDATA_PREFIX") or os.path.join(ROOT, "vendor", "te
 # one directory per book with notations.jsonl, images.json and the crops.
 # Gitignored whole; the crops are published as release assets.
 NOTATIONS_DIR = os.environ.get("NOTATIONS_DIR") or os.path.join(ROOT, "data", "notations")
+# The review ledger (34_notation_review.py): one append-only file a book of
+# the reviewer's verdicts, and the accepted records with their images as
+# fixtures. Small, committed to the data repository; the images are re-cut.
+REVIEW_DIR = os.environ.get("REVIEW_DIR") or os.path.join(os.path.dirname(NOTATIONS_DIR), "review")
 
 os.makedirs(ARTIFACTS, exist_ok=True)
 os.makedirs(VECTORS, exist_ok=True)

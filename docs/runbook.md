@@ -190,8 +190,21 @@ python 27_ingest_book.py --src ./books/dyal-singh --book gurmat-sangeet-sagar-1
 python 32_build_notations_db.py --gurbani <path to gurbani.sqlite>
 ```
 
-The database refuses a book whose review did not pass; `--allow-unmeasured`
-is for a pilot. `docs/output-format.md` describes what is written.
+Then review the whole book, with every verdict saved as it is given:
+
+```
+python 34_notation_review.py serve --book gurmat-sangeet-sagar-1     # tick, comment, or reject each notation
+python 34_notation_review.py check --book gurmat-sangeet-sagar-1 --strict   # after a change to the reader
+python 34_notation_review.py status                                  # the dashboard
+python 32_build_notations_db.py --gurbani <path to gurbani.sqlite> --accepted-only
+```
+
+The ledger (`REVIEW_DIR/<book>.jsonl`) keeps each notation's verdict under
+a stable key; an accepted notation is frozen and never redone, a commented
+one comes back after the next change, and `check` is the regression gate
+on everything accepted. The database refuses a book whose review did not
+pass; `--allow-unmeasured` is for a pilot, `--accepted-only` builds the
+reviewed notations alone. `docs/output-format.md` describes what is written.
 
 To see how the reader fares across a shelf of books before committing to
 any of them, `33_notation_sample.py --library <folder of books> --books 20

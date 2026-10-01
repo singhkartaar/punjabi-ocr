@@ -46,7 +46,9 @@
    "verified",
    "images_bytes",
    "passed_bar",
-   "built"
+   "built",
+   "accepted",
+   "backlog"
   ],
   "notations": [
    "notation_id",

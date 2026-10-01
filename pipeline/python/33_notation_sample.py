@@ -253,6 +253,7 @@ def main() -> None:
         write_page(args, results)          # the page grows as the run goes, so it can be watched
     log.close()
     print("-> %s" % os.path.join(args.out, "review.html"))
+    print("   to tick and comment with the verdicts saved: 34_notation_review.py serve --sample %s" % os.path.basename(args.out.rstrip("/")))
 
 
 def write_page(args, results: list[dict]) -> None:
@@ -295,6 +296,8 @@ def write_page(args, results: list[dict]) -> None:
         pages_base = os.path.relpath(os.path.join(OCR_DIR, b["book"], "pages"), args.out).replace("\\", "/")
         shown_pages = {p for r in b["records"] for p in r["pages"]}
         parts.append(gt.raag_notes_html(gt.load_raag_notes(os.path.join(NOTATIONS_DIR, b["book"])), img_base, shown_pages))
+        from lib.notation_review import assign_keys
+        assign_keys(b["records"])
         for rec in b["records"]:
             cand = gt.candidate(rec)
             cand["book"] = b["book"]

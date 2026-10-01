@@ -481,7 +481,7 @@ def _label_sections(span: dict) -> None:
             sec["kind"], sec["n"] = "sthai", 1
 
 
-MAX_SPAN_PAGES = 5          # a shabad's notation runs over two or three pages, rarely more; past five it is the next shabad unread
+LONG_SPAN_PAGES = 5         # a shabad's notation runs over two or three pages; past five it is flagged for the reviewer's eye, never cut
 CONTENT_ROLES = ("grid", "section", "marker", "note", "text")     # what makes a shabad's span a notation
 NOTATION_ROLES = ("grid", "section", "marker")                   # what says the grids have begun
 
@@ -788,25 +788,12 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
     return segs
 
 
-def _cap_pages(seg: dict, dropped: list[dict]) -> None:
-    """A notation runs over MAX_SPAN_PAGES pages at most from its shabad's page; the rest is the next one, unread."""
-    pages = sorted({it["page"] for it in seg["items"]})
-    start = min((it["page"] for it in seg["items"] if it["role"] == "shabad"), default=pages[0])
-    keep = [p for p in pages if p < start + MAX_SPAN_PAGES]
-    if len(keep) == len(pages):
-        return
-    cut = [it for it in seg["items"] if it["page"] not in keep]
-    seg["items"] = [it for it in seg["items"] if it["page"] in keep]
-    seg["capped"] = True
-    dropped.append({"why": "beyond-cap", "pages": sorted({it["page"] for it in cut}),
-                    "roles": [it["role"] for it in cut]})
-
-
 def _span_from_items(seg: dict) -> dict:
     """The span dict the parser reads, from a segment's items."""
     span = {"heading": None, "heading_page": None, "headings": [], "shabad": [], "ref": None, "sections": [],
             "notes": [], "text": [], "pages": [], "continued": False, "extent": {},
-            "sid": seg.get("sid"), "inherited": bool(seg.get("inherited")), "capped": bool(seg.get("capped"))}
+            "sid": seg.get("sid"), "inherited": bool(seg.get("inherited")),
+            "long": len({it["page"] for it in seg["items"]}) > LONG_SPAN_PAGES}
 
     def touch(page):
         if page not in span["pages"]:
@@ -865,18 +852,46 @@ def _span_from_items(seg: dict) -> dict:
     return span
 
 
+def header_page_numbers(layouts: list[dict], style: dict | None = None) -> dict[int, int]:
+    """
+    {scan page: printed page number} from the running headers ('70 ਸ੍ਰੀ ਗੁਰੂ
+    ਤੇਗ ਬਹਾਦਰ ਰਾਗ ਰਤਨਾਵਲੀ', 'ਰਾਗ ਰਾਮਕਲੀ ਰ 299'): the number at either end of a
+    top-of-page region the header tests claim. The index's printed pages
+    map to scan pages by the offset these vote for.
+    """
+    from lib.notation_vocab import gurmukhi_digits
+    out: dict[int, int] = {}
+    repeated = _repeated_tops(layouts, style)
+    for lay in layouts:
+        page_h = lay.get("page_h") or 0
+        regs = lay.get("regions") or []
+        if not regs or not page_h:
+            continue
+        r = regs[0]
+        if r["bbox"][1] > 0.1 * page_h or r["role"] not in ("heading", "text", "pageno"):
+            continue
+        if not (_running_header(r, page_h) or _is_running(r, page_h, repeated)):
+            continue
+        text = (r.get("text") or "").strip()
+        m = re.match(r"^\(?([0-9੦-੯]{1,4})\)?\b", text) or re.search(r"\b\(?([0-9੦-੯]{1,4})\)?\s*$", text)
+        if m:
+            out[lay["page"]] = int(gurmukhi_digits(m.group(1)))
+    return out
+
+
 def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = None) -> list[dict]:
     """
     Regions of consecutive pages, strung into notation spans, one per shabad:
     {"heading": region|None, "heading_page", "headings": [(page, region)], "shabad": [(page, region)],
      "ref": region|None, "sections": [{"label", "kind", "n", "page", "grids", "markers", "taal"}],
      "notes": [(page, region)], "text": [(page, region)], "pages": [..], "extent": {page: bbox},
-     "continued": bool, "inherited": bool, "capped": bool}
+     "continued": bool, "inherited": bool, "long": bool}
 
     The shabad is the anchor. A notation is its shabad and everything the
     book prints after it -- grids, taans, tihais, notes, a notation set as
     text -- up to the next shabad, a raag's heading, a page of prose or the
-    end of the pages read, and over MAX_SPAN_PAGES pages at most. What has
+    end of the pages read -- never cut short: a span over more than
+    LONG_SPAN_PAGES pages is marked `long` for the reviewer. What has
     no shabad (a preface, an exercise, a raag description) is dropped and
     listed in `dropped`; a notation opened by a heading straight after
     another (the same shabad in a second taal) inherits that one's shabad.
@@ -934,8 +949,6 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
             continue
         if edge_grid:
             seg["continued"] = True
-        if not after:
-            _cap_pages(seg, dropped)
         span = _span_from_items(seg)
         # what stands between a notation's last region and the next notation's first on the same
         # page -- a bol row OCR glued to the next verse, a line read as nothing -- is the first's tail:

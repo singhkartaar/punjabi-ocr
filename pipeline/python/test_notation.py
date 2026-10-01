@@ -11,6 +11,7 @@ the byte. Regenerate the expectations from this side only:
   python test_notation.py --write-expected
 """
 import json
+import importlib.util
 import os
 import sys
 import tempfile
@@ -503,6 +504,20 @@ class LinkerRuleTests(unittest.TestCase):
         return [_line(n0, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y), _line(n0 + 1, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", y + 80),
                 _line(n0 + 2, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 160)]
 
+    def test_a_long_notation_is_flagged_not_cut(self):
+        pages = [self._page(84, self._shabad(84, 2399, 500) + [_line(9, "ਰਾਗ ਸੋਰਠਿ ਤਿੰਨਤਾਲ", 1500, bold=True)] + self._grids(10, 1650))]
+        pages += [self._page(p, self._grids(1, 300)) for p in range(85, 91)]
+        spans = link_pages(pages, merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [list(range(84, 91))])
+        self.assertTrue(spans[0]["long"])
+
+    def test_the_running_headers_give_the_printed_page_numbers(self):
+        from lib.notation_layout import header_page_numbers
+        p1 = self._page(84, [_line(1, "ਰੀ ਗੁਰੂ ਤੇਗ ਬਹਾਦਰ ਰਾਗ ਰਤਨਾਵਲੀ 68", 160)] + self._shabad(84, 2399, 500))
+        p2 = self._page(85, [_line(1, "ਰਾਗ ਸੋਰਠਿ", 140, x0=600, x1=900)] + self._grids(2, 300))
+        p3 = self._page(86, [_line(1, "70 ਸ੍ਰੀ ਗੁਰੂ ਤੇਗ ਬਹਾਦਰ ਰਾਗ ਰਤਨਾਵਲੀ", 140)] + self._grids(2, 300))
+        self.assertEqual(header_page_numbers([p1, p2, p3]), {84: 68, 86: 70})
+
     def test_a_running_header_is_known_by_its_repetition_however_the_ocr_spells_it(self):
         p1 = self._page(84, [_line(1, "ਰੀ ਗੁਰੂ ਤੇਗ ਬਹਾਦਰ ਰਾਗ ਰਤਨਾਵਲੀ", 160)] + self._shabad(84, 2399, 500)
                         + [_line(9, "ਰਾਗ ਸੋਰਠਿ ਤਿੰਨਤਾਲ", 1500, bold=True)] + self._grids(10, 1650))
@@ -591,6 +606,141 @@ class LinkerRuleTests(unittest.TestCase):
         self.assertEqual(classify_line(_line(5, "N..O\" '", 2021, x0=984, x1=1127)), "text")
 
 
+class ReviewLedgerTests(unittest.TestCase):
+    """The review ledger: keys, re-attaching by overlap, freezing, drift, the server's verdicts."""
+
+    def _rec(self, nid, pages, sid, raag="gujri", taal="teentaal", y0=200, y1=900):
+        rec = _record(nid, shabad_id=sid)
+        rec["page"], rec["pages"], rec["seq"] = int(nid.split(":")[1]), pages, int(nid.split(":")[2])
+        rec["heading"]["raag"]["key"], rec["heading"]["taal"]["key"] = raag, taal
+        rec["layout"] = {"extent": {str(p): [100, y0, 1600, y1] for p in pages}}
+        rec["images"] = [{"n": 1, "file": "images/%s-1.png" % nid.replace(":", "-"), "role": "block", "page": pages[0],
+                          "bbox": [100, y0, 1600, y1], "w": 1500, "h": y1 - y0, "bytes": 3, "sha256": "ab" * 32, "thumb": None}]
+        rec["source"]["commit"] = "abc1234"
+        return rec
+
+    def test_keys_number_the_notations_that_share_shabad_raag_and_taal(self):
+        from lib.notation_review import assign_keys, key_slug
+        a, b, c = self._rec("test-book:0170:1", [170], 1248), self._rec("test-book:0172:1", [172], 1248), self._rec("test-book:0174:1", [174], 1248, taal="jhaptaal")
+        keys = assign_keys([b, a, c])
+        self.assertEqual(sorted(keys), ["test-book/1248/gujri/jhaptaal#1", "test-book/1248/gujri/teentaal#1", "test-book/1248/gujri/teentaal#2"])
+        self.assertEqual((a["review_nth"], b["review_nth"]), (1, 2))
+        self.assertEqual(key_slug(a["review_key"]), "test-book__1248__gujri__teentaal__1")
+
+    def test_an_entry_reattaches_by_overlap_when_the_seq_moves_and_not_to_another_shabad(self):
+        from lib.notation_review import assign_keys, entry_of, match_entry, drift_of
+        a = self._rec("test-book:0170:1", [170], 1248)
+        assign_keys([a])
+        e = entry_of(a, "accepted", round_=1)
+        moved = self._rec("test-book:0170:2", [170, 171], 1248, y0=240, y1=950)       # a later run cut it a little differently
+        other = self._rec("test-book:0170:1", [170], 913)
+        assign_keys([other, moved])
+        self.assertIs(match_entry(e, [other, moved]), moved)
+        d = drift_of(e, moved)
+        self.assertFalse(d["same"]); self.assertEqual(d["pages_after"], [170, 171])
+        self.assertIsNone(match_entry(e, [other]))
+        self.assertTrue(drift_of(e, None)["lost"])
+
+    def test_the_ledger_freezes_accepted_records_and_annotates_the_backlog(self):
+        import tempfile
+        from lib.notation_review import append_entry, apply_review, assign_keys, entry_of, read_ledger, save_fixture
+        with tempfile.TemporaryDirectory() as d:
+            images = os.path.join(d, "images"); os.makedirs(images)
+            a = self._rec("test-book:0170:1", [170], 1248); b = self._rec("test-book:0172:1", [172], 913); c = self._rec("test-book:0174:1", [174], 4284)
+            assign_keys([a, b, c])
+            open(os.path.join(images, "test-book-0170-1-1.png"), "wb").write(b"png")
+            ea = entry_of(a, "accepted", round_=1); append_entry(ea, d); save_fixture(a, ea, images, d)
+            append_entry(entry_of(b, "backlog", "the antara is missing", round_=1), d)
+            append_entry(entry_of(c, "rejected", round_=1), d)
+            self.assertTrue(os.path.exists(os.path.join(d, "fixtures", "test-book", "images", "ab" * 32 + ".png")))
+            ledger = read_ledger("test-book", d)
+            self.assertEqual({e["status"] for e in ledger.values()}, {"accepted", "backlog", "rejected"})
+            # a later run: a moved a little, b unchanged, c the same, plus a new one
+            a2 = self._rec("test-book:0170:1", [170], 1248, y0=400)
+            b2 = self._rec("test-book:0172:1", [172], 913); c2 = self._rec("test-book:0174:1", [174], 4284)
+            n = self._rec("test-book:0176:1", [176], 1313)
+            os.remove(os.path.join(images, "test-book-0170-1-1.png"))
+            got = apply_review([a2, b2, c2, n], ledger, images, d)
+            ids = [r["notation_id"] for r in got["records"]]
+            self.assertEqual(ids, ["test-book:0170:1", "test-book:0172:1", "test-book:0176:1"])
+            frozen = got["records"][0]
+            self.assertTrue(frozen["verified"]); self.assertEqual(frozen["layout"]["extent"]["170"][1], 200)     # the fixture, not the re-cut
+            self.assertTrue(os.path.exists(os.path.join(images, "test-book-0170-1-1.png")))                       # its image restored
+            self.assertEqual((got["accepted"], got["reused"], got["lost"], got["backlog"], got["rejected"]), (1, 1, 0, 1, 1))
+            self.assertEqual(got["records"][1]["review"]["comment"], "the antara is missing")
+            self.assertFalse(got["drift"][0]["same"])                                                             # the re-cut moved: reported
+            # lost: nothing overlaps the accepted one any more -> still emitted
+            got2 = apply_review([n], ledger, images, d)
+            self.assertEqual((got2["lost"], [r["notation_id"] for r in got2["records"]]), (1, ["test-book:0176:1", "test-book:0170:1"]))
+
+    def test_the_server_saves_a_verdict_and_hides_what_is_accepted(self):
+        import tempfile, urllib.request
+        from http.server import ThreadingHTTPServer
+        import threading
+        spec = importlib.util.spec_from_file_location("review34", os.path.join(HERE, "34_notation_review.py"))
+        m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+        with tempfile.TemporaryDirectory() as d:
+            a = self._rec("test-book:0170:1", [170], 1248); b = self._rec("test-book:0172:1", [172], 913)
+            from lib.notation_review import assign_keys, read_ledger
+            assign_keys([a, b])
+            books = [{"book": "test-book", "title": "Test", "author": "A", "records": [a, b], "img_base": "/b/test-book", "pages_base": "/b/test-book/pages", "files": {}}]
+            state = m.ReviewState(books, 40, False, 2, d, "Test · review")
+            srv = ThreadingHTTPServer(("127.0.0.1", 0), m.make_handler(state))
+            t = threading.Thread(target=srv.serve_forever, daemon=True); t.start()
+            try:
+                base = "http://127.0.0.1:%d" % srv.server_address[1]
+                page = urllib.request.urlopen(base + "/").read().decode("utf-8")
+                self.assertIn("test-book/1248/gujri/teentaal#1", page); self.assertIn("textarea", page); self.assertIn("Accept (a)", page)
+                req = urllib.request.Request(base + "/verdict", data=json.dumps({"notation_id": "test-book:0170:1", "key": a["review_key"], "status": "accepted", "comment": ""}).encode(),
+                                             headers={"content-type": "application/json"}, method="POST")
+                got = json.loads(urllib.request.urlopen(req).read())
+                self.assertTrue(got["ok"]); self.assertIn("1 accepted", got["counts"])
+                req = urllib.request.Request(base + "/verdict", data=json.dumps({"notation_id": "test-book:0172:1", "key": b["review_key"], "status": "backlog", "comment": "cut short"}).encode(),
+                                             headers={"content-type": "application/json"}, method="POST")
+                urllib.request.urlopen(req).read()
+                ledger = read_ledger("test-book", d)
+                self.assertEqual({k: v["status"] for k, v in ledger.items()}, {a["review_key"]: "accepted", b["review_key"]: "backlog"})
+                self.assertEqual(ledger[b["review_key"]]["round"], 2)
+                self.assertTrue(os.path.exists(os.path.join(d, "fixtures", "test-book", "test-book__1248__gujri__teentaal__1.json")))
+                page = urllib.request.urlopen(base + "/").read().decode("utf-8")
+                self.assertNotIn("test-book/1248/gujri/teentaal#1", page.split("<script id=cands")[0])   # accepted: hidden
+                self.assertIn("test-book/913/gujri/teentaal#1", page)                                     # backlog: shown
+                bad = urllib.request.Request(base + "/verdict", data=b'{"notation_id": "nope", "status": "accepted"}', headers={"content-type": "application/json"}, method="POST")
+                with self.assertRaises(urllib.error.HTTPError):
+                    urllib.request.urlopen(bad)
+            finally:
+                srv.shutdown()
+            # the gate and the dashboard
+            from lib.notation_review import check_book, status_of
+            self.assertTrue(check_book("test-book", [a, b], d)["ok"])
+            moved = self._rec("test-book:0170:1", [170, 171], 1248, y0=600)
+            got = check_book("test-book", [moved, b], d)
+            self.assertFalse(got["ok"]); self.assertEqual(len(got["failed"]), 1)
+            st = status_of("test-book", [a, b], d)
+            self.assertEqual((st["accepted"], st["backlog"], st["unreviewed"], st["clear"]), (1, 1, 0, False))
+
+
+class RecutTests(unittest.TestCase):
+    def test_an_image_cut_again_from_its_bbox_has_the_same_sha(self):
+        try:
+            import cv2
+            import numpy as np
+        except ImportError:
+            self.skipTest("cv2")
+        import tempfile, importlib.util
+        spec = importlib.util.spec_from_file_location("parse29", os.path.join(HERE, "29_notation_parse.py"))
+        p29 = importlib.util.module_from_spec(spec); spec.loader.exec_module(p29)
+        with tempfile.TemporaryDirectory() as d:
+            page = np.full((800, 600), 255, dtype=np.uint8)
+            page[100:300, 50:550:7] = 0
+            im = {"n": 1, "file": "images/b-0001-1-1.png", "role": "block", "page": 1, "bbox": [40, 90, 560, 310], "thumb": "images/b-0001-1-1.thumb.png"}
+            sha1 = p29.cut_image(page, im, d)
+            os.remove(os.path.join(d, "b-0001-1-1.png"))
+            sha2 = p29.cut_image(page, im, d)
+            self.assertEqual(sha1, sha2)
+            self.assertTrue(os.path.exists(os.path.join(d, "b-0001-1-1.thumb.png")))
+
+
 class SectionTaalTests(unittest.TestCase):
     def test_a_section_taal_is_written_as_its_key_and_validates(self):
         rec = _record()
@@ -633,6 +783,23 @@ class IndexTests(unittest.TestCase):
         under = [e for e in idx["entries"] if e["kind"] == "shabad" and e["page_printed"] in (58, 60)]
         self.assertEqual({e.get("section") for e in under}, {9})
         self.assertEqual(find_index({3: prose, 5: prose}), {"pages": [], "entries": []})
+
+    def test_raag_starts_the_page_offset_and_the_missing_list(self):
+        from lib.notation_index import find_index, missing_entries, page_offset, raag_starts
+        idx = find_index({13: self._index_lines()})
+        self.assertEqual([(r["key"], r["page_printed"]) for r in raag_starts(idx["entries"])], [("sorath", 56)])
+        for e in idx["entries"]:
+            if e["kind"] == "shabad" and e["page_printed"] == 58:
+                e["shabad_id"] = 3285
+            if e["kind"] == "shabad" and e["page_printed"] == 74:
+                e["shabad_id"] = 2399
+        recs = [{"shabad": {"shabad_id": 3285}, "pages": [74, 75]}, {"shabad": {"shabad_id": 2399}, "pages": [90]}]
+        got = page_offset(idx["entries"], {86: 70, 110: 94}, recs)
+        self.assertEqual((got["offset"], got["witnesses"]), (16, {"headers": 2, "entries": 2}))
+        self.assertEqual(missing_entries(idx["entries"], recs[:1], 16), [{"text": "ਮਾਈ ਮੈ ਕਿਹਿ ਬਿਧਿ ਲਖਉ ਗੁਸਾਈ", "shabad_id": 2399, "page_printed": 74, "expected_scan_page": 90}])
+        self.assertEqual(missing_entries(idx["entries"], recs, None), [])
+        split = page_offset(idx["entries"], {86: 70, 110: 94, 120: 104, 200: 150, 210: 160, 220: 170}, [])
+        self.assertTrue(split["split"]); self.assertIsNone(split["offset"])
 
     def test_a_table_with_a_number_on_every_line_is_not_believed_without_the_corpus(self):
         from lib.notation_index import credible

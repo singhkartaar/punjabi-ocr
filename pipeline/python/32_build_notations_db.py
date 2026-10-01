@@ -32,6 +32,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib import notation
 from lib.notation import PARSER_VERSION, SCHEMA_VERSION, apply_gold, read_jsonl, validate
+from lib.notation_review import read_ledger
 from lib.notation_render import text_english
 from lib.notation_vocab import RAAGS, TAALS, VERSION as VOCAB_VERSION
 from lib.paths import ARTIFACTS, NOTATIONS_DIR, OCR_DIR, ROOT
@@ -52,7 +53,8 @@ CREATE TABLE authors (author_key TEXT PRIMARY KEY, name TEXT NOT NULL, name_gurm
 CREATE TABLE books   (book_key TEXT PRIMARY KEY, title TEXT NOT NULL, title_en TEXT, author_key TEXT NOT NULL,
                       part INTEGER, publisher TEXT, year INTEGER, source_url TEXT, style TEXT NOT NULL,
                       pages INTEGER NOT NULL, notations INTEGER NOT NULL, resolved INTEGER NOT NULL,
-                      verified INTEGER NOT NULL, images_bytes INTEGER NOT NULL, passed_bar INTEGER NOT NULL, built TEXT NOT NULL);
+                      verified INTEGER NOT NULL, images_bytes INTEGER NOT NULL, passed_bar INTEGER NOT NULL, built TEXT NOT NULL,
+                      accepted INTEGER NOT NULL DEFAULT 0, backlog INTEGER NOT NULL DEFAULT 0);
 CREATE TABLE notations (
   notation_id TEXT PRIMARY KEY, book_key TEXT NOT NULL, author_key TEXT NOT NULL, ordinal INTEGER NOT NULL,
   page_start INTEGER NOT NULL, page_end INTEGER NOT NULL, pages TEXT NOT NULL,
@@ -187,7 +189,8 @@ def image_rows(rec: dict, book_dir: str, urls: dict[str, str], by_file: dict[str
 
 
 def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls: dict[str, str],
-          require_urls: bool, allow_unmeasured: bool, verify_images: bool, release_base: str | None) -> dict:
+          require_urls: bool, allow_unmeasured: bool, verify_images: bool, release_base: str | None,
+          accepted_only: bool = False) -> dict:
     with open(COLUMNS_PATH, encoding="utf-8") as fh:
         columns = json.load(fh)["tables"]
     dirs = sorted(d for d in glob.glob(os.path.join(src, "*")) if os.path.exists(os.path.join(d, "notations.jsonl")))
@@ -245,7 +248,12 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
         meta, records = read_jsonl(os.path.join(d, "notations.jsonl"))
         parser_majors.add(str(meta.get("parser_version", PARSER_VERSION)).split(".")[0])
         verdict = eval_verdict(book)
-        passed = bool(verdict and verdict.get("passed"))
+        ledger = read_ledger(book)
+        n_acc = sum(1 for e in ledger.values() if e["status"] == "accepted")
+        n_bl = sum(1 for e in ledger.values() if e["status"] == "backlog")
+        passed = bool(verdict and verdict.get("passed")) or (accepted_only and n_acc > 0)
+        if accepted_only:
+            records = [r for r in records if r.get("verified")]           # the reviewed notations only
         if not passed and not allow_unmeasured:
             problems.append("%s: %s; review it (30/31) or pass --allow-unmeasured"
                             % (book, "review under the bar: " + "; ".join(verdict.get("fails") or []) if verdict else "no review yet"))
@@ -328,7 +336,8 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
                          "year": meta.get("year"), "source_url": meta.get("source_url"),
                          "style": j(meta.get("style") or {}) or "{}",
                          "pages": int(meta.get("pages") or 0), "notations": len(records), "resolved": n_res,
-                         "verified": n_ver, "images_bytes": img_bytes, "passed_bar": 1 if passed else 0, "built": built})
+                         "verified": n_ver, "images_bytes": img_bytes, "passed_bar": 1 if passed else 0, "built": built,
+                         "accepted": n_acc, "backlog": n_bl})
         totals["books"] += 1
         totals["notations"] += len(records)
         totals["images"] += n_img
@@ -381,11 +390,12 @@ def main() -> None:
     ap.add_argument("--urls", action="append", default=[], help="JSON {sha256: url} file(s) or globs from the upload tool")
     ap.add_argument("--require-urls", action="store_true", help="refuse an image without a URL")
     ap.add_argument("--allow-unmeasured", action="store_true", help="build a book whose review has not passed")
+    ap.add_argument("--accepted-only", action="store_true", help="only the notations the review ledger accepted (the public pack's default once a book is clear)")
     ap.add_argument("--verify-images", action="store_true", help="re-hash every crop against its record")
     ap.add_argument("--release-base", help="the URL prefix the images are published under (recorded in meta)")
     args = ap.parse_args()
     got = build(args.src, args.out, args.book, args.gurbani, load_urls(args.urls), args.require_urls,
-                args.allow_unmeasured, args.verify_images, args.release_base)
+                args.allow_unmeasured, args.verify_images, args.release_base, args.accepted_only)
     print("%(books)d book(s), %(notations)d notation(s), %(resolved)d with a shabad (%(shabads)d shabads), "
           "%(verified)d verified, %(images)d image(s) (%(published)d with a URL) -> %(out)s; %(images_manifest)s" % got)
 

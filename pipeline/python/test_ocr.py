@@ -414,7 +414,8 @@ class DriverTests(unittest.TestCase):
                             "works": [{"file": "n.pdf", "work": "n", "book": "n", "title": "N"}]}, pages="10-13")
         argv = dict(steps)
         self.assertEqual(argv["pages"][-1], "1-21,9-16")    # rendered: the front pages, then a page before, the lookahead and a page after
-        self.assertEqual(argv["merge"][-1], "1-20,10-15")   # read: the front pages (the index), the window and two pages past it
+        self.assertEqual(argv["merge"][-1], "1-20,10-15")   # read: the front pages (the index), the window and two pages past it;
+        # the last twenty pages too when the book is long enough to have a back index (an empty pdf has no pages here)
 
     def test_an_english_book_is_not_translated_and_a_hindi_one_is(self):
         en = self._plan({"author": "A", "language": "en", "reader": "ocr",

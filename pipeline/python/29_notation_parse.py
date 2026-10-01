@@ -152,16 +152,17 @@ def borrow_shabads(records: list[dict]) -> int:
     return filled
 
 
-def read_index(book_dir: str, con) -> dict:
+def read_index(book_dir: str, con, n_pages: int = 0) -> dict:
     """
-    The book's index from the merged OCR of its first pages (when those were
-    read): {"pages", "entries", "matched", "credible", "by_number"}. An
-    index that the corpus does not bear out (a table of shrutis, a list of
-    taals) is reported and not used.
+    The book's index from the merged OCR of its first pages and its last
+    (when those were read): {"pages", "entries", "matched", "credible",
+    "raag_starts", "front_pages_read"}. An index that the corpus does not
+    bear out (a table of shrutis, a list of taals) is reported and not used.
     """
-    from lib.notation_index import FRONT_PAGES, credible, find_index, match_entries
+    from lib.notation_index import BACK_PAGES, FRONT_PAGES, credible, find_index, match_entries, raag_starts
     pages: dict[int, list[dict]] = {}
-    for p in range(1, FRONT_PAGES + 1):
+    wanted = list(range(1, FRONT_PAGES + 1)) + (list(range(max(1, n_pages - BACK_PAGES + 1), n_pages + 1)) if n_pages else [])
+    for p in sorted(set(wanted)):
         f = os.path.join(book_dir, "merged", "%04d.jsonl" % p)
         if os.path.exists(f):
             _, lines = load_jsonl(f)
@@ -173,7 +174,8 @@ def read_index(book_dir: str, con) -> dict:
     if idx["entries"] and con is not None:
         from lib.ocr_match import match_text
         matched = match_entries(idx["entries"], corpus_index(con), match_text)
-    idx.update({"matched": matched, "credible": credible(idx, matched), "front_pages_read": len(pages)})
+    idx.update({"matched": matched, "credible": credible(idx, matched), "front_pages_read": len(pages),
+                "raag_starts": raag_starts(idx["entries"])})
     return idx
 
 
@@ -266,6 +268,18 @@ def raag_records(descriptions: list[dict], book: str, book_dir: str, images_dir:
 
 
 _INDEX = {}
+
+
+def code_commit() -> str:
+    """The short hash of the checkout that cut the record ('unknown' outside git), read once."""
+    if "commit" not in _INDEX:
+        try:
+            import subprocess
+            _INDEX["commit"] = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True,
+                                              text=True, timeout=5).stdout.strip() or "unknown"
+        except Exception:
+            _INDEX["commit"] = "unknown"
+    return _INDEX["commit"]
 
 
 def corpus_index(con):
@@ -445,8 +459,8 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
         flags.append("continued-from-prev")
     if span.get("inherited"):
         flags.append("shabad-inherited")
-    if span.get("capped"):
-        flags.append("span-capped")
+    if span.get("long"):
+        flags.append("long-span")
     if any(sec.get("assumed") for sec in span["sections"]):
         flags.append("no-section-label")
     if heading and heading.get("raag") and heading["raag"].get("key") is None:
@@ -536,7 +550,7 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
                    "title": book["title"], "title_en": book.get("title_en"), "part": book.get("part"),
                    "pages": sorted(set(span["pages"])), "engines": book.get("engines", []),
                    "row_engine": getattr(engine, "key", None) if sections_out else None,
-                   "parser": {"name": "notation", "version": PARSER_VERSION},
+                   "parser": {"name": "notation", "version": PARSER_VERSION}, "commit": code_commit(),
                    "vocab_version": VOCAB_VERSION, "built": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                    "content_hash": "", "gold": None},
         "quality": {"cells": quality["cells"], "unknown": quality["unknown"],
@@ -549,6 +563,69 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
     return rec, images
 
 
+def cut_image(img, im: dict, images_dir: str) -> str:
+    """One image of a record cut again from its page render and stored bbox; returns the new file's sha256."""
+    from lib.ocr_grid import crop_bilevel, thumbnail
+    dst = os.path.join(images_dir, os.path.basename(im["file"]))
+    crop_bilevel(img, [int(v) for v in im["bbox"]], CROP_PAD, dst)
+    if im.get("thumb"):
+        b = [int(v) for v in im["bbox"]]
+        thumbnail(img, [max(0, b[0] - CROP_PAD), max(0, b[1] - CROP_PAD), b[2] + CROP_PAD, b[3] + CROP_PAD],
+                  os.path.join(images_dir, os.path.basename(im["thumb"])))
+    return sha256_of(dst)
+
+
+def recut(book: str, book_dir: str, images_dir: str, pages_meta: dict, out_dir: str) -> dict:
+    """
+    The images of a book cut again from the records' stored bboxes -- the
+    way they travel between machines: the records go by git, the images
+    are re-made from the PDF. A page not rendered yet is rendered first
+    (20_ocr_pages.py from the PDF pages.json names). Every new file is
+    checked against the record's sha256; a mismatch is reported and the
+    record left as it is. Returns the counts.
+    """
+    import subprocess
+    import cv2
+    path = os.path.join(out_dir, "notations.jsonl")
+    if not os.path.exists(path):
+        sys.exit("no %s to re-cut from" % path)
+    _, records = notation.read_jsonl(path)
+    page_files = {p["page"]: p["file"] for p in pages_meta.get("pages", [])}
+    needed = sorted({im["page"] for r in records for im in r.get("images", [])
+                     if not os.path.exists(os.path.join(images_dir, os.path.basename(im["file"])))
+                     or sha256_of(os.path.join(images_dir, os.path.basename(im["file"]))) != im["sha256"]})
+    missing_pages = [p for p in needed if p not in page_files or not os.path.exists(os.path.join(book_dir, "pages", page_files[p]))]
+    if missing_pages:
+        pdf = pages_meta.get("pdf")
+        if not pdf or not os.path.exists(pdf):
+            sys.exit("pages %s are not rendered and the PDF %r is not here" % (missing_pages[:8], pdf))
+        subprocess.run([sys.executable, os.path.join(HERE, "20_ocr_pages.py"), "--pdf", pdf, "--book", book, "--out", os.path.dirname(book_dir),
+                        "--pages", ",".join(str(p) for p in missing_pages)], check=True)
+        with open(os.path.join(book_dir, "pages.json"), encoding="utf-8") as fh:
+            page_files = {p["page"]: p["file"] for p in json.load(fh).get("pages", [])}
+    os.makedirs(images_dir, exist_ok=True)
+    counts = {"kept": 0, "cut": 0, "mismatch": [], "no_page": []}
+    cache: dict[int, object] = {}
+    for rec in records:
+        for im in rec.get("images", []):
+            dst = os.path.join(images_dir, os.path.basename(im["file"]))
+            if os.path.exists(dst) and sha256_of(dst) == im["sha256"]:
+                counts["kept"] += 1
+                continue
+            p = im["page"]
+            if p not in cache:
+                f = page_files.get(p)
+                cache[p] = cv2.imread(os.path.join(book_dir, "pages", f), cv2.IMREAD_GRAYSCALE) if f else None
+            if cache[p] is None:
+                counts["no_page"].append(im["file"])
+                continue
+            got = cut_image(cache[p], im, images_dir)
+            if got != im["sha256"]:
+                counts["mismatch"].append({"file": im["file"], "expected": im["sha256"], "got": got})
+            counts["cut"] += 1
+    return counts
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--book", required=True, help="the book key under data/ocr/")
@@ -559,6 +636,8 @@ def main():
     ap.add_argument("--no-images", action="store_true")
     ap.add_argument("--force", action="store_true", help="recompute cached page layouts")
     ap.add_argument("--no-index", action="store_true", help="do not read the book's index for the numbered notations")
+    ap.add_argument("--no-review", action="store_true", help="ignore the review ledger (accepted notations are re-cut like any other)")
+    ap.add_argument("--recut", action="store_true", help="cut the images again from the records' stored bboxes (after a git pull of the data); no parsing")
     args = ap.parse_args()
 
     book_dir = os.path.join(args.out, args.book)
@@ -567,6 +646,14 @@ def main():
     if pages_meta.get("kind") != "notation":
         sys.exit("%s is not a notation book (pages.json says kind %r); set kind: notation in the manifest and rerun 20"
                  % (args.book, pages_meta.get("kind")))
+    if args.recut:
+        out_dir = os.path.join(args.notations_dir, args.book)
+        got = recut(args.book, book_dir, os.path.join(out_dir, "images"), pages_meta, out_dir)
+        print("%s: %d image(s) already right, %d cut again, %d mismatch, %d with no page"
+              % (args.book, got["kept"], got["cut"], len(got["mismatch"]), len(got["no_page"])))
+        for m in got["mismatch"][:10]:
+            print("  mismatch %s" % m["file"])
+        sys.exit(1 if got["mismatch"] or got["no_page"] else 0)
     style = merge_style(pages_meta.get("style"))
     pages = pages_meta["pages"]
     if args.pages:
@@ -641,13 +728,33 @@ def main():
     borrowed = borrow_shabads(records)
     index = {"pages": [], "entries": [], "matched": 0, "credible": False, "front_pages_read": 0}
     index_use = {"filled": 0, "conflicts": 0, "agreed": 0}
+    offset = {"offset": None, "votes": {}, "witnesses": {}, "split": False}
+    missing: list[dict] = []
     if not args.no_index:
-        index = read_index(book_dir, con)
+        from lib.notation_index import missing_entries, page_offset
+        from lib.notation_layout import header_page_numbers
+        index = read_index(book_dir, con, n_pages=max((p["page"] for p in pages_meta["pages"]), default=0))
         index_use = index_shabads(records, index, con)
+        offset = page_offset(index["entries"], header_page_numbers(layouts, style), records)
+        missing = missing_entries(index["entries"], records, offset["offset"]) if index["credible"] else []
         if index["entries"] or index["front_pages_read"]:
             with open(os.path.join(out_dir, "index.json"), "w", encoding="utf-8", newline="\n") as fh:
                 json.dump({"book": args.book, "pages": index["pages"], "credible": index["credible"], "matched": index["matched"],
-                           "front_pages_read": index["front_pages_read"], "entries": index["entries"]}, fh, ensure_ascii=False, indent=1)
+                           "front_pages_read": index["front_pages_read"], "page_offset": offset, "raag_starts": index.get("raag_starts", []),
+                           "missing": missing, "entries": index["entries"]}, fh, ensure_ascii=False, indent=1)
+    # the review ledger: accepted notations come back as their fixtures, rejected ones go, backlog ones carry their comment
+    review = {"accepted": 0, "reused": 0, "lost": 0, "backlog": 0, "rejected": 0, "drift": []}
+    if not args.no_review:
+        from lib.notation_review import apply_review, read_ledger
+        ledger = read_ledger(args.book)
+        if ledger:
+            review = apply_review(records, ledger, images_dir)
+            records = review.pop("records")
+            all_images = [im for im in all_images if any(im["notation_id"] == r["notation_id"] for r in records)]
+            for r in records:
+                for im in r["images"]:
+                    if not any(x["notation_id"] == r["notation_id"] and x["n"] == im["n"] for x in all_images):
+                        all_images.append({**im, "notation_id": r["notation_id"]})
     raag_notes = raag_records(raag_descriptions(layouts), args.book, book_dir, images_dir, page_files)
     with open(os.path.join(out_dir, "raags.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(json.dumps({"_meta": {"book": args.book, "raag_notes": len(raag_notes)}}, ensure_ascii=False) + "\n")
@@ -672,7 +779,11 @@ def main():
               "dropped": dropped, "dropped_pages": sorted({p for d in dropped for p in d["pages"]}),
               "index": {"pages": index["pages"], "front_pages_read": index["front_pages_read"], "credible": index["credible"],
                         "entries": len(index["entries"]), "shabad_entries": sum(1 for e in index["entries"] if e["kind"] == "shabad"),
-                        "matched": index["matched"], **index_use},
+                        "matched": index["matched"], "page_offset": offset, "raag_starts": len(index.get("raag_starts", [])),
+                        "missing": missing, **index_use},
+              "long_spans": [r["notation_id"] for r in records if "long-span" in r["flags"]],
+              "review": review,
+              "commit": code_commit(),
               "flags": _count([f for r in records for f in r["flags"]]),
               "raags_used": _count([((r.get("heading") or {}).get("raag") or {}).get("key") for r in records]),
               "taals": _count([((r.get("heading") or {}).get("taal") or {}).get("key") for r in records]),
@@ -687,11 +798,17 @@ def main():
     print("%d pages -> %d spans -> %d records (%s), %d with a shabad; %d refused by the validator; %d part(s) without a shabad dropped"
           % (len(pages), len(spans), len(records), ", ".join("%s %d" % kv for kv in kinds.items()),
              meta["resolved"], len(problems), len(dropped)))
+    if review["accepted"] or review["backlog"] or review["rejected"]:
+        drift = [d for d in review["drift"] if not d.get("same") and not d.get("lost")]
+        print("  review: %d accepted (%d reused, %d lost), %d in backlog, %d rejected; %d accepted would move under the current reader"
+              % (review["accepted"], review["reused"], review["lost"], review["backlog"], review["rejected"], len(drift)))
     if index["front_pages_read"]:
-        print("  index: %s, %d shabad line(s) listed, %d known to the corpus%s; %d notation(s) named by it, %d agree, %d conflict"
-              % (("pages %s" % ",".join(map(str, index["pages"]))) if index["pages"] else "none found in %d front page(s)" % index["front_pages_read"],
+        print("  index: %s, %d shabad line(s) listed, %d known to the corpus%s; %d notation(s) named by it, %d agree, %d conflict; "
+              "%d raag start(s); page offset %s; %d listed shabad(s) not found"
+              % (("pages %s" % ",".join(map(str, index["pages"]))) if index["pages"] else "none found in %d page(s) read at the ends" % index["front_pages_read"],
                  sum(1 for e in index["entries"] if e["kind"] == "shabad"), index["matched"], "" if index["credible"] else " (not believed)",
-                 index_use["filled"], index_use["agreed"], index_use["conflicts"]))
+                 index_use["filled"], index_use["agreed"], index_use["conflicts"], len(index.get("raag_starts", [])),
+                 ("%+d" % offset["offset"]) if offset["offset"] is not None else ("split" if offset.get("split") else "unknown"), len(missing)))
     for p in problems[:5]:
         print("  refused %s: %s" % (p["notation_id"], "; ".join("%s at %s" % (e["code"], e["path"]) for e in p["errors"][:3])))
     print("  -> %s  and  %s" % (out_dir, report_path))

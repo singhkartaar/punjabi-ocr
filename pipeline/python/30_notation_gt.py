@@ -160,6 +160,10 @@ textarea{width:100%;box-sizing:border-box;font:inherit;min-height:3em}
 textarea.comment{min-height:5em;border:2px solid #c9a227;border-radius:4px;padding:6px;background:#fffdf5}
 .row.comment{margin-top:12px}
 .row{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.rkey{font-family:ui-monospace,monospace;font-size:12px;color:#666;margin:4px 12px}
+.prior{background:#fff4d6;border:1px solid #e0c060;padding:6px 8px;border-radius:4px;margin:6px 12px;font-size:13px}.prior b{color:#8a5a00}
+.prior.accepted{background:#e3f4e6;border-color:#8fc99a}.prior.accepted b{color:#2e7d32}
+.flag-long{background:#fde2e2;color:#a00;padding:1px 6px;border-radius:3px;font-size:12px}
 .count{color:#555}
 .ntn{overflow-x:auto;margin-top:8px}
 """
@@ -297,6 +301,15 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: s
     parts.append('<h2>%s <small>pages %s · %s · seq %d</small><span style="flex:1"></span>%s</h2>'
                  % (esc(cid), esc(",".join(map(str, rec["pages"]))), esc(rec["kind"]), rec["seq"],
                     "" if comments else '<button data-allok="%s">all right, verified</button>' % esc(cid)))
+    if rec.get("review_key"):
+        parts.append('<div class="rkey">%s%s</div>' % (esc(rec["review_key"]),
+                     ' <span class="flag-long">long span: %d pages</span>' % len(rec["pages"]) if "long-span" in rec.get("flags", []) else ""))
+    prior = rec.get("review") or {}
+    if prior.get("status") == "backlog":
+        parts.append('<div class="prior"><b>backlog, round %s:</b> %s%s</div>'
+                     % (esc(prior.get("round") or "?"), esc(prior.get("comment") or ""), " · <i>the cut changed since</i>" if prior.get("changed") else ""))
+    elif prior.get("status") == "accepted":
+        parts.append('<div class="prior accepted"><b>accepted</b> in round %s · frozen</div>' % esc(prior.get("round") or "?"))
     parts.append('<div class="crops">')
     blocks = [im for im in rec.get("images", []) if im["role"] == "block"]
     others = [im for im in rec.get("images", []) if im["role"] != "block"]
@@ -422,6 +435,8 @@ def review_page(book: str, meta: dict, records: list[dict], cands: list[dict], p
                 window: tuple[int, int] | None, warn: str | None, raag_notes: list[dict] | None = None,
                 pages_base: str | None = None, page_files: dict | None = None) -> None:
     corpus_lines: dict = {}
+    from lib.notation_review import assign_keys
+    assign_keys(records)
     by_id = {r["notation_id"]: r for r in records}
     body = [card(by_id[c["notation_id"]], c, img_base, corpus_lines, pages_base, page_files) for c in cands]
     shown_pages = {p for c in cands for p in (c.get("pages") or [])}

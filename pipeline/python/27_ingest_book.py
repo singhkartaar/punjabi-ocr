@@ -149,7 +149,10 @@ def plan(src: str, metas: list[dict], *, engines: list[str] | None = None, gpu_e
         # page before and after a notation, so a reader can see nothing was cut off
         read = widen_pages(window, 0, NOTATION_LOOKAHEAD) if window else None
         if read and not read.startswith("1-"):
-            read = "1-%d,%s" % (NOTATION_FRONT_PAGES, read)      # the index at the front names the numbered notations
+            # the index, at the front or the back of the book, names the numbered notations and the raag starts
+            n_all = pdf_pages(os.path.join(src, m.get("file") or ""))
+            back = ",%d-%d" % (max(1, n_all - NOTATION_FRONT_PAGES + 1), n_all) if n_all > 2 * NOTATION_FRONT_PAGES else ""
+            read = "1-%d,%s%s" % (NOTATION_FRONT_PAGES, read, back)
         page_args = ["--pages", read] if read else []
         render_args = ["--pages", widen_pages(read)] if read else []
         out.append(("pages", [script("20_ocr_pages.py"), "--src", src, "--book", book, "--out", ocr_dir] + render_args

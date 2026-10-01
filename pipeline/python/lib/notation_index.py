@@ -32,7 +32,8 @@ _GURMUKHI = re.compile(r"[ਅ-ਹਖ਼-ਫ਼]")
 
 MIN_ENTRIES = 8             # an index page lists this many lines with a page number at least
 MIN_SHARE = 0.4             # ... and they are this share of its body lines
-FRONT_PAGES = 25            # the index is looked for in the first pages of a book
+FRONT_PAGES = 25            # the index is looked for in the first pages of a book ...
+BACK_PAGES = 20             # ... and in the last ones (some books put it there)
 
 
 def _rows(lines: list[dict], tol: int = 28) -> list[list[dict]]:
@@ -102,9 +103,7 @@ def find_index(pages: dict[int, list[dict]]) -> dict:
     at least two consecutive pages qualify.
     """
     found: list[tuple[int, list[dict], bool]] = []
-    for p in sorted(pages):
-        if p > FRONT_PAGES:
-            break
+    for p in sorted(pages):                       # the caller chooses the pages: the front of the book, the back
         lines = pages[p]
         entries = page_entries(lines)
         titled = any(_TITLE_WORDS.search(l.get("text") or "") for l in lines)
@@ -123,11 +122,16 @@ def find_index(pages: dict[int, list[dict]]) -> dict:
     for p, entries in keep:
         for e in entries:
             out.append({**e, "index_page": p})
-    # a section's number carries to the shabads under it until the next section
+    # a section's number carries to the shabads under it until the next section; a section that
+    # names a raag is where that raag begins in the book (a raag-only index still says that)
+    from lib.notation_text import parse_heading
     section = None
     for e in out:
         if e["kind"] == "section":
             section = e["number"] if e["number"] is not None else section
+            raag = (parse_heading(e["text"]) or {}).get("raag") or {}
+            if raag.get("key"):
+                e["raag_key"] = raag["key"]
         else:
             e["section"] = section
     # Dyal Singh numbers the notations themselves: a shabad entry with its own number keeps it
@@ -173,16 +177,60 @@ def by_number(entries: list[dict]) -> dict[int, dict]:
     return out
 
 
-def page_offset(entries: list[dict], headers: dict[int, int]) -> int | None:
+def raag_starts(entries: list[dict]) -> list[dict]:
+    """[{key, text, page_printed, number}] for the sections of the index that name a raag."""
+    return [{"key": e["raag_key"], "text": e["text"], "page_printed": e["page_printed"], "number": e.get("number")}
+            for e in entries if e["kind"] == "section" and e.get("raag_key")]
+
+
+def page_offset(entries: list[dict], headers: dict[int, int], records: list[dict] | None = None) -> dict:
     """
-    Printed page -> rendered page, as a constant offset, from the page
-    numbers the running headers carry ({rendered page: printed number});
-    the most common difference, or None.
+    Printed page -> scan page as a constant offset, voted by two witnesses:
+    the page numbers the running headers carry ({scan page: printed}) and
+    the index entries whose shabad a record holds (the record's first
+    page against the entry's printed page). {"offset": int|None, "votes":
+    {offset: count}, "witnesses": {"headers": n, "entries": n}}; two
+    offsets with real support each are reported as `split`, not chosen.
     """
-    diffs: dict[int, int] = {}
-    for rendered, printed in headers.items():
-        d = rendered - printed
-        diffs[d] = diffs.get(d, 0) + 1
-    if not diffs:
-        return None
-    return max(diffs, key=diffs.get)
+    votes: dict[int, int] = {}
+    n_h = n_e = 0
+    for scan, printed in (headers or {}).items():
+        votes[scan - printed] = votes.get(scan - printed, 0) + 1
+        n_h += 1
+    by_sid: dict[int, list[int]] = {}
+    for r in records or []:
+        sid = (r.get("shabad") or {}).get("shabad_id")
+        if sid is not None and r.get("pages"):
+            by_sid.setdefault(sid, []).append(r["pages"][0])
+    for e in entries:
+        if e["kind"] != "shabad" or e.get("shabad_id") is None or not by_sid.get(e["shabad_id"]):
+            continue
+        scan = min(by_sid[e["shabad_id"]], key=lambda p: abs(p - e["page_printed"]))
+        votes[scan - e["page_printed"]] = votes.get(scan - e["page_printed"], 0) + 1
+        n_e += 1
+    if not votes:
+        return {"offset": None, "votes": {}, "witnesses": {"headers": n_h, "entries": n_e}, "split": False}
+    best = max(votes, key=votes.get)
+    others = [v for k, v in votes.items() if k != best and abs(k - best) > 1]
+    split = bool(others) and max(others) >= max(3, votes[best] // 2)
+    return {"offset": best if not split else None, "votes": {str(k): v for k, v in sorted(votes.items())},
+            "witnesses": {"headers": n_h, "entries": n_e}, "split": split}
+
+
+def missing_entries(entries: list[dict], records: list[dict], offset: int | None, slack: int = 2) -> list[dict]:
+    """The shabad entries whose shabad no record holds near the scan page the offset points at: the coverage list."""
+    if offset is None:
+        return []
+    by_sid: dict[int, list[int]] = {}
+    for r in records:
+        sid = (r.get("shabad") or {}).get("shabad_id")
+        if sid is not None:
+            by_sid.setdefault(sid, []).extend(r.get("pages") or [])
+    out = []
+    for e in entries:
+        if e["kind"] != "shabad" or e.get("shabad_id") is None:
+            continue
+        expected = e["page_printed"] + offset
+        if not any(abs(p - expected) <= slack for p in by_sid.get(e["shabad_id"], [])):
+            out.append({"text": e["text"], "shabad_id": e["shabad_id"], "page_printed": e["page_printed"], "expected_scan_page": expected})
+    return out
