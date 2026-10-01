@@ -468,7 +468,7 @@ def _label_sections(span: dict) -> None:
             sec["kind"], sec["n"] = "sthai", 1
 
 
-MAX_SPAN_PAGES = 3          # a shabad's notation runs over two or three pages at most; more is the next shabad unread
+MAX_SPAN_PAGES = 5          # a shabad's notation runs over two or three pages, rarely more; past five it is the next shabad unread
 CONTENT_ROLES = ("grid", "section", "marker", "note", "text")     # what makes a shabad's span a notation
 NOTATION_ROLES = ("grid", "section", "marker")                   # what says the grids have begun
 

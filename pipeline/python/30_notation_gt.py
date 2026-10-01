@@ -137,7 +137,7 @@ button.primary{background:#2a5db0;color:#fff;border-color:#2a5db0}
 .crops img{max-width:100%;height:auto;border:1px solid #ccc;display:block;margin:0 0 8px;background:#fff;cursor:zoom-in}
 .crops img.zoom{max-width:none;cursor:zoom-out}
 .crops .origs{display:flex;gap:10px;flex-wrap:wrap}.crops .origs figure{margin:0}.crops .origs figcaption{font-size:11px;color:#777}
-.crops .origs img{width:220px;height:auto}.crops .origs img.zoom{width:auto;max-width:100%}
+.crops .origs img{width:220px;height:auto}.crops .origs img.zoom{width:auto;max-width:100%}.crops .origs figure.ctx{opacity:.55;border:1px dashed #bbb;padding:4px;border-radius:4px}.crops .origs figure.ctx:hover{opacity:1}.crops .origs .noimg{width:220px;height:120px;display:flex;align-items:center;justify-content:center;color:#999;font-size:12px;background:#f4f4f4}
 .crops details{margin:8px 0}.crops summary,.facts summary{cursor:pointer;color:#555;font-size:13px}
 .pages-note{background:#fff4d6;border:1px solid #f0d890;border-radius:4px;padding:4px 8px;font-size:13px;margin:0 0 8px}
 .raags{margin:14px 16px;background:#fff;border:1px solid #ddd;border-radius:6px;padding:10px 12px}
@@ -288,12 +288,18 @@ def card(rec: dict, cand: dict, img_base: str, corpus_lines: dict, pages_base: s
         parts.append('<div class="role">as printed · page %d</div><img src="%s" loading="lazy" alt="notation, page %d">'
                      % (im["page"], esc(img_base + "/" + im["file"]), im["page"]))
     if pages_base:
-        parts.append('<div class="role">original page%s</div><div class="origs">' % ("s" if len(rec["pages"]) > 1 else ""))
-        for p in rec["pages"]:
+        parts.append('<div class="role">original page%s, with the page before and after</div><div class="origs">' % ("s" if len(rec["pages"]) > 1 else ""))
+        before, after = rec["pages"][0] - 1, rec["pages"][-1] + 1
+        for p in [before] + list(rec["pages"]) + [after]:
             f = page_files.get(p)
+            ctx = p in (before, after)
             if f:
-                parts.append('<figure><figcaption>page %d</figcaption><img src="%s" loading="lazy" alt="page %d"></figure>'
-                             % (p, esc(pages_base + "/" + f), p))
+                parts.append('<figure%s><figcaption>page %d%s</figcaption><img src="%s" loading="lazy" alt="page %d"></figure>'
+                             % (' class="ctx"' if ctx else "", p, " · before" if p == before else (" · after" if p == after else ""),
+                                esc(pages_base + "/" + f), p))
+            elif ctx:
+                parts.append('<figure class="ctx none"><figcaption>page %d%s</figcaption><div class="noimg">not rendered</div></figure>'
+                             % (p, " · before" if p == before else " · after"))
         parts.append("</div>")
     if others:
         parts.append('<details><summary>the parser\'s finer cuts (%d)</summary>' % len(others))

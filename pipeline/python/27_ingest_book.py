@@ -105,6 +105,19 @@ def books_in(src: str, only: str | None) -> list[dict]:
     return metas
 
 
+def widen_pages(spec: str, by: int = 1) -> str:
+    """'165-176,200' -> '164-177,199-201': each range grown by `by` pages on either side (never below 1)."""
+    out = []
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        a, b = (part.split("-", 1) + [part])[:2] if "-" in part else (part, part)
+        lo, hi = max(1, int(a) - by), int(b) + by
+        out.append("%d-%d" % (lo, hi))
+    return ",".join(out)
+
+
 def plan(src: str, metas: list[dict], *, engines: list[str] | None = None, gpu_engines: list[str] = (),
          gt: bool = False, translate: bool = True, translate_engine: str = "sarvam", ocr_dir: str = OCR_DIR,
          corpus_db: str = CORPUS_DB, pages: str | None = None) -> list[tuple[str, list[str] | str]]:
@@ -124,7 +137,10 @@ def plan(src: str, metas: list[dict], *, engines: list[str] | None = None, gpu_e
                 a, b = mid_window(n, NOTATION_GT_PAGES)
                 window = "%d-%d" % (a, b)
         page_args = ["--pages", window] if window else []
-        out.append(("pages", [script("20_ocr_pages.py"), "--src", src, "--book", book, "--out", ocr_dir] + page_args
+        # the page before and after a window are rendered (not read): the review page shows them
+        # beside a notation, so a reader can see nothing was cut off at either end
+        render_args = ["--pages", widen_pages(window)] if window else []
+        out.append(("pages", [script("20_ocr_pages.py"), "--src", src, "--book", book, "--out", ocr_dir] + render_args
                     + (["--bleed"] if m.get("bleed") else [])))
         names = list(engines or DEFAULT_ENGINES.get(lang + "-notation") or DEFAULT_ENGINES.get(lang, ["tesseract"]))
         for name in names:

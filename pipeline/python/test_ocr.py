@@ -405,6 +405,17 @@ class DriverTests(unittest.TestCase):
         self.assertEqual(mid_window(10, 5), (4, 8))
         self.assertEqual(mid_window(3, 5), (1, 3))
 
+    def test_a_window_is_rendered_one_page_wider_on_each_side_than_it_is_read(self):
+        from importlib import import_module
+        drv = import_module("27_ingest_book")
+        self.assertEqual(drv.widen_pages("165-176,200"), "164-177,199-201")
+        self.assertEqual(drv.widen_pages("1-4"), "1-5")
+        steps = self._plan({"author": "A", "language": "pa", "reader": "ocr", "kind": "notation",
+                            "works": [{"file": "n.pdf", "work": "n", "book": "n", "title": "N"}]}, pages="10-13")
+        argv = dict(steps)
+        self.assertIn("9-14", argv["pages"])
+        self.assertIn("10-13", argv["merge"])
+
     def test_an_english_book_is_not_translated_and_a_hindi_one_is(self):
         en = self._plan({"author": "A", "language": "en", "reader": "ocr",
                          "works": [{"file": "t.pdf", "work": "ten", "book": "ten", "title": "T"}]})
