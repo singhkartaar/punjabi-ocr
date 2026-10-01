@@ -616,6 +616,29 @@ def cut_image(img, im: dict, images_dir: str) -> str:
     return sha256_of(dst)
 
 
+def local_pdf(pdf: str | None, book_dir: str) -> str | None:
+    """
+    The book's PDF on this machine. pages.json travels by git and names the
+    path of the machine that rendered it; the data repository keeps the
+    PDFs beside the manifests (keertan/<author>/<file>, linked there by
+    link_library.py), so the same tail under this machine's data root, or
+    the same file name in any manifest folder, is the same book.
+    """
+    if pdf and os.path.exists(pdf):
+        return pdf
+    if not pdf:
+        return None
+    root = os.path.dirname(os.path.dirname(os.path.abspath(book_dir)))      # <data>/ocr/<book> -> <data>
+    norm = pdf.replace("\\", "/")
+    if "/keertan/" in norm:
+        cand = os.path.join(root, "keertan", norm.split("/keertan/", 1)[1])
+        if os.path.exists(cand):
+            return cand
+    import glob
+    hits = glob.glob(os.path.join(root, "keertan", "*", os.path.basename(norm)))
+    return hits[0] if len(hits) == 1 else None
+
+
 def recut(book: str, book_dir: str, images_dir: str, pages_meta: dict, out_dir: str) -> dict:
     """
     The images of a book cut again from the records' stored bboxes -- the
@@ -637,13 +660,24 @@ def recut(book: str, book_dir: str, images_dir: str, pages_meta: dict, out_dir: 
                      or sha256_of(os.path.join(images_dir, os.path.basename(im["file"]))) != im["sha256"]})
     missing_pages = [p for p in needed if p not in page_files or not os.path.exists(os.path.join(book_dir, "pages", page_files[p]))]
     if missing_pages:
-        pdf = pages_meta.get("pdf")
-        if not pdf or not os.path.exists(pdf):
-            sys.exit("pages %s are not rendered and the PDF %r is not here" % (missing_pages[:8], pdf))
-        subprocess.run([sys.executable, os.path.join(HERE, "20_ocr_pages.py"), "--pdf", pdf, "--book", book, "--out", os.path.dirname(book_dir),
-                        "--pages", ",".join(str(p) for p in missing_pages)], check=True)
-        with open(os.path.join(book_dir, "pages.json"), encoding="utf-8") as fh:
-            page_files = {p["page"]: p["file"] for p in json.load(fh).get("pages", [])}
+        pdf = local_pdf(pages_meta.get("pdf"), book_dir)
+        if not pdf:
+            sys.exit("pages %s are not rendered and the PDF %r is not here (link the library: link_library.py in the data repository)"
+                     % (missing_pages[:8], pages_meta.get("pdf")))
+        # rendered through the manifest beside the PDF, so the render carries the book's kind and style; the
+        # pages.json that came by git is put back afterwards untouched (the page files are NNNN.png either way)
+        here = os.path.dirname(os.path.abspath(__file__))
+        src = os.path.dirname(pdf)
+        via = ["--src", src] if os.path.exists(os.path.join(src, "manifest.json")) else ["--pdf", pdf]
+        meta_path = os.path.join(book_dir, "pages.json")
+        with open(meta_path, encoding="utf-8") as fh:
+            travelled = fh.read()
+        try:
+            subprocess.run([sys.executable, os.path.join(here, "20_ocr_pages.py"), *via, "--book", book, "--out", os.path.dirname(book_dir),
+                            "--pages", ",".join(str(p) for p in missing_pages)], check=True)
+        finally:
+            with open(meta_path, "w", encoding="utf-8", newline="") as fh:
+                fh.write(travelled)
     os.makedirs(images_dir, exist_ok=True)
     counts = {"kept": 0, "cut": 0, "mismatch": [], "no_page": []}
     cache: dict[int, object] = {}
@@ -696,6 +730,9 @@ def main():
               % (args.book, got["kept"], got["cut"], len(got["mismatch"]), len(got["no_page"])))
         for m in got["mismatch"][:10]:
             print("  mismatch %s" % m["file"])
+        if got["mismatch"]:
+            print("  (a crop is byte-identical only on the kind of machine that cut it -- the deskew rotation rounds differently\n"
+                  "   on Apple silicon and on x86; these look the same, but publish them from the machine that ran the book)")
         sys.exit(1 if got["mismatch"] or got["no_page"] else 0)
     style = merge_style(pages_meta.get("style"))
     pages = pages_meta["pages"]

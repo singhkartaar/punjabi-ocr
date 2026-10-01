@@ -106,6 +106,16 @@ book by book on this machine. What the agent does here, and does not:
   `21_ocr_run.py` and `29_notation_parse.py` use all cores but two; for
   several books at once set `NOTATION_WORKERS` (and `--workers` on 21)
   so they share the machine.
+- **Publish the images here, after the run** (only when the person asks
+  for it: it uploads to a public repository). The crops are byte-identical
+  only on the machine that cut them, so this machine publishes its own
+  books: `python 32_build_notations_db.py --book <book-key>
+  --allow-unmeasured --out $ARTIFACTS_DIR/notations.sqlite`, then `node
+  ../../tools/publish-notation-images.mjs --book <book-key> --dry-run`,
+  then without `--dry-run` (the repository comes from
+  `NOTATION_ASSETS_REPO`; exit 3 means run it again, it resumes), then
+  commit `notations/<book-key>/images.urls.json` in the data repository
+  and push. Never pass `--prune` unless asked: it deletes public assets.
 - **Never edit a record, a ledger line or a fixture by hand.** A wrong
   cut is a backlog comment through the review page; a reader fix is a
   rule in `lib/notation_layout.py` with a test in `LinkerRuleTests`

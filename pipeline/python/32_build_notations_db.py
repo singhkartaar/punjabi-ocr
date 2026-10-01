@@ -302,11 +302,15 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
                 problems.append("%s: taal key %r unknown to the vocabulary" % (rec["notation_id"], row["taal_key"]))
                 continue
             insert("notations", row)
-            for im in image_rows(rec, d, book_urls, by_file):
+            ims = list(image_rows(rec, d, book_urls, by_file))
+            # the app shows a notation's block cuts (and their thumbs), or every image of one without blocks;
+            # those are what tools/publish-notation-images.mjs publishes, and all --require-urls asks for
+            has_block = any(im["role"] == "block" for im in ims)
+            for im in ims:
                 full = os.path.join(src, im["path"])
                 if verify_images and os.path.exists(full) and im["sha256"] and sha256_of(full) != im["sha256"]:
                     problems.append("%s: %s does not match its sha256" % (rec["notation_id"], im["path"]))
-                if require_urls and not im["url"]:
+                if require_urls and not im["url"] and (im["role"] == "block" or not has_block):
                     problems.append("%s: image %s has no URL" % (rec["notation_id"], im["path"]))
                 insert("images", im)
                 images_manifest.append({"notation_id": im["notation_id"], "n": im["n"], "kind": im["kind"],
