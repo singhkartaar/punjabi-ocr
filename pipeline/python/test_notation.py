@@ -324,7 +324,7 @@ def write_expected():
 
 # ---- the page reader: text, layout, resolution ---------------------------------
 
-from lib.notation_layout import classify_line, link_pages, page_layout  # noqa: E402
+from lib.notation_layout import classify_line, link_pages, page_layout, raag_descriptions  # noqa: E402
 from lib.notation_resolve import resolve_shabad  # noqa: E402
 from lib.notation_text import (bol_text, clean_bol, is_heading_like, parse_heading, parse_ref, swara_token,  # noqa: E402
                                token_class)
@@ -1301,3 +1301,328 @@ if __name__ == "__main__":
         write_expected()
     else:
         unittest.main()
+
+
+class DescriptionBoundaryTests(unittest.TestCase):
+    """
+    The second cut's repeated failure (2 October 2026): the next raag's
+    description, printed after a notation's last grid, rode along with the
+    notation. Three shapes, each from the page that showed it.
+    """
+
+    def _page(self, page, lines, page_h=2669):
+        lay = page_layout(lines, 1727, page_h, merge_style(None), page)
+        lay["page_w"], lay["page_h"] = 1727, page_h
+        return lay
+
+    def _shabad(self, sid, y):
+        m = [{"shabad_id": sid, "line_id": sid * 10 + i, "score": 0.95, "source": "G"} for i in range(2)]
+        return [_line(2, "ਮਾਈ ਮੈ ਕਿਹਿ ਬਿਧਿ ਲਖਉ ਗੁਸਾਈ ॥", y, kind="gurbani", matches=[m[0]]),
+                _line(3, "ਮਹਾ ਮੋਹ ਅਗਿਆਨਿ ਤਿਮਰਿ ਮੋ ਮਨੁ ਰਹਿਓ ਉਰਝਾਈ ॥੧॥ ਰਹਾਉ ॥", y + 80, kind="gurbani", matches=[m[1]]),
+                _line(4, "(ਆਸਾ ਮ: ੫, ਪੰਨਾ ੩੭੮)", y + 170, x0=600, x1=1100)]
+
+    def _grids(self, n0, y):
+        return [_line(n0, "ਅਸਥਾਈ", y, x0=800, x1=900), _line(n0 + 1, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y + 60),
+                _line(n0 + 2, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", y + 140), _line(n0 + 3, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 220)]
+
+    # Gurbani Sangeet 1, p. 165: the description's lines, dashes and swar letters, as the OCR read them
+    DESCRIPTION = [".ਵਾਦੀ--ਗ ਠਾਠ - ਖਮਾਜ ਸਮਾਂ--ਰਾਤ ਦਾ ਦੂਜਾ ਪਹਿਰ", "ਸੰਵਾਦੀ -ਨ ਜਾਤ-ਓਡਵ --| ਨੂੁੰਪਸ਼ੁਰਸੌਗਤਿ।", "ਪਕੜ--ਨ੍ਸਗਮਪ --ਨਸੋਂ, ਠੁਪ, ਗਮਗ, ਸ ।",
+                   "ਆਰੌਹ--ਸਗ,ਮਪਨਸੰ। . -", "ਅਵਰੌਹ-ਸੰ ਨੁਪਮਗਸ। ਰ", "ਸੁਰ-ਫਿਸਥਾਰ",
+                   "ਸ਼ -- ਸਨ - ਨਸੇ, ਸਗ--ਗਮਗ--ਨ--ਠਪ--ਪਨ--ਨਸ--ਸਗ--ਮ, ਗਮ ੯ -- ਮੈ,", "ਸਨ੍--ਨਸ--ਨ੍ਸਗ--ਸਗਮ ਗਮਗ--ਸ--ਸਗਮਪ--ਨੁਪ, ਮਗ--ਪਗਮਗ--ਸ, ੍ ਨੌਸਗੇਮਪ---"]
+
+    def test_the_words_of_a_description_make_a_line_prose_not_a_grid_row(self):
+        for t in self.DESCRIPTION[:5]:
+            self.assertEqual(classify_line(_line(1, t, 300)), "text", t)
+        self.assertEqual(classify_line(_line(1, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 300)), "grid")
+
+    def test_a_raag_description_read_under_a_raag_heading_ends_the_notation_before_it(self):
+        p164 = self._page(164, [_line(1, "ਰਾਗ ਬੈਰਾੜੀ; ਜਪ ਤਾਲ, ਬਿਲੰਬਿਤ", 269, bold=True)] + self._shabad(48, 375) + self._grids(5, 1047))
+        p165 = self._page(165, [_line(1, "ਰਾਗ ਤਿਲੰਗ", 269, bold=True, x0=747, x1=973)]
+                          + [_line(2 + i, t, 330 + 62 * i) for i, t in enumerate(self.DESCRIPTION)])
+        p166 = self._page(166, [_line(1, "ਤਿਲੰਗ ਤਿੰਨ ਤਾਲ", 265, bold=True)] + self._shabad(2290, 358) + self._grids(5, 1746))
+        dropped = []
+        spans = link_pages([p164, p165, p166], merge_style(None), dropped)
+        self.assertEqual([s["pages"] for s in spans], [[164], [166]])
+        self.assertEqual([s["sid"] for s in spans], [48, 2290])
+        found = raag_descriptions([p164, p165, p166])
+        self.assertEqual([(d["raag"]["key"], d["page"]) for d in found], [("tilang", 165)])
+
+    def test_a_raag_the_vocabulary_cannot_name_still_opens_its_description(self):
+        # Gurbani Sangeet 2, p. 218: "ਰਾਗ ਨੰਦ ਕੌਂਸ" read as "ਰਾਗ ਨਦ ਕੱਸ"
+        p217 = self._page(217, [_line(1, "ਰਾਗ ਸਿੰਧੜਾ, ਤਿੰਨ ਤਾਲ", 1208, bold=True)] + self._shabad(2008, 1324) + self._grids(5, 2292))
+        p218 = self._page(218, self._grids(1, 219)[1:] + [_line(5, "ਰਾਗ ਨਦ ਕੱਸ", 1378, bold=True, x0=700, x1=1000)]
+                          + [_line(6 + i, t, 1487 + 70 * i) for i, t in enumerate(self.DESCRIPTION[:3])])
+        p219 = self._page(219, [_line(1, "ਰਾਗ ਨੰਦ ਕੌਂਸ, ਤਿੰਨ ਤਾਲ", 324, bold=True)] + self._shabad(1000, 490) + self._grids(5, 1417))
+        spans = link_pages([p217, p218, p219], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [[217, 218], [219]])
+        self.assertLess(spans[0]["extent"][218][3], 1378)
+
+    def test_a_raag_introduction_heading_takes_the_raag_heading_above_it_into_the_next_section(self):
+        # Guru Angad Dev Sangeet Darpan, p. 152: "ਰਾਗ ਦੇਵਗੰਧਾਰੀ" at the top of the page, "ਰਾਗੁ ਪਰੀਚੈ:-" under it
+        p151 = self._page(151, [_line(1, "ਰਾਗ ਗੁਜਰੀ ਤੀਨ ਤਾਲ ਮਾਤਰਾਂ-16 ਮੱਧ ਲੇਅ", 252, bold=True)] + self._shabad(5371, 333) + self._grids(5, 600))
+        p152 = self._page(152, [_line(1, "ਰਾਗ ਦੇਵਰੀਧਾਰੀ", 253, bold=True, x0=700, x1=1000), _line(2, "ਰਾਗੁ ਪਰੀਚੈ:-", 479, bold=True, x0=200, x1=500),
+                                _line(3, "ਸਵਰ- ਦੋਵੇਂ ਧੈਵਤ ਦੋਵੇਂ ਨਿਸ਼ਾਦ, ਹੋਰ ਸਭ ਸ਼ੁਧ ਵਰਜਿਤ ਸਵਰ-ਗੰਧਾਰ ਤੇ ਨਿਸ਼ਾਦ ਆਰੋਹ ਵਿੱਚ", 628),
+                                _line(4, "ਸ੍ਰੀ ਗੁਰੂ ਗਰੰਥ ਸਾਹਿਬ ਦੀ ਰਾਗੁ ਤਰਤੀਬ ਵਿੱਚ ਰਾਗੁ ਦੇਵਗੰਧਾਰੀ ਨੂੰ ਛੇਵਾਂ ਅਸਥਾਨ ਪ੍ਰਾਪਤ ਹੈ।", 993)]
+                          + self._shabad(5372, 1205) + [_line(8, "ਰਾਗੁ ਦੇਵਗੰਧਾਰੀ ਫਰੋਦਸਤ ਤਾਲ ਮਾਤਰਾਂ-14 ਮੱਧ ਲੈਅ", 1766, bold=True)] + self._grids(9, 1851))
+        spans = link_pages([p151, p152], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [[151], [152]])
+        self.assertEqual([s["sid"] for s in spans], [5371, 5372])
+        found = raag_descriptions([p151, p152])
+        self.assertEqual([d["page"] for d in found], [])        # the raag's name was not read: nothing to file it under
+
+
+class TailTests(unittest.TestCase):
+    """The lines after a notation's last grid stay its own (the second cut's 'missing in the end' cards)."""
+
+    def _page(self, page, lines):
+        lay = page_layout(lines, 1727, 2669, merge_style(None), page)
+        lay["page_w"], lay["page_h"] = 1727, 2669
+        return lay
+
+    TIHAI = ["1) ਪਹਿਲੀ ਤੋਂ ਚੌਥੀ ਮਾਤਰ ਦੇ ਟੁਕੜੇ ਨੂੰ ਦੂਜੀ ਮਾਤਰ ਤੋਂ ਲੈ ਕੇ ਇੱਕ ਮਾਤਰ ਬਿਸਰਾਮ ਫਿਰ ਤੀਜੀ",
+             "ਤੋਂ ਚੌਥੀ ਮਾਤਰ ਦਾ ਟੁਕੜਾ ਫਿਰ ਬਿਸਰਾਮ ਫਿਰ ਇਹੀ ਟੁਕੜਾ ਲੈ ਕੇ ਸਮ ਤੇ ਆਉਣਾ ਹੈ।",
+             "2) ਤੀਜੀ ਮਾਤਰ ਤੇ 'ਨਾਮ' ਦਾ ਉਚਾਰਨ ਕਰਨਾ ਹੈ ਪਹਿਲੀ ਮਾਤਰ ਤੋਂ 'ਸਿਮਰਤ ਨਾਮੁ' ਇਹ",
+             "ਟੁਕੜਾ ਗਾ ਕੇ ਸਮ ਤੇ ਆਉਣਾ ਹੈ।",
+             "3) 7ਵੀਂ ਤੋਂ 11ਵੀਂ ਮਾਤਰ ਦੇ 5 ਮਾਤਰਾਂ ਦੇ ਟੁਕੜੇ ਨੂੰ 8ਵੀਂ ਮਾਤਰ ਤੋਂ ਆਰੰਭ ਕਰਕੇ ਤਿੰਨ ਵਾਰ",
+             "ਬਰਾਬਰ ਲੈ ਕੇ ਸਮ ਤੇ ਸਮਾਪਤ ਕਰਨਾ ਹੈ।"]
+
+    def test_a_tihai_spelt_out_is_prose_not_a_verse_over_the_reference(self):
+        from lib.notation_layout import _verse_shaped
+        self.assertFalse(_verse_shaped("\n".join(self.TIHAI)))
+        kabit = "ਆਂਬ ਕੀ ਸਧਰ ਕਤ ਮਿਟਤ ਆਂਬਲੀ ਖਾਏ, ਪਿਆਸ ਨ ਬੁਝਤ ਜੈਸੇ ਬਾਰਿ ਕੇ ਬੁਝਾਏ ਹੈ।\nਸਾਧਸੰਗਿ ਗੁਰਮੁਖਿ ਸੁਖਫਲ ਪਾਏ, ਕਰਮ ਕਾਂਡ ਸੇ ਨ ਪਾਏ ਹੈ।"
+        self.assertTrue(_verse_shaped(kabit))
+
+    def test_the_notation_keeps_its_tihai_when_the_next_reference_stands_under_it(self):
+        # Gurmat Sangeet Darpan 2, p. 394: the tihai of 4733, then the reference and the salok of 4805
+        m = [{"shabad_id": 4805, "line_id": 48050 + i, "score": 0.95, "source": "G"} for i in range(2)]
+        p393 = self._page(393, [_line(1, "ਰਾਗੁ ਕਾਨੜਾ ਕੁੰਭ ਤਾਲ ਮਾਤਰਾਂ-11 ਵਿਲੰਭਿਤ ਲੈਅ", 1629, bold=True)]
+                          + [_line(2, "ਸਿਮਰਤ ਨਾਮੁ ਮਨਹਿ ਸੁਖੁ ਪਾਈਐ ॥", 1310, kind="gurbani", matches=[{"shabad_id": 4733, "line_id": 47330, "score": 0.95, "source": "G"}]),
+                             _line(3, "ਸਾਧ ਜਨਾ ਮਿਲਿ ਹਰਿ ਜਸੁ ਗਾਈਐ ॥੧॥ ਰਹਾਉ ॥", 1390, kind="gurbani", matches=[{"shabad_id": 4733, "line_id": 47331, "score": 0.95, "source": "G"}]),
+                             _line(4, "ਅਸਥਾਈ", 1707, x0=800, x1=900), _line(5, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 1824),
+                             _line(6, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 2085), _line(7, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 2313)])
+        p394 = self._page(394, [_line(1, "ਤਾਨਾਂ ਤੇ ਤਿਹਾਈਆਂ:-", 234), _line(2, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 386)]
+                          + [_line(3 + i, t, 472 + 64 * i) for i, t in enumerate(self.TIHAI)]
+                          + [_line(10, "(ਕਾਨੜੇ ਕੀ ਵਾਰ ਮਹਲਾ ੪) (੧੩੧੮)", 935, x0=600, x1=1100),
+                             _line(11, "ਸਲੋਕ ਮ:੪॥ ਹਉ ਢੂੰਢੇਂਦੀ ਸਜਣਾ ਸਜਣੁ ਮੈਡੈ ਨਾਲਿ ॥", 1002, kind="gurbani", matches=[m[0]]),
+                             _line(12, "ਜਨ ਨਾਨਕ ਅਲਖੁ ਨ ਲਖੀਐ ਗੁਰਮੁਖਿ ਦੇਹਿ ਦਿਖਾਲਿ ॥੧॥", 1070, kind="gurbani", matches=[m[1]]),
+                             _line(13, "ਰਾਗੁ ਕਾਨੜਾ ਏਕ ਤਾਲ ਮਾਤਰਾਂ-12 ਵਿਲੰਭਿਤ ਲੈਅ", 1248, bold=True), _line(14, "ਅਸਥਾਈ", 1325, x0=800, x1=900),
+                             _line(15, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 1598), _line(16, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 1680)])
+        self.assertNotIn("shabad", [r["role"] for r in p394["regions"] if r["bbox"][1] < 900])
+        spans = link_pages([p393, p394], merge_style(None))
+        self.assertEqual([s["sid"] for s in spans], [4733, 4805])
+        self.assertGreaterEqual(spans[0]["extent"][394][3], 472 + 64 * 5 + 60)     # the tihai's last line is 4733's
+        self.assertEqual(spans[1]["extent"][394][1], 935)                            # 4805 begins at its reference
+
+
+class PadhtiGranthTests(unittest.TestCase):
+    """Guru Nanak Sangeet Padhti Granth: the number at the left margin, the taal at the right, on one line."""
+
+    def _page(self, page, lines):
+        lay = page_layout(lines, 1568, 2421, merge_style(None), page)
+        lay["page_w"], lay["page_h"] = 1568, 2421
+        return lay
+
+    def test_a_bracketed_number_leads_a_heading(self):
+        from lib.notation_text import parse_heading
+        h = parse_heading("(੨) ਤੀਨ ਤਾਲ")
+        self.assertEqual((h["number"], h["taal"]["key"]), (2, "teentaal"))
+        self.assertEqual(parse_heading("(੧) ਰੂਪਕ ਤਾਲ")["number"], 1)
+        self.assertEqual(parse_heading("੧੬. ਰਾਗ ਭੈਰਵੀ, ਤਾਲ ਕਹਿਲਵਾ")["number"], 16)
+
+    def test_the_number_at_the_margin_and_the_taal_across_the_page_are_one_heading(self):
+        # p. 98: "ਰਾਗੁ ਭੈਰਉ" over "ਤੀਨ ਤਾਲ" (right) and "(੨)" (left), then the sthai
+        lines = [_line(1, "ਰਾਗੁ ਭੈਰਉ", 212, bold=True, x0=635, x1=899), _line(2, "ਤੀਨ ਤਾਲ", 362, x0=1257, x1=1414, h=50),
+                 _line(3, "(੨)", 375, x0=120, x1=174, h=50), _line(4, "ਸਥਾਈ", 425, x0=116, x1=224),
+                 _line(5, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 490), _line(6, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 570), _line(7, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 650)]
+        lay = self._page(98, lines)
+        heads = [r for r in lay["regions"] if r["role"] == "heading"]
+        self.assertEqual([h["text"] for h in heads], ["ਰਾਗੁ ਭੈਰਉ", "(੨) ਤੀਨ ਤਾਲ"])
+        self.assertEqual((heads[1]["parsed"]["number"], heads[1]["parsed"]["taal"]["key"]), (2, "teentaal"))
+        self.assertNotIn("pageno", [r["role"] for r in lay["regions"]])
+        # a page number at the foot of the page is still a page number
+        foot = self._page(99, [_line(1, "(੭੩)", 2300, x0=700, x1=800)] + lines[4:])
+        self.assertNotIn("heading", [r["role"] for r in foot["regions"]])
+
+    def test_a_second_numbered_notation_with_no_verse_is_the_same_shabad_again(self):
+        m = [{"shabad_id": 4006, "line_id": 40060 + i, "score": 0.95, "source": "G"} for i in range(2)]
+        p94 = self._page(94, [_line(1, "ਸਰਨੀ ਆਇਓ ਨਾਥ ਨਿਧਾਨ ॥ ਨਾਮ ਪ੍ਰੀਤਿ ਲਾਗੀ ਮਨ ਭੀਤਰਿ ਮਾਗਨ ਕਉ ਹਰਿ ਦਾਨ ॥੧॥ ਰਹਾਉ ॥", 314, kind="gurbani", matches=[m[0]]),
+                              _line(2, "ਸੁਖਦਾਈ ਪੂਰਨ ਪਰਮੇਸੁਰ ਕਰਿ ਕਿਰਪਾ ਰਾਖਹੁ ਮਾਨ ॥", 384, kind="gurbani", matches=[m[1]]),
+                              _line(3, "ਰਾਗੁ ਕੇਦਾਰਾ", 587, bold=True, x0=606, x1=921), _line(4, "ਤੀਨ ਤਾਲ", 672, x0=1250, x1=1400, h=50),
+                              _line(5, "(੧)", 682, x0=115, x1=170, h=50), _line(6, "ਸਥਾਈ", 729, x0=113, x1=219),
+                              _line(7, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 790), _line(8, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 870), _line(9, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 950),
+                              _line(10, "ਕੀਰਤਨਕਾਰ ਭਾ. ਨਿਰੰਜਨ ਸਿੰਘ, ਜਵੱਦੀ ਕਲਾਂ", 2026, x0=700, x1=1400)])
+        p95 = self._page(95, [_line(1, "ਰਾਗ ਕੇਦਾਰਾ", 221, bold=True, x0=640, x1=955), _line(2, "ਤੀਨਤਾਲ", 362, x0=1257, x1=1414, h=50),
+                              _line(3, "(੨)", 375, x0=145, x1=199, h=50), _line(4, "ਸਥਾਈ", 425, x0=141, x1=249),
+                              _line(5, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 490), _line(6, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 570), _line(7, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 650),
+                              _line(8, "ਕੀਰਤਨਕਾਰ ਡਾ. ਗੁਰਿੰਦਰ ਕੌਰ, ਦਿੱਲੀ", 1600, x0=700, x1=1400)])
+        spans = link_pages([p94, p95], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [[94], [94, 95]])      # the second carries the shabad's text from 94
+        self.assertEqual([s["sid"] for s in spans], [4006, 4006])
+        self.assertEqual([s["heading"]["parsed"]["number"] for s in spans], [1, 2])
+        self.assertTrue(spans[1]["inherited"])
+
+
+class DarpanTests(unittest.TestCase):
+    """Gurmat Sangeet Darpan prints the Granth reference ABOVE the verse (style.ref_position before)."""
+
+    def _page(self, page, lines, before=True):
+        style = merge_style({"ref_position": "before"} if before else None)
+        lay = page_layout(lines, 1854, 2606, style, page)
+        lay["page_w"], lay["page_h"] = 1854, 2606
+        return lay
+
+    def _lines(self):
+        # p. 158: the pauri's notation ends in a tihai, then the reference, the salok the corpus missed, its heading and grids
+        return [_line(1, "ਰਾਗੁ ਗੂਜਰੀ ਤਾਲ ਪੰਚਮ ਸਵਾਰੀ ਮਾਤਰਾਂ-15 ਵਿਲੰਭਿਤ ਲੈਅ", 168, bold=True), _line(2, "ਅਸਥਾਈ", 251, x0=800, x1=950),
+                _line(3, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 320), _line(4, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 400), _line(5, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 480),
+                _line(6, "1) 10ਵੀਂ ਮਾਤਰਾਂ ਤੋਂ ਇਹ 2 ਮਾਤਰਾਂ ਨੂੰ ਤਿੰਨ ਵਾਰ ਗਾ ਕੇ ਸਮ ਤੇ ਆਉਣਾ ਹੈ।", 1123),
+                _line(7, "(ਰਾਗੁ ਗੂਜਰੀ ਵਾਰ ਮਹਲਾ ੫) (੫੨੧)", 1492, x0=600, x1=1200),
+                _line(8, "ਮ: ੫।। ਰਾਮੁ ਰਮਹੁ ਬਡਭਾਗੀਹੋ ਜਲਿ ਥਲਿ ਮਹੀਅਲਿ ਸੋਇ।। ਨਾਨਕ ਨਾਮਿ ਅਰਾਧਿਐ ਬਿਘਨੁ", 1547),
+                _line(9, "ਨ ਲਾਗੈ ਕੋਇ।।੨।।", 1600, x0=200, x1=500),
+                _line(10, "ਰਾਗੁ ਗੂਜਰੀ ਤਾਲ ਨਾਰਾਇਣੀ ਮਾਤਰਾਂ- 9 ਵਿਲੰਭਿਤ ਲੈਅ", 1664, bold=True), _line(11, "ਅਸਥਾਈ", 1740, x0=800, x1=950),
+                _line(12, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 1800), _line(13, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 1880), _line(14, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 1960)]
+
+    def test_the_verse_under_a_reference_is_the_shabad_whatever_the_ocr_made_of_it(self):
+        lay = self._page(158, self._lines())
+        roles = [(r["role"], r["bbox"][1]) for r in lay["regions"]]
+        self.assertIn(("ref", 1492), roles)
+        self.assertIn(("shabad", 1547), roles)
+        m = [{"shabad_id": 1981, "line_id": 19810, "score": 0.95, "source": "G"}]
+        p157 = self._page(157, [_line(1, "(ਰਾਗੁ ਗੁਜਰੀ ਵਾਰ ਮਹਲਾ ੫) (੫੨੧)", 1920, x0=600, x1=1200),
+                                _line(2, "ਪਉੜੀ।। ਵਾਹੁ ਵਾਹੁ ਸਿਰਜਣਹਾਰ ਪਾਈਅਨੁ ਠਾਢਿ ਆਪਿ ॥ ਜੀਅ ਜੰਤ ਮਿਹਰਵਾਨੁ ਤਿਸ ਨੋ ਸਦਾ ਜਾਪਿ ॥", 1992, kind="gurbani", matches=m)])
+        spans = link_pages([p157, lay], merge_style({"ref_position": "before"}))
+        self.assertEqual([s["pages"] for s in spans], [[157, 158], [158]])
+        self.assertEqual([s["sid"] for s in spans], [1981, None])
+        self.assertEqual(spans[0]["extent"][158][3], 1491)                       # the tihai is the pauri's, up to the reference
+        self.assertEqual(spans[1]["extent"][158][1], 1492)                       # the salok's notation begins at its reference
+        self.assertEqual(spans[1]["ref"]["text"], "(ਰਾਗੁ ਗੂਜਰੀ ਵਾਰ ਮਹਲਾ ੫) (੫੨੧)")
+
+    def test_a_book_with_the_reference_after_the_verse_is_untouched(self):
+        lay = self._page(158, self._lines(), before=False)
+        self.assertNotIn("shabad", [r["role"] for r in lay["regions"]])
+
+
+class PadhtiNumberTests(unittest.TestCase):
+    def test_a_bare_number_heading_opens_the_next_notation_when_its_taal_was_lost(self):
+        # p. 95 as the OCR read it: "ਰਾਗ ਕੇਦਾਰਾ", "(੨)" and no taal at all
+        def page(n, lines):
+            lay = page_layout(lines, 1568, 2421, merge_style(None), n)
+            lay["page_w"], lay["page_h"] = 1568, 2421
+            return lay
+        m = [{"shabad_id": 4006, "line_id": 40060 + i, "score": 0.95, "source": "G"} for i in range(2)]
+        p94 = page(94, [_line(1, "ਸਰਨੀ ਆਇਓ ਨਾਥ ਨਿਧਾਨ ॥ ਨਾਮ ਪ੍ਰੀਤਿ ਲਾਗੀ ਮਨ ਭੀਤਰਿ ਮਾਗਨ ਕਉ ਹਰਿ ਦਾਨ ॥੧॥ ਰਹਾਉ ॥", 314, kind="gurbani", matches=[m[0]]),
+                        _line(2, "ਸੁਖਦਾਈ ਪੂਰਨ ਪਰਮੇਸੁਰ ਕਰਿ ਕਿਰਪਾ ਰਾਖਹੁ ਮਾਨ ॥", 384, kind="gurbani", matches=[m[1]]),
+                        _line(3, "ਰਾਗੁ ਕੇਦਾਰਾ", 587, bold=True, x0=606, x1=921), _line(5, "(੧)", 682, x0=115, x1=170, h=50), _line(6, "ਸਥਾਈ", 729, x0=113, x1=219),
+                        _line(7, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 790), _line(8, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 870), _line(9, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 950)])
+        p95 = page(95, [_line(1, "ਰਾਗ ਕੇਦਾਰਾ", 221, bold=True, x0=640, x1=955), _line(3, "(੨)", 375, x0=145, x1=199, h=50), _line(4, "ਸਥਾਈ", 425, x0=141, x1=249),
+                        _line(5, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 490), _line(6, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 570), _line(7, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 650)])
+        spans = link_pages([p94, p95], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [[94], [94, 95]])
+        self.assertEqual([s["sid"] for s in spans], [4006, 4006])
+        self.assertEqual(spans[1]["heading"]["parsed"]["number"], 2)
+
+
+class DarpanBracketedHeadingTests(unittest.TestCase):
+    def test_a_bracketed_granth_heading_is_the_reference_of_the_verse_under_it(self):
+        # Darpan 1 p. 213: "(ਬਿਹਾਗੜਾ ਮਹਲਾ ੫)" then nineteen lines the corpus did not match, then the heading and grids
+        style = merge_style({"ref_position": "before"})
+        def page(n, lines):
+            lay = page_layout(lines, 1854, 2606, style, n)
+            lay["page_w"], lay["page_h"] = 1854, 2606
+            return lay
+        m = [{"shabad_id": 2065, "line_id": 20650 + i, "score": 0.95, "source": "G"} for i in range(2)]
+        p213 = page(213, [_line(1, "ਰਾਗ ਬਿਹਾਗੜਾ ਤਾਲ ਦੀਪਚੰਦੀ ਮਾਤਰਾਂ-14 ਮੱਧ ਲੈਅ", 397, bold=True), _line(2, "ਅਸਥਾਈ", 480, x0=800, x1=950),
+                          _line(3, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 560), _line(4, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 640), _line(5, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 720),
+                          _line(6, "(ਬਿਹਾਗੜਾ ਮਹਲਾ ੫)", 1293, bold=True, x0=700, x1=1100),
+                          _line(7, "ਅਮਿਤ ਬਾਣੀ ਰਾਮ।। ਜਿਨ ਪ੍ਰਭੁ ਕਿਰਪਾ ਕਰੇ।।", 1365), _line(8, "ਅਕਥ ਕਹਾਣੀ ਤਿਨੀ ਜਾਣੀ ਜਿ ਪ੍ਰਭ ਭਾਣੀ।।", 1430),
+                          _line(9, "ਰਾਗ ਬਿਹਾਗੜਾ ਤਾਲ ਰੁਪਕ ਮਾਤਰਾਂ-7", 1748, bold=True), _line(10, "ਅਸਥਾਈ", 1825, x0=800, x1=950),
+                          _line(11, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 1900), _line(12, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 1980), _line(13, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 2060)])
+        p212 = page(212, [_line(1, "(ਰਾਗੁ ਬਿਹਾਗੜਾ ਛੰਤ ਮਹਲਾ ੪ ਘਰੁ ੧) (੫੩੮)", 2258, x0=600, x1=1200),
+                          _line(2, "ਸਖੀ ਸਹੇਲੀ ਮੇਰੀਆ ਮੇਰੀ ਜਿੰਦੁੜੀਏ ਕੋਈ ਹਰਿ ਪ੍ਰਭੁ ਆਣਿ ਮਿਲਾਵੈ ਰਾਮ ॥", 2320, kind="gurbani", matches=[m[0]])])
+        roles = [(r["role"], r["bbox"][1]) for r in p213["regions"]]
+        self.assertIn(("ref", 1293), roles)
+        self.assertIn(("shabad", 1365), roles)
+        spans = link_pages([p212, p213], style)
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([212, 213], 2065), ([213], None)])
+        self.assertEqual(spans[0]["extent"][213][3], 1292)
+
+
+class SectionPairingTests(unittest.TestCase):
+    """Guru Nanak Sangeet Padhti Granth: shabads and notations pair by order within a raag section."""
+
+    def _page(self, page, lines):
+        style = merge_style({"pairing": "section"})
+        lay = page_layout(lines, 1568, 2421, style, page)
+        lay["page_w"], lay["page_h"] = 1568, 2421
+        return lay
+
+    def _m(self, sid):
+        return [[{"shabad_id": sid, "line_id": sid * 10 + i, "score": 0.95, "source": "G"}] for i in range(2)]
+
+    def _grids(self, n0, y):
+        return [_line(n0, "ਸਥਾਈ", y, x0=116, x1=224), _line(n0 + 1, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y + 65),
+                _line(n0 + 2, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", y + 145), _line(n0 + 3, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 225)]
+
+    DESC = ["ਭੈਰਉ (ਭੈਰਵ) ਬਹੁਤ ਪ੍ਰਾਚੀਨ, ਮਧੁਰ ਅਤੇ ਪ੍ਰਮੁਖ ਰਾਗਾਂ ਵਿੱਚੋਂ ਇਕ ਹੈ।", "ਸਵਰ - ਰਿਸ਼ਭ ਤੇ ਧੈਵਤ ਕੋਮਲ, ਬਾਕੀ ਸ਼ੁੱਧ", "ਥਾਟ - ਭੈਰਵ",
+            "ਸ ਰੇ ਗ ਮ | ਪ ਧ ਨੀ ਸੰ |", "ਸਮਾਂ - ਸਵੇਰ ਦਾ ਸੰਧੀ-ਪ੍ਰਕਾਸ਼"]        # the aaroh reads as a grid row of one line
+
+    def test_two_shabads_then_two_notations_pair_in_order(self):
+        a, b = self._m(4086), self._m(4087)
+        p96 = self._page(96, [_line(1, "ਰਾਗੁ ਭੈਰਉ", 353, bold=True, x0=674, x1=942)] + [_line(2 + i, t, 474 + 70 * i) for i, t in enumerate(self.DESC)]
+                         + [_line(7, "ਸਤਿਗੁਰੁ ਮੇਰਾ ਬੇਮੁਹਤਾਜੁ ॥ ਸਤਿਗੁਰ ਮੇਰੇ ਸਚਾ ਸਾਜੁ ॥", 1594, kind="gurbani", matches=a[0]),
+                            _line(8, "ਸਤਿਗੁਰੁ ਮੇਰਾ ਸਭਸ ਕਾ ਦਾਤਾ ॥ ਸਤਿਗੁਰੁ ਮੇਰਾ ਪੁਰਖੁ ਬਿਧਾਤਾ ॥੧॥", 1660, kind="gurbani", matches=a[1])])
+        p97 = self._page(97, [_line(1, "ਮਾਥੇ ਤਿਲਕੁ ਹਥਿ ਮਾਲਾ ਬਾਨਾਂ ॥ ਲੋਗਨ ਰਾਮੁ ਖਿਲਉਨਾ ਜਾਨਾਂ ॥੧॥", 290, kind="gurbani", matches=b[0]),
+                              _line(2, "ਜਉ ਹਉ ਬਉਰਾ ਤਉ ਰਾਮ ਤੋਰਾ ॥ ਲੋਗੁ ਮਰਮੁ ਕਹ ਜਾਨੈ ਮੋਰਾ ॥੧॥ ਰਹਾਉ ॥", 345, kind="gurbani", matches=b[1]),
+                              _line(3, "ਰਾਗੁ ਭੈਰਉ", 552, bold=True, x0=674, x1=942), _line(4, "(੧) ਰੂਪਕ ਤਾਲ", 697, bold=True)] + self._grids(5, 767))
+        p98 = self._page(98, [_line(1, "ਰਾਗੁ ਭੈਰਉ", 212, bold=True, x0=635, x1=899), _line(2, "ਤੀਨ ਤਾਲ", 362, x0=1257, x1=1414, h=50),
+                              _line(3, "(੨)", 375, x0=120, x1=174, h=50)] + self._grids(4, 425))
+        spans = link_pages([p96, p97, p98], merge_style({"pairing": "section"}))
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([96, 97], 4086), ([97, 98], 4087)])
+        self.assertEqual([s["heading"]["parsed"]["number"] for s in spans], [1, 2])
+
+    def test_a_notation_takes_the_shabad_printed_under_it(self):
+        x, y = self._m(3724), self._m(3748)
+        kafi = ["ਸਵਰ - ਦੋਵੇਂ ਗੰਧਾਰ, ਦੋਵੇਂ ਮਧਿਅਮ, ਦੋਵੇਂ ਨਿਸ਼ਾਦ, ਬਾਕੀ ਸੁਰ ਸ਼ੁੱਧ", "ਥਾਟ - ਕਾਫ਼ੀ", "ਜਾਤੀ - ਸੰਪੂਰਨ", "ਵਾਦੀ - ਪੰਚਮ", "ਸੰਵਾਦੀ - ਸ਼ੜਜ"]
+        p184 = self._page(184, [_line(1, "ਰਾਗੁ ਮਾਰੂ ਕਾਫੀ", 190, bold=True, x0=500, x1=1000)] + [_line(2 + i, t, 350 + 50 * i) for i, t in enumerate(kafi)]
+                          + [_line(8, "ਸਥਾਈ", 840, x0=60, x1=160), _line(9, "ਤੀਨਤਾਲ", 840, x0=1000, x1=1120)]
+                          + [_line(10, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 980), _line(11, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 1060), _line(12, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 1140)])
+        p185 = self._page(185, [_line(1, "ਅੰਤਰਾ", 230, x0=100, x1=200), _line(2, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 370), _line(3, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 450),
+                                _line(4, "ਆਵਉ ਵੰਞਉ ਡੁੰਮਣੀ ਕਿਤੀ ਮਿਤ੍ਰ ਕਰੇਉ ॥ ਸਾ ਧਨ ਢੋਈ ਨ ਲਹੈ ਵਾਢੀ ਕਿਉ ਧੀਰੇਉ ॥੧॥", 1089, kind="gurbani", matches=x[0]),
+                                _line(5, "ਮੈਡਾ ਮਨੁ ਰਤਾ ਆਪਨੜੇ ਪਿਰ ਨਾਲਿ ॥ ਹਉ ਘੋਲਿ ਘੁਮਾਈ ਖੰਨੀਐ ਕੀਤੀ ਹਿਕ ਭੋਰੀ ਨਦਰਿ ਨਿਹਾਲਿ ॥੧॥ ਰਹਾਉ ॥", 1150, kind="gurbani", matches=x[1]),
+                                _line(6, "ਕੀਰਤਨਕਾਰ ਬੀਬੀ ਮਨਜੀਤ ਕੌਰ ਪਟਿਆਲਾ", 1860, x0=700, x1=1400)])
+        p186 = self._page(186, [_line(1, "ਰਾਗੁ ਮਾਰੂ ਦਖਣੀ", 249, bold=True, x0=500, x1=1000)] + [_line(2 + i, t, 350 + 50 * i) for i, t in enumerate(kafi)]
+                          + [_line(8, "ਸਥਾਈ", 953, x0=60, x1=160), _line(9, "ਏਕਤਾਲ", 953, x0=1000, x1=1120)]
+                          + [_line(10, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 1060), _line(11, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 1140), _line(12, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 1220)])
+        p187 = self._page(187, [_line(1, "ਕਾਇਆ ਨਗਰੁ ਨਗਰ ਗੜ ਅੰਦਰਿ ॥ ਸਾਚਾ ਵਾਸਾ ਪੁਰਿ ਗਗਨੰਦਰਿ ॥", 251, kind="gurbani", matches=y[0]),
+                                _line(2, "ਅਸਥਿਰੁ ਥਾਨੁ ਸਦਾ ਨਿਰਮਾਇਲੁ ਆਪੇ ਆਪੁ ਉਪਾਇਦਾ ॥੧॥", 320, kind="gurbani", matches=y[1])])
+        spans = link_pages([p184, p185, p186, p187], merge_style({"pairing": "section"}))
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([184, 185], 3724), ([186, 187], 3748)])
+        self.assertTrue(all(s["inherited"] for s in spans))
+        self.assertLess(spans[0]["extent"][184][1], 900)                              # the body begins at its sthai, after the description
+        self.assertGreater(spans[0]["extent"][184][1], 600)
+
+
+class SourceLineTests(unittest.TestCase):
+    def test_a_line_naming_another_scripture_opens_a_shabad_of_that_source(self):
+        # Darpan 1 p. 214: the Kabit Savaiye after a Granth shabad's notation
+        style = merge_style({"ref_position": "before"})
+        def page(n, lines):
+            lay = page_layout(lines, 1854, 2606, style, n)
+            lay["page_w"], lay["page_h"] = 1854, 2606
+            return lay
+        m = [{"shabad_id": 2065, "line_id": 20650 + i, "score": 0.95, "source": "G"} for i in range(2)]
+        p213 = page(213, [_line(1, "(ਰਾਗੁ ਬਿਹਾਗੜਾ ਛੰਤ ਮਹਲਾ ੪ ਘਰੁ ੧) (੫੩੮)", 300, x0=600, x1=1200),
+                          _line(2, "ਸਖੀ ਸਹੇਲੀ ਮੇਰੀਆ ਮੇਰੀ ਜਿੰਦੁੜੀਏ ਕੋਈ ਹਰਿ ਪ੍ਰਭੁ ਆਣਿ ਮਿਲਾਵੈ ਰਾਮ ॥", 360, kind="gurbani", matches=[m[0]]),
+                          _line(3, "ਰਾਗ ਬਿਹਾਗੜਾ ਤਾਲ ਰੁਪਕ ਮਾਤਰਾਂ-7", 1748, bold=True), _line(4, "ਅਸਥਾਈ", 1825, x0=800, x1=950),
+                          _line(5, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 1900), _line(6, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 1980), _line(7, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 2060)])
+        p214 = page(214, [_line(1, "ਕਬਿੱਤ ਸਵੱਯੇ (ਭਾਈ ਗੁਰਦਾਸ ਜੀ)", 203, x0=500, x1=1100),
+                          _line(2, "ਆਂਬ ਕੀ ਸਧਰ ਕਤ ਮਿਟਤ ਆਂਬਲੀ ਖਾਏ, ਪਿਆਸ ਨ ਬੁਝਤ ਜੈਸੇ ਬਾਰਿ ਕੇ ਬੁਝਾਏ ਹੈ।", 270),
+                          _line(3, "ਸਾਧਸੰਗਿ ਗੁਰਮੁਖਿ ਸੁਖਫਲ ਪਾਏ, ਕਰਮ ਕਾਂਡ ਸੇ ਨ ਪਾਏ ਹੈ।", 330),
+                          _line(4, "ਰਾਗ ਬਿਹਾਗੜਾ ਤਾਲ ਦਾਦਰਾ ਮਾਤਰਾਂ-6 ਮੱਧ ਲੈਅ", 709, bold=True), _line(5, "ਅਸਥਾਈ ਅੰਤਰਾ", 786, x0=700, x1=1000),
+                          _line(6, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 860), _line(7, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", 940), _line(8, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 1020)])
+        roles = [(r["role"], r["bbox"][1]) for r in p214["regions"]]
+        self.assertIn(("ref", 203), roles)
+        self.assertIn(("shabad", 270), roles)
+        spans = link_pages([p213, p214], style)
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([213], 2065), ([214], None)])
+        self.assertEqual(spans[1]["ref"]["parsed"]["source"], "B")

@@ -821,6 +821,47 @@ class DriverTests(unittest.TestCase):
 class BenchTests(unittest.TestCase):
     """29_bench_books.py: the sample, the scorecard and its table."""
 
+    def test_a_place_added_to_a_sample_overlaps_none_already_read(self):
+        import random
+        from importlib import import_module
+        sample = import_module("33_notation_sample")
+        rng = random.Random(3)
+        have = [(42, 44), (72, 74), (76, 78), (98, 100), (106, 108)]
+        for _ in range(20):
+            w = sample.another_window(124, have, 3, rng)
+            self.assertIsNotNone(w)
+            a, c = w
+            self.assertTrue(int(0.12 * 124) <= a and c <= 124 and c - a == 2)
+            self.assertTrue(all(c < x - sample.LOOKAHEAD or a > y + sample.LOOKAHEAD for x, y in have))
+        # a book with no room left between its places says so
+        self.assertIsNone(sample.another_window(30, [(1, 30)], 3, rng))
+
+    def test_a_short_book_is_read_whole_when_asked(self):
+        """Raags-PU: one-shabad excerpts of one to six pages, under the twenty-page floor, read every page."""
+        import random
+        import tempfile
+        from importlib import import_module
+        sample = import_module("33_notation_sample")
+        self.assertEqual(sample.windows_for(4, 5, 3, random.Random(1), ["whole"]), [(1, 4)])
+        self.assertEqual(sample.windows_for(1, 5, 3, random.Random(1), ["whole"]), [(1, 1)])
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "Raags-PU"))
+            import fitz
+            doc = fitz.open()
+            for _ in range(2):
+                doc.new_page()
+            doc.save(os.path.join(d, "Raags-PU", "289. Adana (Tu mera Trang).pdf"))
+            self.assertEqual(sample.library_books(d), [])
+            books = sample.library_books(d, min_pages=1)
+            self.assertEqual([(b["author_slug"], b["book"], b["pages"]) for b in books], [("raags-pu", "289-adana-tu-mera-trang", 2)])
+            # a manifest may mark a file skip: a second scan of a book the shelf already has
+            folder = os.path.join(d, "keertan", "raags-pu")
+            os.makedirs(folder)
+            with open(os.path.join(folder, "manifest.json"), "w", encoding="utf-8") as fh:
+                json.dump({"author": "Raags-PU", "works": [{"file": "289. Adana (Tu mera Trang).pdf", "book": "289-adana-tu-mera-trang", "skip": True}]}, fh)
+            self.assertTrue(sample.work_skipped(folder, "289. Adana (Tu mera Trang).pdf"))
+            self.assertFalse(sample.work_skipped(folder, "other.pdf"))
+
     def test_the_sample_is_the_first_pages_and_a_spread_over_the_rest(self):
         from importlib import import_module
         b = import_module("29_bench_books")

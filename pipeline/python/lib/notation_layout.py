@@ -29,12 +29,55 @@ _BAR_CHARS = re.compile(r"[|¦│\[\]{}!]|(?<![।])।(?![।])")
 _BAR_SPLIT = re.compile(r"[\s|¦│\[\]{}!]+|(?<![।])।(?![।])")
 _PAGENO = re.compile(r"^[\s।॥()\-]*[0-9੦-੯]{1,4}[\s।॥()\-]*$")
 _COUNT_LINE = re.compile(r"[\s0-9੦-੯॥।]+")
-_NUMBER_LINE = re.compile(r"^\s*[0-9੦-੯]{1,4}\s*[.)।]?\s*$")
+_NUMBER_LINE = re.compile(r"^\s*\(?\s*[0-9੦-੯]{1,4}\s*[.)।]?\s*$")                  # "੧੮.", "(੨)"
 _GRANTH_HEADING = re.compile(r"(?:ਮਹਲਾ|ਮਹੱਲਾ|ਮਃ|ਮ[:ਃ])\s*[੧-੯1-9]")
 _MARKER_GLYPH = re.compile(r"^[x×X+०੦0oO°\[\)\(\]ਨਤੇੜੇ੨੩੪੧2345]{1,3}$")
 
 
 # ---- lines -----------------------------------------------------------------
+
+# The words a book uses when it describes a raag before its shabads -- the
+# vaadi and samvaadi, the thaat, the pakad, aaroh and avroh, the swar-vistaar,
+# a "ਰਾਗ ਪਰੀਚੈ" (introduction). Swar sequences set with dashes ("ਆਰੋਹ--ਸਗ,ਮਪਨਸੰ")
+# read as grid rows by token shape, which is how a description under a raag's
+# heading rode along with the notation before it (Gurbani Sangeet 1, p. 165,
+# the second cut, 2 October 2026). A line that says one of these words is prose.
+_DESCRIPTION_WORDS = re.compile(r"ਸੰਵਾਦੀ|ਸੌਵਾਦੀ|ਵਾਦੀ|ਠਾਠ|ਥਾਟ|ਪਕੜ|ਆਰ[ੋੌ]ਹ|ਅਰੋਹ|ਅਵਰ[ੋੌ]ਹ|ਵਿਸਥਾਰ|ਵਿਸਤਾਰ|ਪਰੀਚੈ|ਪਰਿਚੈ|ਪਰਿਚਯ"
+                                r"|ਵਰਜਿਤ|ਨਿਆਸ|ਪ੍ਰਕ੍ਰਿਤੀ|ਮੁੱਖ ਅੰਗ|ਜਾਤੀ|ਜਾਤ\s*-|ਸਮਾਂ\s*-")
+_RAAG_WORD = re.compile(r"^\W*ਰਾਗ[ੁ]?\b")
+
+
+def _describes_raag(region: dict) -> bool:
+    """A heading that is the description's own: 'ਰਾਗੁ ਪਰੀਚੈ:-', 'ਥਾਟ - ਭੈਰਵ।'."""
+    return bool(_DESCRIPTION_WORDS.search(region.get("text") or ""))
+
+
+def _description_words(regions: list[dict], span: int = 4) -> set[str]:
+    """
+    The description's words in the prose at the head of `regions`: the next
+    few text regions, stepping over grid and marker regions (a swar sequence
+    set with dashes still reads as a grid row), stopping at a shabad, a
+    reference, a section label or a break.
+    """
+    words: set[str] = set()
+    seen = 0
+    for r in regions:
+        role = r.get("role")
+        if role in ("grid", "marker"):
+            continue
+        if role not in ("text", "note") and not (role == "heading" and _DESCRIPTION_WORDS.search(r.get("text") or "")):
+            break
+        words.update(m.group(0).strip() for m in _DESCRIPTION_WORDS.finditer(r.get("text") or ""))
+        seen += 1
+        if seen >= span:
+            break
+    return words
+
+
+def _description_follows(items: list[dict], i: int) -> bool:
+    """Two or more of the description's words in the prose right after item i."""
+    return len(_description_words([{**(it.get("region") or {}), "role": it["role"]} for it in items[i + 1:i + 8]])) >= 2
+
 
 def classify_line(line: dict) -> str:
     """
@@ -60,12 +103,15 @@ def classify_line(line: dict) -> str:
     if is_note_like(text):
         return "note"
     ref = parse_ref(text)
-    if ref and (ref["ang_from"] or ref["source"] != "G") and len(toks) <= 12 and (text.startswith("(") or text.startswith("[") or ref["span"][0] <= 2):
-        return "ref"
+    if ref and (ref["ang_from"] or ref["source"] != "G") and len(toks) <= 12 \
+            and (text.startswith("(") or text.startswith("[") or ref["span"][0] <= 2 or ref["source"] != "G"):
+        return "ref"                          # "ਕਬਿੱਤ ਸਵੱਯੇ (ਭਾਈ ਗੁਰਦਾਸ ਜੀ)", "ਮੁਖ ਵਾਕ ਪਾਤਸ਼ਾਹੀ ੧੦ (ਦਸਮ ਗ੍ਰੰਥ 'ਚੋਂ)": the source line over the verse
     if _GRANTH_HEADING.search(text) and len(toks) <= 8 and "ਤਾਲ" not in text and not text.startswith("("):
         return "gurbani"                      # ਜੈਤਸਰੀ ਮਹਲਾ ੫ ਘਰੁ ੨: the Granth's own heading, the shabad's first line
     if is_heading_like(text):
         return "heading"
+    if _DESCRIPTION_WORDS.search(text) and bar_count <= 2:
+        return "text"                         # "ਆਰੋਹ--ਸਗ,ਮਪਨਸੰ।": a raag's description, not a grid row
     classes = [token_class(t) for t in toks]
     gridish = sum(c in GRID_CLASSES for c in classes) + bar_count
     if toks and all(_MARKER_GLYPH.match(t) or token_class(t) in ("marker", "matra", "bar") for t in toks) and len(toks) <= 20 and gridish + sum(1 for t in toks if _MARKER_GLYPH.match(t)) >= len(toks):
@@ -120,6 +166,11 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
             cur = None
 
     for line, role in roles:
+        if role == "pageno" and line.get("zone") == "body" and page_h and 0.08 * page_h < line["bbox"][1] < 0.5 * page_h \
+                and _BRACKET_NUMBER.match((line.get("text") or "").strip()):
+            # "(੨)" at the left margin under the raag's heading: the notation's number, not a page's
+            # (Guru Nanak Sangeet Padhti Granth sets the number at the left margin and the taal at the right)
+            role = "heading"
         if role in ("stamp", "pageno"):
             continue
         n, bbox, text = line.get("n"), list(line["bbox"]), (line.get("text") or "").strip()
@@ -154,8 +205,8 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
         if role == "grid":
             if cur and cur["role"] == "grid":
                 cur["lines"].append(n); cur["bbox"] = _bbox_union([cur["bbox"], bbox])
-            elif cur and cur["role"] == "text" and len(cur["lines"]) <= 1:
-                # a stray fragment before the grid belongs to it
+            elif cur and cur["role"] == "text" and len(cur["lines"]) <= 1 and not _DESCRIPTION_WORDS.search(cur["text"]):
+                # a stray fragment before the grid belongs to it (not a description's line: "ਵਾਦੀ--ਗ ਠਾਠ--ਖਮਾਜ")
                 cur = {"role": "grid", "bbox": _bbox_union([cur["bbox"], bbox]), "lines": cur["lines"] + [n], "text": ""}
             else:
                 close()
@@ -163,6 +214,9 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
             continue
     close()
 
+    # the number and the taal of a notation set on one line, apart ("(੨)" at the left margin, "ਤੀਨ ਤਾਲ"
+    # at the right): two headings on one baseline are one
+    regions = _join_number_and_taal(regions, body_h)
     # a verse line Tesseract read as a bol row stands as a grid of a line or two right over the
     # verse block it opens: a line of words, or one the corpus matched to the block's shabad, is the block's
     regions = _fold_misread_verse(regions, {l.get("n"): l for l in lines}, body_h)
@@ -176,13 +230,35 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
     # Kabitt of Bhai Gurdas, Dasam Bani, which the corpus does not hold).
     # Prose that mentions a line, tabla bols under a taal heading, and OCR
     # noise that happens to hold a danda are text.
+    ref_before = (style or {}).get("ref_position") == "before"
     for i, r in enumerate(regions):
         if r["role"] != "shabad":
             continue
-        after_ = regions[i + 1] if i + 1 < len(regions) else None
-        over_ref = bool(after_ and after_["role"] == "ref" and _verse_shaped(r["text"]))
+        # the printed reference stands after the verse, or (Gurmat Sangeet Darpan) above it
+        beside = regions[i - 1] if ref_before and i > 0 else regions[i + 1] if not ref_before and i + 1 < len(regions) else None
+        over_ref = bool(beside and beside["role"] == "ref" and _verse_shaped(r["text"]))
         if not (_verse_block(r) or over_ref):
             r["role"] = "text"
+    # a line naming another scripture (the Kabit Savaiye, the Dasam Bani) stands over its verse in every book,
+    # and that verse matches no corpus line: the block under it is a shabad of that source, linked when the
+    # scriptures store exists (docs/plans/scriptures-2026-10-02.md), a boundary now
+    for i, r in enumerate(regions[:-1]):
+        nxt = regions[i + 1]
+        if r["role"] == "ref" and (r.get("parsed") or {}).get("source", "G") != "G" and nxt["role"] == "text" and "merged" in nxt \
+                and len(nxt.get("lines") or []) >= 2:
+            nxt["role"], nxt["source"] = "shabad", r["parsed"]["source"]
+    if ref_before:
+        # "(ਬਿਹਾਗੜਾ ਮਹਲਾ ੫)": the Granth's heading of the shabad in brackets, printed as its reference
+        for r in regions:
+            t = (r.get("text") or "").strip()
+            if r["role"] == "heading" and t.startswith("(") and _GRANTH_HEADING.search(t) and not re.search("ਤਾਲ", t):
+                r["role"], r["parsed"] = "ref", parse_ref(t)
+        # under a reference lies the shabad's text, whatever the OCR made of it: a salok of two lines the
+        # corpus did not match, a shabad set as prose
+        for i, r in enumerate(regions[:-1]):
+            nxt = regions[i + 1]
+            if r["role"] == "ref" and nxt["role"] == "text" and "merged" in nxt:
+                nxt["role"] = "shabad"
     # the swar-vistaar of a raag's description runs into the shabad under it: the block begins at the
     # Granth's heading of the shabad, or its first matched line; what stands before is text
     regions = _split_shabad_head(regions)
@@ -214,6 +290,34 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
     else:
         kind = "text"
     return {"page": page, "kind": kind, "regions": regions, "body_h": body_h}
+
+
+_BRACKET_NUMBER = re.compile(r"^\(\s*[0-9੦-੯]{1,3}\s*\)$")
+
+
+def _join_number_and_taal(regions: list[dict], body_h: int) -> list[dict]:
+    """
+    Two heading regions on one baseline, one a bare number ("(੨)"), the other a
+    taal with no raag ("ਤੀਨ ਤਾਲ"), become one numbered heading "(੨) ਤੀਨ ਤਾਲ".
+    """
+    out: list[dict] = []
+    i = 0
+    while i < len(regions):
+        a = regions[i]
+        b = regions[i + 1] if i + 1 < len(regions) else None
+        if b and a["role"] == "heading" and b["role"] == "heading" and abs(a["bbox"][1] - b["bbox"][1]) < body_h:
+            pa, pb = a.get("parsed") or {}, b.get("parsed") or {}
+            num, taal = (a, b) if _BRACKET_NUMBER.match(a["text"]) else (b, a) if _BRACKET_NUMBER.match(b["text"]) else (None, None)
+            pt = (taal.get("parsed") or {}) if taal else {}
+            if num is not None and pt.get("taal") and not pt.get("raag") and pt.get("number") is None:
+                text = "%s %s" % (num["text"].strip(), taal["text"].strip())
+                out.append({"role": "heading", "bbox": _bbox_union([a["bbox"], b["bbox"]]), "lines": a["lines"] + b["lines"],
+                            "text": text, "parsed": parse_heading(text)})
+                i += 2
+                continue
+        out.append(a)
+        i += 1
+    return out
 
 
 def _shabad_between(regions: list[dict], body_h: int) -> list[dict]:
@@ -267,10 +371,26 @@ def _fold_shreds(regions: list[dict]) -> list[dict]:
     return regions
 
 
+# The words of a singing instruction -- a tihai or a layakari spelt out in prose
+# ("ਪਹਿਲੀ ਤੋਂ ਚੌਥੀ ਮਾਤਰ ਦੇ ਟੁਕੜੇ ਨੂੰ ਦੂਜੀ ਮਾਤਰ ਤੋਂ ਲੈ ਕੇ ... ਸਮ ਤੇ ਆਉਣਾ ਹੈ।"). Its
+# sentences close with a danda, so it has the shape of a verse, and in a book that
+# prints the reference ABOVE the next shabad (Gurmat Sangeet Darpan) it stands right
+# over that reference: the "verse over a printed reference" rule took it for the
+# shabad and the notation before it lost its last lines (second cut, 2 October 2026:
+# Darpan 2 p. 394, Darpan 3 p. 222). Two of these words make a block prose.
+_INSTRUCTION_WORDS = re.compile(r"ਮਾਤਰ|ਟੁਕੜ|ਬਿਸਰਾਮ|ਸਮ ਤੇ|ਆਉਣਾ ਹੈ|ਮੁਕਾਅ|ਸਮਾਪਤ|ਉਚਾਰ[ਨਣ]|ਬਰਾਬਰ|ਤਿਹਾਈ|ਲੈਅਕਾਰੀ"
+                                r"|ਦੁਗ[ੁ]?ਨ|ਤਿਗ[ੁ]?ਨ|ਚੌਗ[ੁ]?ਨ|ਮੁਖੜਾ|ਵੀਂ")
+
+
+def _instruction(text: str) -> bool:
+    """A singing instruction set as prose: two or more of its words."""
+    return len({m.group(0) for m in _INSTRUCTION_WORDS.finditer(text or "")}) >= 2
+
+
 def _verse_shaped(text: str) -> bool:
     """Two lines or more, most of them closed by a danda or a comma, as a Kabitt or a Savaiya is set; prose is not."""
     lines = [l.strip() for l in (text or "").split("\n") if l.strip()]
-    if len(lines) < 2:
+    if len(lines) < 2 or _instruction(text):
         return False
     closed = sum(1 for l in lines if l.rstrip("0-9੦-੯ ॥।)")[-1:] in ("।", "॥", ",") or l[-1:] in ("।", "॥", ","))
     return closed / len(lines) >= 0.5
@@ -520,11 +640,15 @@ def raag_descriptions(layouts: list[dict]) -> list[dict]:
         if prev_page is not None and page != prev_page + 1 and cur:
             out.append(cur); cur = None
         prev_page = page
-        for r in lay["regions"]:
+        regions = lay["regions"]
+        for k, r in enumerate(regions):
             role = r["role"]
             p = r.get("parsed") or {}
-            if role == "heading" and p.get("raag") and not p.get("taal") and not p.get("section") and not _running_header(r, lay.get("page_h") or 0) \
-                    and not _shabad_heading(r):
+            # a running-header-shaped raag heading at the top of the page is the description's when the
+            # description's own heading ("ਰਾਗੁ ਪਰੀਚੈ:-") or its words stand right under it
+            opens = len(_description_words(regions[k + 1:k + 8])) >= 2
+            if role == "heading" and p.get("raag") and not p.get("taal") and not p.get("section") and not _shabad_heading(r) \
+                    and (opens or not _running_header(r, lay.get("page_h") or 0)):
                 if cur and (cur["raag"] or {}).get("key") and (cur["raag"] or {}).get("key") == p["raag"].get("key"):
                     # a sentence of the same description that names the raag again: not a new one
                     if page not in cur["pages"]:
@@ -537,16 +661,21 @@ def raag_descriptions(layouts: list[dict]) -> list[dict]:
                 continue
             if cur is None:
                 continue
-            if role in ("text", "shabad", "note", "ref"):
+            if role in ("grid", "marker") and not cur["regions"]:
+                continue                                   # swar lines under the heading read as a grid: the description has not begun
+            if role in ("text", "shabad", "note", "ref") or (role == "heading" and _describes_raag(r)):
                 if page not in cur["pages"]:
                     cur["pages"].append(page)
-                cur["regions"].append((page, r))
+                cur["regions"].append((page, r))         # "ਰਾਗੁ ਪਰੀਚੈ:-", "ਥਾਟ-ਬਿਲਾਵਲ": the description's own headings
             else:
                 out.append(cur); cur = None
     if cur:
         out.append(cur)
-    # a heading with nothing under it is a running header of another kind, not a description
-    return [d for d in out if sum(len(r.get("lines") or []) for _, r in d["regions"]) >= 2]
+    # a heading with nothing under it is a running header of another kind, not a description; a heading
+    # whose taal the OCR lost, over a shabad and its reference, is a notation's (its prose is nowhere)
+    def prose(d):
+        return sum(len(r.get("lines") or []) for _, r in d["regions"] if r["role"] in ("text", "note") or _describes_raag(r))
+    return [d for d in out if prose(d) >= 2]
 
 
 def _label_sections(span: dict) -> None:
@@ -781,7 +910,7 @@ def _grids_after_shabad(seg: dict, real: bool = False) -> bool:
     return any(it["role"] == "grid" and (not real or _is_real_grid(it["region"])) for it in seg["items"][last + 1:])
 
 
-def _segments(items: list[dict], after: bool) -> list[dict]:
+def _segments(items: list[dict], after: bool, pairing: bool = False) -> list[dict]:
     """
     The items cut into notations. A notation is a shabad and what the book
     prints after it (before it, in a book that sets the shabad after the
@@ -864,7 +993,10 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
             if (has(cur, ("shabad",)) and not same) or again or (not has(cur, ("shabad",)) and has(cur, NOTATION_ROLES)) or prose_before:
                 # the next shabad -- or the first, after grids whose shabad was not read (the previous page, a failed read)
                 lead: list[dict] = []
-                while cur["items"] and _is_lead(cur["items"][-1]):
+                # a reference standing after the grids is the next shabad's, printed above it (Gurmat
+                # Sangeet Darpan sets "(ਕਾਨੜੇ ਕੀ ਵਾਰ ਮਹਲਾ ੪) (੧੩੧੮)" over the salok)
+                while cur["items"] and (_is_lead(cur["items"][-1])
+                                        or (cur["items"][-1]["role"] == "ref" and has(cur, ("grid",)))):
                     lead.insert(0, cur["items"].pop())
                 close()
                 cur = open_(items=lead, opened_by="shabad")
@@ -878,19 +1010,35 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
                 cur["items"].append(it)                 # a section's own heading (ਅੰਤਰਾ, a partaal's next taal): inside the notation
                 i += 1
                 continue
-            p = _named_heading(it["region"])
-            if p:
-                done = has(cur, ("shabad",)) and _grids_after_shabad(cur)
-                raag_only = p.get("raag") and not p.get("taal") and not p.get("number")
+            p = _named_heading(it["region"]) or {}
+            if not p and (it["region"].get("parsed") or {}).get("number") is not None:
+                p = {"number": it["region"]["parsed"]["number"]}        # "(੨)" alone: the taal beside it lost by the OCR
+            intro = _describes_raag(it["region"])                     # "ਰਾਗੁ ਪਰੀਚੈ:-", "ਥਾਟ - ਭੈਰਵ।"
+            # "ਰਾਗ ਨਦ ਕੱਸ": a heading that names a raag the vocabulary cannot read (OCR) still names one
+            names_raag = bool(p.get("raag")) or bool(_RAAG_WORD.match(it["region"].get("text") or ""))
+            if p or intro or names_raag:
+                # the notation before it is done: grids after its shabad, or (a body whose shabad the book
+                # printed elsewhere: Padhti Granth's second kirtankar's "(੨) ਤੀਨਤਾਲ") grids with no shabad at all
+                done = (has(cur, ("shabad",)) and _grids_after_shabad(cur)) \
+                    or (not has(cur, ("shabad",)) and any(it["role"] == "grid" and _is_real_grid(it["region"]) for it in cur["items"]))
+                raag_only = names_raag and not p.get("taal") and p.get("number") is None
                 nxt = items[i + 1]["role"] if i + 1 < len(items) else "break"
                 # a raag's heading followed by prose, below the top of the page, opens a description;
-                # at the top of a page it is a running header the repetition test missed
-                description = raag_only and (p["raag"] or {}).get("key") and not it.get("top") and nxt in ("text", "break")
+                # at the top of a page it is a running header the repetition test missed -- unless what
+                # follows says the words of a description (vaadi, thaat, pakad, aaroh), or the heading
+                # itself is the description's ("ਰਾਗੁ ਪਰੀਚੈ")
+                described = intro or ((raag_only or not p) and _description_follows(items, i))
+                description = (raag_only and (p.get("raag") or {}).get("key") and not it.get("top") and nxt in ("text", "break")) \
+                    or ((raag_only or intro) and described)
                 # a heading with a taal or a number after the grids is the next notation's; a raag alone is
                 # not a boundary (Dyal Singh's Hindustani raag headings hold shabads of several Granth raags)
-                if after or (done and not raag_only) or (description and has(cur, NOTATION_ROLES)):
+                if after or (done and p and not raag_only) or (description and (has(cur, NOTATION_ROLES) or pairing)):
+                    # the raag's heading at the top of the page above its "ਰਾਗੁ ਪਰੀਚੈ" leads the description, not the notation
+                    lead = []
+                    while cur["items"] and cur["items"][-1]["role"] == "heading" and _is_lead(cur["items"][-1]):
+                        lead.insert(0, cur["items"].pop())
                     close()
-                    cur = open_(opened_by="raag" if raag_only else "heading")
+                    cur = open_(items=lead, opened_by="raag" if (raag_only or intro) else "heading")
             cur["items"].append(it)
             i += 1
             continue
@@ -898,6 +1046,83 @@ def _segments(items: list[dict], after: bool) -> list[dict]:
         i += 1
     close()
     return segs
+
+
+def _pair_by_section(segs: list[dict]) -> list[dict]:
+    """
+    style.pairing == "section" (Guru Nanak Sangeet Padhti Granth): the book is
+    organised by raag, a section opening at the raag's heading and description,
+    and within a section it sets its shabads and their notations in the same
+    order but not together -- one shabad then two numbered notations of it by
+    two kirtankars, two shabads then two notations, a notation then its shabad
+    under it. So within a section the k-th body (a segment with grids) takes
+    the k-th shabad block (the last one when the shabads run out), whatever
+    verse happens to stand inside the body; the shabad blocks themselves are
+    consumed, and a raag's description at the head of a body is left out.
+    """
+    out: list[dict] = []
+    section: list[dict] = []
+
+    def blocks(sg):
+        # the shabad blocks of a segment, one per shabad: two shabads listed one under the other are
+        # consecutive shabad items the linker grouped as one, told apart by the corpus votes on each
+        out_: list[tuple] = []
+        block: list[dict] = []
+        bsid = None
+        for it in sg["items"]:
+            if it["role"] == "shabad":
+                sid = _sid_of([it["region"]])
+                if block and sid is not None and bsid is not None and sid != bsid:
+                    out_.append((bsid, block))
+                    block = []
+                block.append(it)
+                bsid = sid if sid is not None else bsid
+            elif it["role"] == "ref" and block:
+                block.append(it)
+            elif block:
+                out_.append((bsid, block))
+                block, bsid = [], None
+        if block:
+            out_.append((bsid, block))
+        return out_
+
+    def flush():
+        if not section:
+            return
+        shabads = [b for sg in section for b in blocks(sg)]
+        # a body holds a notation proper: a section label (ਸਥਾਈ) or a marker row; a description's aaroh
+        # and avroh read as a grid of two lines and are neither
+        bodies = [sg for sg in section if any(it["role"] in ("section", "marker") for it in sg["items"])]
+        if not shabads or not bodies:
+            out.extend(section)
+            section.clear()
+            return
+        for k, sg in enumerate(bodies):
+            sid, sh = shabads[min(k, len(shabads) - 1)]
+            rest = [it for it in sg["items"] if it["role"] not in ("shabad", "ref")]
+            if sg.get("opened_by") == "raag":
+                # the raag's heading and description lead the body: not the notation's
+                first = next((n for n, it in enumerate(rest) if it["role"] in NOTATION_ROLES or (it["role"] == "heading" and _opens_notation(it["region"]))), 0)
+                rest = rest[first:]
+            own = any(it["role"] == "shabad" for it in sg["items"])
+            paired_own = own and sh and any(it is sh[0] for it in sg["items"])
+            sg["items"] = list(sh) + rest
+            sg["sid"] = sid
+            sg["paired"] = True
+            if not paired_own:
+                sg["inherited"] = True
+            out.append(sg)
+        section.clear()
+
+    for sg in segs:
+        # a raag's heading opens a section once the one before holds a notation (a description may run
+        # over several headings: ਰਾਗੁ ਭੈਰਉ, then ਥਾਟ - ਭੈਰਵ)
+        if sg.get("after_break") or (sg.get("opened_by") == "raag"
+                                     and any(it["role"] in NOTATION_ROLES for s2 in section for it in s2["items"])):
+            flush()
+        section.append(sg)
+    flush()
+    return out
 
 
 def _span_from_items(seg: dict) -> dict:
@@ -957,6 +1182,7 @@ def _span_from_items(seg: dict) -> dict:
                 if v and not parsed.get(k):
                     parsed[k] = v
         span["heading"] = {**first, "parsed": parsed, "text": " / ".join(r["text"] for _, r in span["headings"])}
+    span["pages"].sort()                   # a paired shabad's page may come after its notation's
     first_item = seg["items"][0]
     span["continued"] = bool(seg.get("after_break") is False and first_item["first"]
                              and first_item["role"] in ("grid", "marker", "section")) or bool(seg.get("continued"))
@@ -1020,7 +1246,10 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
         return []
     pages_read = sorted({it["page"] for it in items if it["role"] != "break"})
     first_read, last_read = (pages_read[0], pages_read[-1]) if pages_read else (None, None)
-    segs = _segments(items, after)
+    pairing = style.get("pairing") == "section"
+    segs = _segments(items, after, pairing)
+    if pairing:
+        segs = _pair_by_section(segs)
     # the last item of each run of consecutive pages read (a window ends there, or the book)
     tails = {id(it) for k, it in enumerate(items) if it["role"] != "break" and (k + 1 == len(items) or items[k + 1]["role"] == "break")}
     heads = {id(it) for k, it in enumerate(items) if it["role"] != "break" and (k == 0 or items[k - 1]["role"] == "break")}

@@ -66,8 +66,13 @@ def pdf_pages(path: str) -> int:
         return 0
 
 
-def library_books(library: str) -> list[dict]:
-    """Every readable PDF under the library: {path, author, title, book, pages}."""
+def library_books(library: str, min_pages: int = 20) -> list[dict]:
+    """
+    Every readable PDF under the library: {path, author, title, book, pages}.
+    A file under `min_pages` is left out: a scan of a cover, a leaflet; but
+    a folder of one-shabad excerpts (Raags-PU, one to six pages each) is
+    read whole with --min-pages 1 --places whole.
+    """
     out = []
     for root, _dirs, files in os.walk(library):
         for f in sorted(files):
@@ -77,7 +82,7 @@ def library_books(library: str) -> list[dict]:
             rel = os.path.relpath(root, library)
             author = rel.split(os.sep)[0] if rel not in (".", "") else "Misc"
             n = pdf_pages(path)
-            if n < 20:
+            if n < min_pages:
                 continue
             stem = os.path.splitext(f)[0]
             out.append({"path": path, "author": author, "author_slug": slug(author), "title": stem.replace("_", " ").replace("-", " ").strip(),
@@ -99,6 +104,16 @@ def folder_with(keertan_dir: str, filename: str) -> str | None:
         if any(w.get("file") == filename for w in manifest.get("works", [])):
             return os.path.join(keertan_dir, name)
     return None
+
+
+def work_skipped(folder: str, filename: str) -> bool:
+    """The manifest marks the file `skip` (a second scan of a book the shelf already has): not a book to read."""
+    mpath = os.path.join(folder, "manifest.json")
+    if not os.path.exists(mpath):
+        return False
+    with open(mpath, encoding="utf-8") as fh:
+        manifest = json.load(fh)
+    return any(w.get("file") == filename and w.get("skip") for w in manifest.get("works", []))
 
 
 def book_key_in(folder: str, filename: str) -> str | None:
@@ -147,12 +162,39 @@ def windows_for(n_pages: int, k: int, width: int, rng: random.Random, places: li
     notations late, before its index) or, with no places, k random ones
     between 12% and 88%. A place never runs past the last page.
     """
+    if places == ["whole"]:
+        return [(1, n_pages)]                              # a short book, every page
     if places:
         starts = sorted({max(1, min(n_pages - width + 1, int(round(PLACES[p] * n_pages)))) for p in places})
     else:
         lo, hi = max(1, int(0.12 * n_pages)), max(1, int(0.88 * n_pages) - width)
         starts = sorted(set(rng.randint(lo, max(lo, hi)) for _ in range(k)))
     return [(a, min(n_pages, a + width - 1)) for a in starts]
+
+
+def another_window(n_pages: int, have: list[tuple[int, int]], width: int, rng: random.Random,
+                   tries: int = 50) -> tuple[int, int] | None:
+    """
+    One more random place in the same 12%-88% band, overlapping none already
+    read (nor their lookahead), or None when the band has no room left.
+    """
+    lo, hi = max(1, int(0.12 * n_pages)), max(1, int(0.88 * n_pages) - width)
+    for _ in range(tries):
+        a = rng.randint(lo, max(lo, hi))
+        c = min(n_pages, a + width - 1)
+        if all(c < x - LOOKAHEAD or a > y + LOOKAHEAD for x, y in have):
+            return (a, c)
+    return None
+
+
+def linked_in(book: str, windows: list[tuple[int, int]]) -> list[dict]:
+    """The notations that begin in the windows, as parsed so far."""
+    path = os.path.join(NOTATIONS_DIR, book, "notations.jsonl")
+    if not os.path.exists(path):
+        return []
+    _, recs = read_jsonl(path)
+    wanted = {p for a, c in windows for p in range(a, c + 1)}
+    return [r for r in recs if r["pages"][0] in wanted]
 
 
 def run_book(folder: str, book: str, pages: str, engines: str | None, log) -> int:
@@ -177,7 +219,9 @@ def main() -> None:
     ap.add_argument("--library", required=True, help="the folder of keertan books (one subfolder an author)")
     ap.add_argument("--books", type=int, default=0, help="how many books (0: every readable one)")
     ap.add_argument("--per-book", type=int, default=2, help="random places a book (with --places random)")
-    ap.add_argument("--places", default="middle,end", help="'middle,end' (the default), 'start,middle,end', or 'random'")
+    ap.add_argument("--places", default="middle,end", help="'middle,end' (the default), 'start,middle,end', 'random', or 'whole' (every page: short books)")
+    ap.add_argument("--min-pages", type=int, default=20, help="PDFs shorter than this are not books (default 20; 1 for a folder of excerpts)")
+    ap.add_argument("--author", help="comma list of author folder slugs to restrict to (raags-pu)")
     ap.add_argument("--show", type=int, default=6, help="notations shown a book at most")
     ap.add_argument("--window", type=int, default=4, help="pages read at each place")
     ap.add_argument("--seed", type=int, default=1)
@@ -186,11 +230,16 @@ def main() -> None:
     ap.add_argument("--out", default=os.path.join(OCR_DIR, "_sample"))
     ap.add_argument("--skip-ocr", action="store_true", help="only write the page from what is already parsed")
     ap.add_argument("--only", help="comma list of book keys to restrict to")
+    ap.add_argument("--min-shabads", type=int, default=0,
+                    help="add random places to a book until this many notations found in them are linked to a "
+                         "shabad (a book whose notations run four or five pages each finds few starting in a "
+                         "three-page window)")
+    ap.add_argument("--max-extra", type=int, default=6, help="places added a book at most, for --min-shabads")
     ap.add_argument("--judge", action="store_true", help="the per-field right/wrong controls instead of one comment box a notation")
     args = ap.parse_args()
 
     rng = random.Random(args.seed)
-    books = library_books(os.path.expanduser(args.library))
+    books = library_books(os.path.expanduser(args.library), args.min_pages)
     if not books:
         sys.exit("no readable PDFs under %s" % args.library)
     by_author: dict[str, list[dict]] = {}
@@ -201,6 +250,9 @@ def main() -> None:
     if args.only:
         keep = set(args.only.split(","))
         picked = [b for b in picked if b["book"] in keep]
+    if args.author:
+        authors = set(args.author.split(","))
+        picked = [b for b in picked if b["author_slug"] in authors]
     # one book an author first, so the sample covers the shelf, then the rest
     seen_authors: set[str] = set()
     first, rest = [], []
@@ -209,12 +261,20 @@ def main() -> None:
         seen_authors.add(b["author"])
     picked = (first + rest)[: args.books] if args.books else (first + rest)
     places = None if args.places == "random" else [p.strip() for p in args.places.split(",") if p.strip()]
-    if places and any(p not in PLACES for p in places):
-        sys.exit("--places: one of %s, or random" % ", ".join(PLACES))
+    if places and places != ["whole"] and any(p not in PLACES for p in places):
+        sys.exit("--places: one of %s, random, or whole" % ", ".join(PLACES))
 
     os.makedirs(args.out, exist_ok=True)
     log = open(os.path.join(args.out, "run.log"), "a", encoding="utf-8")
     log.write("\n==== sample %s seed %d\n" % (dt.datetime.now().isoformat(timespec="seconds"), args.seed))
+    before: dict[str, list[tuple[int, int]]] = {}
+    prior = os.path.join(args.out, "sample.json")
+    if args.skip_ocr and os.path.exists(prior):
+        with open(prior, encoding="utf-8") as fh:
+            got = json.load(fh)
+        for row in (got if isinstance(got, list) else got.get("books", [])):
+            if row.get("pages_arg"):
+                before[row["book"]] = [tuple(int(x) for x in w.split("-")) for w in row["pages_arg"].split(",")]
     plan = []
     for b in picked:
         existing = folder_with(args.keertan_dir, os.path.basename(b["path"]))
@@ -224,10 +284,18 @@ def main() -> None:
         else:
             folder = os.path.join(args.keertan_dir, b["author_slug"])
             ensure_manifest(folder, b["author"], by_author[b["author"]])
+        if work_skipped(folder, os.path.basename(b["path"])):
+            print("  skipped %s: the manifest marks it skip (a duplicate scan)" % b["book"])
+            continue
         wins = windows_for(b["pages"], args.per_book, args.window, rng, places)
+        if args.skip_ocr and b["book"] in before:
+            # the page again from what was read: the places the last run read (with any it
+            # added for --min-shabads, or by hand), not a fresh draw from the seed
+            wins = before[b["book"]]
         plan.append({**b, "folder": folder, "windows": wins, "pages_arg": ",".join("%d-%d" % w for w in wins),
                      "read": ",".join("%d-%d" % (a, c + LOOKAHEAD) for a, c in wins)})
-    print("%d book(s), %s, %d pages a place" % (len(plan), (", ".join(places) if places else "%d random place(s)" % args.per_book), args.window))
+    print("%d book(s), %s" % (len(plan), "every page" if places == ["whole"]
+                              else "%s, %d pages a place" % (", ".join(places) if places else "%d random place(s)" % args.per_book, args.window)))
 
     results = []
     for k, b in enumerate(plan):
@@ -236,12 +304,23 @@ def main() -> None:
         if not args.skip_ocr:
             code = run_book(b["folder"], b["book"], b["pages_arg"], args.engines, log)
             status = "ok" if code == 0 else "failed (%d)" % code
-        recs = []
-        path = os.path.join(NOTATIONS_DIR, b["book"], "notations.jsonl")
-        if os.path.exists(path):
-            _, all_recs = read_jsonl(path)
-            wanted = {p for a, c in b["windows"] for p in range(a, c + 1)}
-            recs = [r for r in all_recs if r["pages"][0] in wanted]       # the notations that begin in a window
+            # too few shabads found: read more places, one at a time, until there are enough
+            extra = 0
+            while (code == 0 and extra < args.max_extra and
+                   sum(1 for r in linked_in(b["book"], b["windows"]) if r["shabad"].get("shabad_id") is not None)
+                   < args.min_shabads):
+                w = another_window(b["pages"], b["windows"], args.window, rng)
+                if w is None:
+                    break
+                extra += 1
+                b["windows"] = sorted(b["windows"] + [w])
+                b["pages_arg"] = ",".join("%d-%d" % x for x in b["windows"])
+                # every place again, the new one with them: 29 writes the records of the pages it is
+                # given and no others, and the pages already read come from their cached OCR
+                code = run_book(b["folder"], b["book"], b["pages_arg"], args.engines, log)
+            if extra:
+                status += " (+%d place%s)" % (extra, "" if extra == 1 else "s")
+        recs = linked_in(b["book"], b["windows"])       # the notations that begin in a window
         # every notation the windows hold, the resolved ones first, up to --show
         recs.sort(key=lambda r: (r["shabad"].get("shabad_id") is None, not r.get("sections"), r["pages"][0]))
         chosen = recs[: args.show]
@@ -330,7 +409,8 @@ document.addEventListener('click', e => { if (e.target.tagName === 'IMG' && e.ta
            "<span id=count class=count></span><button id=download class=primary>download %s</button><button id=reset>reset</button></header>"
            "%s<script id=cands type=application/json>%s</script><script>%s%s</script></html>"
            % (n_books, gt.PAGE_CSS, gt.NOTATION_CSS, extra_css, n_books, n_shown,
-              ("%d pages at the %s of every book" % (args.window, " and the ".join(args.places.split(","))) if args.places != "random"
+              ("every page of every book" if args.places == "whole"
+               else "%d pages at the %s of every book" % (args.window, " and the ".join(args.places.split(","))) if args.places != "random"
                else "%d random places a book, seed %d" % (args.per_book, args.seed)),
               "candidates.jsonl" if args.judge else "comments.jsonl",
               "".join(parts), data, gt.PAGE_JS, extra_js))

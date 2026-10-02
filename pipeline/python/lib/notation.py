@@ -28,7 +28,7 @@ import re
 from lib.notation_vocab import KOMAL_ALLOWED, RAAGS, SWARA_ORDER, TAALS, TIVRA_ALLOWED, VERSION as VOCAB_VERSION
 
 SCHEMA_VERSION = 1
-PARSER_VERSION = "0.2.0"
+PARSER_VERSION = "0.2.4"
 
 KINDS = ("notation", "partial", "reet-ref", "non-gurbani")
 SCRIPTS = ("gurmukhi", "latin", "devanagari")
@@ -46,8 +46,11 @@ FLAGS = frozenset([
 ])
 DEFAULT_STYLE = {"swar_row": "above", "shabad_position": "before", "matra_row": False,
                  "marker_row": "below", "table": "bars", "labels": False, "script": "gurmukhi",
-                 "running_header": None}      # the book's running header text (or a list), dropped at the top of a page
-STYLE_VALUES = {"swar_row": ("above", "below"), "shabad_position": ("before", "after", "either"),
+                 "running_header": None,      # the book's running header text (or a list), dropped at the top of a page
+                 "ref_position": "after",     # where the Granth reference stands: after the verse, or before it (Gurmat Sangeet Darpan)
+                 "pairing": None}             # "section": shabads and notations pair by order within a raag section (Guru Nanak Sangeet Padhti Granth)
+STYLE_VALUES = {"swar_row": ("above", "below"), "shabad_position": ("before", "after", "either"), "ref_position": ("after", "before"),
+                "pairing": (None, "section"),
                 "marker_row": ("below", "above", "none"), "table": ("ruled", "bars", "none"),
                 "script": SCRIPTS}
 
