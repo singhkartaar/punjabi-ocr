@@ -30,7 +30,8 @@ _NUM = re.compile("[%s]+" % DIGITS)
 _RANGE = re.compile("([%s]{1,4})\\s*[-–—]\\s*([%s]{1,4})" % (DIGITS, DIGITS))
 _BRACKET = re.compile(r"[\(\[]([^()\[\]]{1,80})[\)\]]")
 _MAHALA = re.compile("(?:ਮਹਲਾ|ਮਹੱਲਾ|ਮ[:ਃ]|ਮਃ|M\\.?|ਪਾਤਸ਼ਾਹੀ|ਪਾਤਿਸ਼ਾਹੀ|ਪਾ[:ਃ.])\\s*([%s]{1,2})" % DIGITS)   # a mahala or a patshahi: not an ang
-_ANG_WORDS = re.compile(r"ਪੰਨਾ|ਪੰਨੇ|ਅੰਗ|ਪਨਾ|SGGS|S\.G\.G\.S|ਗੁ\.?\s*ਗ੍ਰੰ|ਗ੍ਰੰਥ|ਆਦਿ ਗ੍ਰੰਥ|\bp\.|\bpage\b|\bang\b", re.I)
+# ਪਨਾ and ਅੰਗ as words of their own: "ਅਪਨਾ ਬਿਗਾਰਿ ਬਿਰਾਂਨਾ ਸਾਂਢੈ ॥ ... ॥੩॥" is a verse, not "ਪਨਾ ੩" (and ਭੁਇਅੰਗ no ਅੰਗ)
+_ANG_WORDS = re.compile(r"ਪੰਨਾ|ਪੰਨੇ|(?<![\u0a05-\u0a4d])ਅੰਗ|(?<![\u0a05-\u0a4d])ਪਨਾ|SGGS|S\.G\.G\.S|ਗੁ\.?\s*ਗ੍ਰੰ|ਗ੍ਰੰਥ|ਆਦਿ ਗ੍ਰੰਥ|\bp\.|\bpage\b|\bang\b", re.I)
 _SOURCE_WORDS = (
     ("B", re.compile(r"ਭਾਈ ਗੁਰਦਾਸ|ਵਾਰਾਂ ਭਾਈ|ਪਉੜੀ|ਵਾਰ\s+[%s]{1,2}\b" % DIGITS)),
     ("K", re.compile(r"ਕਬਿੱਤ|ਕਬਿਤ|ਸਵੱਯੇ ਭਾਈ")),
@@ -42,6 +43,7 @@ _HEADING_WORDS = re.compile(r"(?:^|[\s(:\-—])(?:ਰਾਗ|ਰਾਗੁ|ਤਾ�
 _NOTE_WORDS = re.compile(r"^\s*[\-—–']*\s*(?:ਨੋਟ|ਨੌਟ|ਨੇਂਟ|ਨੋਂਟ)|ਬਾਕੀ ਤੁਕਾਂ|ਅੰਤਰੇ ਤੇ ਲਾਓ|ਤੇ ਲਾਓ|ਦੀ ਰੀਤ|ਦੀ ਤਰਜ਼|ਵਾਂਗ ਗਾਓ|ਲਿਖਿਆ ਹੈ")
 _HELD_LIKE = re.compile(r"^[Ss$5ऽ਽;,.]+$")
 _REET = re.compile(r"(?:ਦੀ|ਵਾਲੀ)?\s*(?:ਰੀਤ|ਤਰਜ਼|ਤਰਜ|ਧਾਰਨਾ|ਧੁਨ)")
+_JAP_TAAL = re.compile(r"(?<![\u0a05-\u0a4d])ਜਪ\s*ਤਾਲ")
 _NUMBER_PREFIX = re.compile("^\\s*\\(?\\s*([%s]{1,3})\\s*[.)।:-]\\s*" % DIGITS)     # "੧੬.", "(੨) ਤੀਨ ਤਾਲ"
 _MATRAS = re.compile("(?:ਮਾਤਰਾ|ਮਾਤਰਾਂ|ਮਾਤ੍ਰਾ|ਮਾਤਰੇ|matras?)\\s*[-:]?\\s*([%s]{1,2})" % DIGITS, re.I)
 _PUNCT = "()[]{}.,;:!?'\"‘’“”।॥|"
@@ -176,7 +178,9 @@ def parse_heading(text: str) -> dict:
      "laya", "section": {"kind", "n"} | None, "reet_of": str | None}
     """
     raw = (text or "").strip()
-    s = raw
+    # "ਜਪ ਤਾਲ" is ਝਪ ਤਾਲ as Tesseract reads the ਝ of some faces (Gurbani Sangeet, Guru Nanak Dev Raag Ratnaavlee);
+    # only before the word ਤਾਲ: ਜਪੁ alone is the bani
+    s = _JAP_TAAL.sub("ਝਪ ਤਾਲ", raw)
     number = None
     m = _NUMBER_PREFIX.match(s)
     if m:

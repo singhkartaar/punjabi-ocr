@@ -231,6 +231,17 @@ class ZoneTests(unittest.TestCase):
         out = classify_zones(lines, 2560, 3300, stamps=stamps)
         self.assertEqual([ln["zone"] for ln in out], ["body", "body", "footnote", "footnote", "stamp"])
 
+    def test_a_watermark_across_the_page_does_not_claim_the_lines_under_it(self):
+        # Bhagat Hayt Gavai Ravidasa (third cut, 5 October 2026): the PDF's text layer boxes the diagonal
+        # "SIKHBOOKCLUB.COM" over the middle of every page, and the verse's last lines and its reference lay in it
+        stamps = [{"bbox": [271, 865, 1374, 1679], "text": "SIKHBOOKCLUB.COM"},
+                  {"bbox": [997, 2430, 1421, 2486], "text": "www.sikhbookclub.com"}]
+        lines = [line(826, 880, "ਕੈਸੇ ਪੂਜ ਕਰਹਿ ਤੇਰੀ ਦਾਸਾ ॥੩॥", x0=444, x1=1146), line(891, 945, "ਤਨੁ ਮਨੁ ਅਰਪਉ ਪੂਜ ਚਰਾਵਉ ॥", x0=444, x1=1146),
+                 line(1141, 1195, "(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਪੰਨਾ ੫੨੫)", x0=700, x1=1300),
+                 line(1200, 1260, "SIKHBOOKCLUB.COM", x0=300, x1=1300), line(2433, 2483, "ਖ਼ਗ਼ 50", x0=1000, x1=1420)]
+        out = classify_zones(lines, 1646, 2545, stamps=stamps)
+        self.assertEqual([ln["zone"] for ln in out], ["body", "body", "body", "stamp", "stamp"])
+
     def test_engine_zone_is_kept(self):
         out = classify_zones([line(1500, 1540, "ਪੰਨਾ", zone="header")], 2560, 3300)
         self.assertEqual(out[0]["zone"], "header")

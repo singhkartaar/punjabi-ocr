@@ -1626,3 +1626,251 @@ class SourceLineTests(unittest.TestCase):
         spans = link_pages([p213, p214], style)
         self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([213], 2065), ([214], None)])
         self.assertEqual(spans[1]["ref"]["parsed"]["source"], "B")
+
+
+class ThirdCutTests(unittest.TestCase):
+    """
+    The third cut (5 October 2026): four more books sampled on the M4 -- Mishrat Raag, Swar Samund, Guru
+    Nanak Dev Raag Ratnaavlee, Bhagat Hayt Gavai Ravidasa -- and what the owner's nine backlog verdicts and
+    two rejections came down to, each from the page that showed it.
+    """
+    W, H = 1646, 2545
+
+    def _page(self, page, lines, style=None, ink=None):
+        lay = page_layout(lines, self.W, self.H, style or merge_style(None), page, ink=ink)
+        lay["page_w"], lay["page_h"] = self.W, self.H
+        return lay
+
+    def _verse(self, n, text, y, sid, **kw):
+        return _line(n, text, y, kind="gurbani", matches=[{"shabad_id": sid, "line_id": sid * 10 + n, "score": 0.95, "source": "G"}], **kw)
+
+    def _grids(self, n0, y):
+        return [_line(n0, "ਸਥਾਈ", y, x0=200, x1=330), _line(n0 + 1, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y + 70),
+                _line(n0 + 2, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", y + 140), _line(n0 + 3, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 210),
+                _line(n0 + 4, "ਲ ਖ | ਉ ऽ | ਗੁ ਸਾ | ਈ ऽ", y + 280)]
+
+    def _ruled(self, y0, y1, bars=(517, 770, 1074)):
+        import numpy as np
+        ink = np.zeros((self.H, self.W), dtype=np.uint8)
+        for x in bars:
+            ink[y0:y1, x:x + 5] = 255
+        for y in range(y0 + 60, y1 - 60, 130):                  # the rows of swaras and syllables
+            ink[y:y + 34, 150:1500:9] = 255
+        return ink
+
+    # -- Guru Nanak Dev Raag Ratnaavlee, the Maru Vaar (pp. 105-107)
+
+    def test_jap_before_taal_is_jhaptaal_and_jap_alone_is_the_bani(self):
+        h = parse_heading("ਜਪ ਤਾਲ")
+        self.assertEqual((h["raag"], h["taal"]["key"]), (None, "jhaptaal"))
+        self.assertEqual(parse_heading("ਰਾਗ ਬੈਰਾੜੀ; ਜਪ ਤਾਲ, ਬਿਲੰਬਿਤ")["taal"]["key"], "jhaptaal")
+        h = parse_heading("ਜਪੁ")
+        self.assertEqual(((h["raag"] or {}).get("key"), h["taal"]), ("jap", None))
+
+    def _salok(self, a, b, c, d, ang):
+        return [_line(1, "ਰਾਗ ਮਾਰੂ 187", 236, x0=681, x1=1349, h=38), _line(2, "ਮਾਰੂ ਵਾਰ", 301, x0=640, x1=820), _line(3, "ਮ: ੧", 360, x0=690, x1=770),
+                _line(4, a, 420, x0=505, x1=940), _line(5, b + "॥", 480, x0=505, x1=940), _line(6, c, 540, x0=505, x1=940),
+                _line(7, d + "॥", 600, x0=505, x1=940), _line(8, "(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਪੰਨਾ %s)" % ang, 678, x0=827, x1=1348, h=45),
+                _line(9, "ਰਾਗ ਮਾਰੂ ਤਿੰਨ ਤਾਲ", 747, x0=143, x1=1358, h=50)] + self._grids(10, 820)
+
+    def test_a_salok_set_in_half_lines_over_its_ang_is_a_verse_and_opens_its_own_notation(self):
+        p105 = self._page(105, [_line(1, "ਮਾਰੂ ਵਾਰ", 316, x0=640, x1=820), self._verse(2, "ਸਲੋਕੁ ਮ: ੧॥", 370, 3805),
+                                self._verse(3, "ਭੂਲੀ ਭੂਲੀ ਮੈ ਫਿਰੀ ਪਾਧਰੁ ਕਹੈ ਨ ਕੋਇ ॥", 430, 3805), self._verse(4, "ਪੂਛਹੁ ਜਾਇ ਸਿਆਣਿਆ ਦੁਖੁ ਕਾਟੈ ਮੇਰਾ ਕੋਇ ॥", 490, 3805),
+                                _line(5, "(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਪੰਨਾ ੧੦੮੭)", 678, x0=980, x1=1498, h=45), _line(6, "ਰਾਗ ਮਾਰੂ ਜਪ ਤਾਲ", 776, h=42)] + self._grids(7, 850))
+        p106 = self._page(106, self._salok("ਸਾਚੁ ਸੀਲ ਸਚੁ ਸੰਜਮੀ", "ਸਾ ਪੂਰੀ ਪਰਵਾਰਿ", "ਨਾਨਕ ਅਹਿਨਿਸਿ ਸਦਾ ਭਲੀ", "ਪਿਰ ਕੈ ਹੇਤਿ ਪਿਆਰਿ", "੧੦੮੮"))
+        p107 = self._page(107, self._salok("ਸਸੁਰੈ ਪੇਈਐ ਕੰਤ ਕੀ", "ਕੰਤੁ ਅਗੰਮੁ ਅਥਾਹੁ", "ਨਾਨਕ ਧੰਨੁ ਸੁੋਹਾਗਣੀ", "ਜੋ ਭਾਵਹਿ ਵੇਪਰਵਾਹ", "੧੦੮੮"))
+        self.assertIn("shabad", [r["role"] for r in p106["regions"]])
+        spans = link_pages([p105, p106, p107], merge_style(None))
+        self.assertEqual([s["pages"] for s in spans], [[105], [106], [107]])
+        self.assertEqual(spans[0]["heading"]["parsed"]["taal"]["key"], "jhaptaal")
+        # a paragraph over a reference is still prose: its sentences close with a single danda
+        prose = self._page(108, [_line(1, "ਇਸ ਰਾਗ ਦਾ ਵਰਣਨ ਗ੍ਰੰਥ ਵਿਚ ਆਇਆ ਹੈ।", 400), _line(2, "ਇਸ ਨੂੰ ਸਵੇਰੇ ਗਾਇਆ ਜਾਂਦਾ ਹੈ ਅਤੇ ਇਹ ਬਹੁਤ ਪੁਰਾਣਾ ਹੈ", 460),
+                                 _line(3, "(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਪੰਨਾ ੧੦੮੮)", 540, x0=827, x1=1348)])
+        self.assertNotIn("shabad", [r["role"] for r in prose["regions"]])
+
+    def test_a_shabad_no_line_of_which_matched_is_found_by_its_printed_ang(self):
+        import sqlite3
+        con = sqlite3.connect(":memory:")
+        con.executescript("""
+          CREATE TABLE shabads (shabad_id INTEGER PRIMARY KEY, writer TEXT, raag TEXT, ang_start INTEGER);
+          CREATE TABLE lines (line_id INTEGER PRIMARY KEY, shabad_id INTEGER, gurmukhi_uni TEXT, kind TEXT, position_in_shabad INTEGER);
+          INSERT INTO shabads VALUES (3812, 'Guru Nanak Dev Ji', 'Raag Maaroo', 1088);
+          INSERT INTO lines VALUES (46489, 3812, 'ਸਾਚੁ ਸੀਲ ਸਚੁ ਸੰਜਮੀ ਸਾ ਪੂਰੀ ਪਰਵਾਰਿ ॥', 'line', 1);
+          INSERT INTO lines VALUES (46490, 3812, 'ਨਾਨਕ ਅਹਿਨਿਸਿ ਸਦਾ ਭਲੀ ਪਿਰ ਕੈ ਹੇਤਿ ਪਿਆਰਿ ॥੨॥', 'line', 2);
+          INSERT INTO shabads VALUES (3815, 'Guru Nanak Dev Ji', 'Raag Maaroo', 1088);
+          INSERT INTO lines VALUES (46501, 3815, 'ਸਸੁਰੈ ਪੇਈਐ ਕੰਤ ਕੀ ਕੰਤੁ ਅਗੰਮੁ ਅਥਾਹੁ ॥', 'line', 1);
+          INSERT INTO lines VALUES (46502, 3815, 'ਨਾਨਕ ਧੰਨੁ ਸੁੋਹਾਗਣੀ ਜੋ ਭਾਵਹਿ ਵੇਪਰਵਾਹ ॥੧॥', 'line', 2);
+        """)
+        block = [_line(i, t, 300 + 60 * i) for i, t in enumerate(["ਮਾਰੂ ਵਾਰ", "ਮ: ੧", "ਸਾਚੁ ਸੀਲ ਸਚੁ ਸੰਜਮੀ", "ਸਾ ਪੂਰੀ ਪਰਵਾਰਿ॥", "ਨਾਨਕ ਅਹਿਨਿਸਿ ਸਦਾ ਭਲੀ", "ਪਿਰ ਕੈ ਹੇਤਿ ਪਿਆਰਿ॥"])]
+        got = resolve_shabad(block, parse_ref("(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਪੰਨਾ ੧੦੮੮)"), con)
+        self.assertEqual((got["shabad"]["shabad_id"], got["shabad"]["method"]), (3812, "ref-window"))
+        self.assertIn("weak-shabad", got["flags"])                                   # linked, and shown to the reviewer as weak
+        self.assertEqual(sorted(got["shabad"]["line_ids"]), [46489, 46490])
+        other = resolve_shabad([_line(1, "ਇਹ ਰਾਗ ਬਹੁਤ ਪੁਰਾਣਾ ਹੈ ਅਤੇ ਸਵੇਰੇ ਗਾਇਆ ਜਾਂਦਾ ਹੈ", 300)], parse_ref("(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਪੰਨਾ ੧੦੮੮)"), con)
+        self.assertIsNone(other["shabad"]["shabad_id"])
+
+    # -- Bhagat Hayt Gavai Ravidasa (pp. 50-53, 93-97)
+
+    def test_a_grid_in_a_ruled_table_is_as_tall_as_its_bars(self):
+        try:
+            import cv2  # noqa: F401
+        except ImportError:
+            self.skipTest("cv2")
+        ink = self._ruled(345, 2226)
+        # p. 96: the OCR read the table's first rows and nothing under them
+        lines = [_line(1, "ਰਾਗ ਗੋਂਡ 75", 205, x0=766, x1=1429, h=55), _line(2, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 400), _line(3, "ਕਾ ऽ | ਨਿੰ ऽ | ਦ ਕੁ | ਕੈ ऽ", 470),
+                 _line(4, "& 4.", 1273, x0=525, x1=576, h=556)]
+        lay = self._page(96, lines, ink=ink)
+        grids = [r for r in lay["regions"] if r["role"] == "grid"]
+        self.assertEqual(len(grids), 1)
+        self.assertGreater(grids[0]["bbox"][3], 2200)
+        self.assertNotIn("text", [r["role"] for r in lay["regions"]])               # the shred down a bar is the table's own
+        # p. 51: a page Tesseract read nothing of
+        lay = self._page(51, [], ink=ink)
+        self.assertEqual((lay["kind"], [r["role"] for r in lay["regions"]]), ("notation", ["grid"]))
+        self.assertTrue(340 <= lay["regions"][0]["bbox"][1] <= 420 and lay["regions"][0]["bbox"][3] > 2150)
+        # bars round a verse (a boxed shabad) are not a notation's; nor is a frame round the whole page
+        boxed = self._page(52, [self._verse(1, "ਜਉ ਹਮ ਬਾਂਧੇ ਮੋਹ ਫਾਸ ਹਮ ਪ੍ਰੇਮ ਬਧਨਿ ਤੁਮ ਬਾਧੇ ॥", 900, 2518), self._verse(2, "ਅਪਨੇ ਛੂਟਨ ਕੋ ਜਤਨੁ ਕਰਹੁ ਹਮ ਛੂਟੇ ਤੁਮ ਆਰਾਧੇ ॥੧॥", 960, 2518)], ink=ink)
+        self.assertNotIn("grid", [r["role"] for r in boxed["regions"]])
+        framed = self._page(53, [], ink=self._ruled(60, 2500))
+        self.assertEqual(framed["regions"], [])
+
+    def test_a_numbered_raag_over_its_description_is_a_chapter_not_a_notation(self):
+        p96 = self._page(96, [_line(1, "ਰਾਗ ਗੋਂਡ ਤਿੰਨਤਾਲ", 284, bold=True), self._verse(2, "ਜੇ ਓਹੁ ਅਠਸਠਿ ਤੀਰਥ ਨ੍ਹਾਵੈ ॥ ਜੇ ਓਹੁ ਦੁਆਦਸ ਸਿਲਾ ਪੂਜਾਵੈ ॥", 360, 3270),
+                              self._verse(3, "ਜੇ ਓਹੁ ਕੂਪ ਤਟਾ ਦੇਵਾਵੈ ॥ ਕਰੈ ਨਿੰਦ ਸਭ ਬਿਰਥਾ ਜਾਵੈ ॥੧॥", 420, 3270)] + self._grids(4, 600))
+        p97 = self._page(97, [_line(1, "13. ਰਾਗ ਰਾਮਕਲੀ", 652, bold=True, x0=560, x1=1010),
+                              _line(2, "ਰਾਮਕਲੀ ਬੜਾ ਪ੍ਰਸਿੱਧ ਰਾਗ ਹੈ। ਇਸ ਦਾ ਵਾਦੀ ਧੈਵਤ ਅਤੇ ਸੰਵਾਦੀ ਰਿਸ਼ਭ ਹੈ ਅਤੇ ਠਾਠ ਭੈਰਵ ਹੈ।", 740),
+                              _line(3, "ਆਰੋਹ : ਸਾ ਗ, ਮ ਪ, ਧੁ, ਨੀ ਸਾਂ।", 1300), _line(4, "ਅਵਰੋਹ : ਸਾਂ ਨੀ ਧੁ ਪ, ਮੰ ਪ ਧੁ ਨੀ ਧੁ ਪ, ਗ, ਮ ਰੇ, ਸਾ।", 1360),
+                              _line(5, "ਰਾਗ ਰਾਮਕਲੀ ਸੁਰ ਵਿਸਤਾਰ", 1560, bold=True, x0=560, x1=1010),
+                              _line(6, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 1650), _line(7, "ਨੀ ਸ | ਗ ਮ | ਧ ਪ | ਮ ਗ", 1720), _line(8, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", 1790)])
+        dropped = []
+        spans = link_pages([p96, p97], merge_style(None), dropped)
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([96], 3270)])
+        self.assertIn("raag", [d.get("opened_by") for d in dropped if 97 in d["pages"]])
+
+    def test_the_running_header_that_is_a_line_of_gurbani_is_no_shabad(self):
+        style = merge_style({"running_header": ["ਭਗਤਿ ਹੇਤ ਗਾਵੈ ਰਵਿਦਾਸਾ"]})
+        lines = [self._verse(1, "74 ਭਗਤਿ ਹੇਤ ਗਾਵੈ ਰਵਿਦਾਸਾ ॥੫॥੫॥", 204, 4300, x0=650, x1=1008, h=50),
+                 self._verse(2, "ਜੇ ਓਹੁ ਅਠਸਠਿ ਤੀਰਥ ਨ੍ਹਾਵੈ ॥ ਜੇ ਓਹੁ ਦੁਆਦਸ ਸਿਲਾ ਪੂਜਾਵੈ ॥", 344, 3270), self._verse(3, "ਜੇ ਓਹੁ ਕੂਪ ਤਟਾ ਦੇਵਾਵੈ ॥ ਕਰੈ ਨਿੰਦ ਸਭ ਬਿਰਥਾ ਜਾਵੈ ॥੧॥", 405, 3270)]
+        lay = self._page(95, lines, style=style)
+        self.assertEqual([(r["role"], len(r["lines"])) for r in lay["regions"]], [("shabad", 2)])
+        # the same words lower on the page are the verse they are
+        lines[0] = self._verse(1, "ਭਗਤਿ ਹੇਤ ਗਾਵੈ ਰਵਿਦਾਸਾ ॥੫॥੫॥", 284, 3270, x0=650, x1=1008, h=50)
+        self.assertEqual([(r["role"], len(r["lines"])) for r in self._page(95, lines, style=style)["regions"]], [("shabad", 3)])
+
+    def test_a_raag_named_alone_over_the_verse_leads_it_and_a_speck_is_no_grid_row(self):
+        p94 = self._page(94, [_line(1, "ਰਾਗ ਗੋਂਡ ਤਿੰਨਤਾਲ", 284, bold=True), self._verse(2, "ਮੁਕੰਦ ਮੁਕੰਦ ਜਪਹੁ ਸੰਸਾਰ ॥", 360, 3269),
+                              self._verse(3, "ਬਿਨੁ ਮੁਕੰਦ ਤਨੁ ਹੋਇ ਅਉਹਾਰ ॥", 420, 3269)] + self._grids(4, 600))
+        p95 = self._page(95, [_line(1, "=", 287, x0=809, x1=826, h=12), _line(2, "ਗੋਂਡ", 300, x0=801, x1=866, h=27),
+                              self._verse(3, "ਜੇ ਓਹੁ ਅਠਸਠਿ ਤੀਰਥ ਨ੍ਹਾਵੈ ॥ ਜੇ ਓਹੁ ਦੁਆਦਸ ਸਿਲਾ ਪੂਜਾਵੈ ॥", 344, 3270),
+                              self._verse(4, "ਜੇ ਓਹੁ ਕੂਪ ਤਟਾ ਦੇਵਾਵੈ ॥ ਕਰੈ ਨਿੰਦ ਸਭ ਬਿਰਥਾ ਜਾਵੈ ॥੧॥", 405, 3270)] + self._grids(5, 900))
+        self.assertEqual([r["role"] for r in p95["regions"]][:2], ["text", "shabad"])
+        spans = link_pages([p94, p95], merge_style(None))
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([94], 3269), ([95], 3270)])
+
+    def test_a_verse_that_begins_with_apna_is_no_reference(self):
+        self.assertIsNone(parse_ref("ਅਪਨਾ ਬਿਗਾਰਿ ਬਿਰਾਂਨਾ ਸਾਂਢੈ ॥ ਕਰੈ ਨਿੰਦ ਬਹੁ ਜੋਨੀ ਹਾਂਢੈ ॥੩॥੩॥"))
+        self.assertEqual(parse_ref("(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਪਨਾ ੮੭੫)")["ang_from"], 875)
+        self.assertEqual(parse_ref("(ਅੰਗ-੭੨੪)")["ang_from"], 724)
+
+    # -- Swar Samund (pp. 83-84)
+
+    def test_the_meanings_and_the_other_shabads_are_prose_and_the_notation_keeps_its_own_shabad(self):
+        p83 = self._page(83, [self._verse(1, "ਮਲਾਰ ਮਹਲਾ ੪ ॥", 231, 4558, x0=600, x1=1000), self._verse(2, "ਤਿਸੁ ਜਨ ਕਉ ਹਰਿ ਮੀਠ ਲਗਾਨਾ ਜਿਸੁ ਹਰਿ ਹਰਿ ਕ੍ਰਿਪਾ ਕਰੈ ॥", 300, 4558),
+                              self._verse(3, "ਤਿਸ ਕੀ ਭੂਖ ਦੂਖ ਸਭਿ ਉਤਰੈ ਜੋ ਹਰਿ ਗੁਣ ਹਰਿ ਉਚਰੈ ॥੧॥", 360, 4558),
+                              _line(4, "(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਅੰਗ ੧੨੬੩)", 950, x0=900, x1=1480), _line(5, "ਭਾਵ-ਅਰਥ", 1070, x0=700, x1=920),
+                              _line(6, "੧. ਜਿਸ ਮਨੁੱਖ ਉਪਰ ਪਰਮਾਤਮਾ ਮਿਹਰ ਕਰਦਾ ਹੈ, ਉਸ ਮਨੁੱਖ ਨੂੰ ਪਰਮਾਤਮਾ ਦਾ ਨਾਮ ਪਿਆਰਾ ਲੱਗਦਾ ਹੈ।", 1140),
+                              _line(7, "ਸ ਰ | ਗ ਮ | ਪ — | ਧ ਨ", 1210),          # a line of the meanings the OCR made a row of
+                              _line(8, "ਹੋਰ ਸ਼ਬਦ (ਅੰਮ੍ਰਿਤ ਕੀਰਤਨ) –", 2130, x0=160, x1=640),
+                              self._verse(9, "੧. ਪ੍ਰਭ ਮੇਰੇ ਪ੍ਰੀਤਮ ਪ੍ਰਾਨ ਪਿਆਰੇ ॥ (ਅੰਗ-੬੯)", 2190, 5001), self._verse(10, "੨. ਬਰਸੁ ਘਨਾ ਮੇਰਾ ਮਨੁ ਭੀਨਾ ॥ (ਅੰਗ-੮੪੯)", 2250, 5002)])
+        p84 = self._page(84, [_line(1, "ਰਾਗੁ ਮਲਾਰ (ਤੀਨ ਤਾਲ)", 265, bold=True, x0=560, x1=1100)] + self._grids(2, 360))
+        self.assertEqual([(r["role"], bool(r.get("prose"))) for r in p83["regions"]], [("shabad", False), ("ref", False), ("text", True), ("text", True)])
+        self.assertTrue(p83["regions"][3]["text"].startswith("ਹੋਰ ਸ਼ਬਦ"))           # the other shabads for the tune, kept apart in the layout
+        self.assertEqual(p83["kind"], "text")
+        spans = link_pages([p83, p84], merge_style(None))
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([83, 84], 4558)])
+        # ... and the other shabads are the record's `also`. The numbers under "(ਅੰਮ੍ਰਿਤ ਕੀਰਤਨ)" are that pothi's pages, not
+        # angs, so the words name the shabad: the merge's match, else the one shabad a line of which begins so
+        import sqlite3
+        from lib.notation_resolve import other_shabads
+        con = sqlite3.connect(":memory:")
+        con.executescript("""
+          CREATE TABLE shabads (shabad_id INTEGER PRIMARY KEY, writer TEXT, raag TEXT, ang_start INTEGER);
+          CREATE TABLE lines (line_id INTEGER PRIMARY KEY, shabad_id INTEGER, gurmukhi_uni TEXT, kind TEXT, position_in_shabad INTEGER);
+          INSERT INTO shabads VALUES (5001, 'Guru Arjan Dev Ji', 'Raag Bilaaval', 802);
+          INSERT INTO lines VALUES (1, 5001, 'ਪ੍ਰਭ ਮੇਰੇ ਪ੍ਰੀਤਮ ਪ੍ਰਾਨ ਪਿਆਰੇ ॥', 'line', 1);
+          INSERT INTO shabads VALUES (5002, 'Guru Arjan Dev Ji', 'Raag Malaar', 1268);
+          INSERT INTO lines VALUES (2, 5002, 'ਬਰਸੁ ਘਨਾ ਮੇਰਾ ਮਨੁ ਭੀਨਾ ॥', 'line', 1);
+          INSERT INTO lines VALUES (3, 5002, 'ਅੰਮ੍ਰਿਤ ਬੂੰਦ ਸੁਹਾਨੀ ਹੀਅਰੈ ਗੁਰਿ ਮੋਹੀ ਮਨੁ ਹਰਿ ਰਸਿ ਲੀਨਾ ॥੧॥ ਰਹਾਉ ॥', 'rahao', 2);
+        """)
+        texts = [r for _, r in spans[0]["text"]]
+        self.assertEqual([len(r.get("others") or []) for r in texts], [0, 2])
+        also = other_shabads(texts, con, 4558)
+        self.assertEqual([(a["shabad_id"], a["ang"], a["confidence"]) for a in also], [(5001, 802, 0.9), (5002, 1268, 0.9)])   # the Granth's angs, not 69 and 849
+        self.assertEqual(also[0]["first_line"], "ਪ੍ਰਭ ਮੇਰੇ ਪ੍ਰੀਤਮ ਪ੍ਰਾਨ ਪਿਆਰੇ ॥")
+        self.assertTrue(also[1]["printed"].startswith("੨. ਬਰਸੁ ਘਨਾ"))
+        self.assertEqual([a["shabad_id"] for a in other_shabads(texts, con, 5001)], [5002])       # never the notation's own shabad
+        # nothing matched by the merge: found by the printed words at the head of a line; words that open two shabads name neither
+        bare = [{"text": "ਹੋਰ ਸ਼ਬਦ (ਅੰਮ੍ਰਿਤ ਕੀਰਤਨ) –", "others": [{"text": "੧. ਬਰਸੁ ਘਨਾ ਮੇਰਾ ਮਨੁ (ਅੰਗ-੮੪੯)", "matches": []}]}]
+        self.assertEqual([(a["shabad_id"], a["confidence"]) for a in other_shabads(bare, con, 4558)], [(5002, 0.7)])
+        con.execute("INSERT INTO shabads VALUES (5003, 'x', 'Raag Sorath', 600)")
+        con.execute("INSERT INTO lines VALUES (4, 5003, 'ਬਰਸੁ ਘਨਾ ਮੇਰਾ ਮਨੁ ਤਰਸੈ ॥', 'line', 1)")
+        from lib import notation_resolve
+        notation_resolve._CORPUS_LINES.clear()
+        self.assertEqual([a["shabad_id"] for a in other_shabads(bare, con, 4558)], [None])
+        self.assertEqual([a["shabad_id"] for a in other_shabads(bare, None, 4558)], [None])         # no corpus: the printed line only
+
+    # -- the ledger
+
+    def test_a_rejection_removes_the_cut_that_was_rejected_not_another_cut_of_the_same_shabad(self):
+        # Bhagat Hayt Gavai Ravidasa: "7. ਰਾਗ ਸੋਰਠਿ" and its swar-vistaar (pp. 52-53) had borrowed the shabad of p. 50 and
+        # were rejected as "raag sorath description"; the reader then cut the shabad's own notation, pp. 50-51
+        from lib.notation_review import append_entry, apply_review, assign_keys, entry_of, read_ledger
+        rec = lambda *a, **kw: ReviewLedgerTests._rec(self, *a, **kw)
+        with tempfile.TemporaryDirectory() as d:
+            images = os.path.join(d, "images"); os.makedirs(images)
+            description = rec("test-book:0052:1", [50, 52, 53], 2010, raag="sorath")
+            assign_keys([description])
+            append_entry(entry_of(description, "rejected", "raag sorath description", round_=1), d)
+            ledger = read_ledger("test-book", d)
+            notation_ = rec("test-book:0051:1", [50, 51], 2010)
+            got = apply_review([notation_], ledger, images, d)
+            self.assertEqual([r["notation_id"] for r in got["records"]], ["test-book:0051:1"])       # shown for review, not dropped unseen
+            from lib.notation_review import attach
+            self.assertEqual(attach(ledger, [notation_]), {})                                            # and the review page shows it unreviewed
+            again = rec("test-book:0052:1", [50, 52, 53], 2010, raag="sorath", y0=230)                 # the rejected cut itself, re-cut a little
+            self.assertEqual(apply_review([again], ledger, images, d)["records"], [])
+
+    # -- the other shabads for a tune (Swar Samund's "ਹੋਰ ਸ਼ਬਦ"), as secondary entries of the notation
+
+    def test_the_database_lists_a_notation_under_the_other_shabads_the_book_sets_to_its_tune(self):
+        import sqlite3
+        build = _script("32_build_notations_db.py")
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, "notations", "test-book")
+            os.makedirs(os.path.join(src, "images"))
+            rec = _record("test-book:0084:1", 1248)
+            rec["page"], rec["pages"] = 84, [83, 84]
+            rec["also"] = [{"shabad_id": 2000, "ang": 69, "printed": "੧. ਪ੍ਰਭ ਮੇਰੇ ਪ੍ਰੀਤਮ ਪ੍ਰਾਨ ਪਿਆਰੇ (ਅੰਗ-੬੯)", "first_line": "ਪ੍ਰਭ ਮੇਰੇ ਪ੍ਰੀਤਮ ਪ੍ਰਾਨ ਪਿਆਰੇ ॥"},
+                           {"shabad_id": 1248, "ang": 1263, "printed": "the notation's own shabad, listed again"},
+                           {"shabad_id": 777777, "ang": 5, "printed": "an id the corpus does not hold"},
+                           {"shabad_id": None, "ang": 849, "printed": "੨. ਬਰਸੁ ਘਨਾ ਮੇਰਾ ਮਨੁ ਭੀਨਾ (ਅੰਗ-੮੪੯)", "first_line": None}]
+            notation.write_jsonl(os.path.join(src, "notations.jsonl"),
+                                 notation.meta_for({"book": "test-book", "author": "Test Author", "title": "Test Book", "part": 1,
+                                                    "style": merge_style(None)}, pages=2), [rec])
+            gurbani = os.path.join(d, "gurbani.sqlite")
+            con = sqlite3.connect(gurbani)
+            con.execute("CREATE TABLE shabads (shabad_id INTEGER PRIMARY KEY)")
+            con.executemany("INSERT INTO shabads VALUES (?)", [(1248,), (2000,)])
+            con.commit(); con.close()
+            out = os.path.join(d, "artifacts", "notations.sqlite")
+            build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, True, False, None)
+            con = sqlite3.connect(out)
+            with open(os.path.join(HERE, "lib", "notation_columns.json"), encoding="utf-8") as fh:
+                optional = json.load(fh)["optional"]
+            self.assertEqual([r[1] for r in con.execute("PRAGMA table_info(notation_shabads)")], optional["notation_shabads"])
+            rows = con.execute("SELECT notation_id, n, shabad_id, ang FROM notation_shabads ORDER BY n").fetchall()
+            self.assertEqual(rows, [("test-book:0084:1", 1, 2000, 69), ("test-book:0084:1", 2, None, 849)])
+            self.assertEqual(con.execute("SELECT n FROM shabad_counts WHERE shabad_id = 1248").fetchone(), (1,))     # the notation's own count is its own
+            self.assertEqual(con.execute("SELECT value FROM meta WHERE key = 'shabads_also'").fetchone(), ("2",))
+            con.close()

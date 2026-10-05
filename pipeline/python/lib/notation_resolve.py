@@ -17,6 +17,7 @@ such.
     unresolved <  0.50   shabad_id null, flagged unresolved-shabad
 """
 from __future__ import annotations
+import re
 import sqlite3
 from collections import defaultdict
 
@@ -42,6 +43,112 @@ def votes_from_lines(merged_lines: list[dict]) -> tuple[dict[int, float], dict[i
     return dict(weight), dict(line_ids), sources
 
 
+_NOT_LETTERS = re.compile(r"[^\u0a05-\u0a39\u0a3e-\u0a4d\u0a59-\u0a5e\u0a70-\u0a75]")
+
+
+def by_printed_ang(merged_lines: list[dict], ref: dict, con: sqlite3.Connection) -> tuple[int, float, list[int]] | None:
+    """
+    No line of the block matched the corpus, but the book prints the ang: a salok of a vaar set in
+    half-lines ("ਸਾਚੁ ਸੀਲ ਸਚੁ ਸੰਜਮੀ / ਸਾ ਪੂਰੀ ਪਰਵਾਰਿ॥") matches no corpus line by any one of its own
+    (Guru Nanak Dev Raag Ratnaavlee, the Maru Vaar; third cut, 5 October 2026). The block read as one
+    text, against the lines of that ang and its neighbours: the shabad two or more of whose lines are
+    found in it, and more of them than any other's. (shabad_id, score, [line_ids]) or None.
+    """
+    from rapidfuzz import fuzz
+    block = _NOT_LETTERS.sub("", " ".join((l.get("text") or "") for l in merged_lines))
+    if len(block) < 12:
+        return None
+    # by the shabad's first ang (both corpora have it; corpus.sqlite's lines carry no ang of their own)
+    try:
+        rows = con.execute("SELECT l.shabad_id, l.line_id, l.gurmukhi_uni FROM lines l JOIN shabads s ON s.shabad_id = l.shabad_id "
+                           "WHERE s.ang_start BETWEEN ? AND ? AND l.kind IN ('line','rahao')",
+                           (ref["ang_from"] - 1, (ref.get("ang_to") or ref["ang_from"]) + 1)).fetchall()
+    except sqlite3.Error:
+        return None
+    found: dict[int, list[tuple[int, float]]] = defaultdict(list)
+    for sid, line_id, text in rows:
+        line = _NOT_LETTERS.sub("", text or "")
+        if len(line) >= 8:
+            score = fuzz.partial_ratio(line, block)
+            if score >= 85:
+                found[sid].append((line_id, score / 100.0))
+    ranked = sorted(found.items(), key=lambda kv: (-len(kv[1]), -sum(sc for _, sc in kv[1])))
+    if not ranked or len(ranked[0][1]) < 2 or (len(ranked) > 1 and len(ranked[1][1]) == len(ranked[0][1])):
+        return None
+    sid, hits = ranked[0]
+    return sid, sum(sc for _, sc in hits) / len(hits), [lid for lid, _ in hits]
+
+
+_LIST_NUMBER = re.compile(r"^\s*[0-9੦-੯]{1,2}\s*[.)]\s*")
+
+
+_CORPUS_LINES: dict[int, list[tuple[int, str]]] = {}
+
+
+def _corpus_lines(con: sqlite3.Connection) -> list[tuple[int, str]]:
+    """Every line of the corpus as (shabad_id, its letters), read once a connection."""
+    key = id(con)
+    if key not in _CORPUS_LINES:
+        try:
+            rows = con.execute("SELECT shabad_id, gurmukhi_uni FROM lines WHERE kind IN ('line','rahao')").fetchall()
+        except sqlite3.Error:
+            rows = []
+        _CORPUS_LINES[key] = [(sid, _NOT_LETTERS.sub("", text or "")) for sid, text in rows]
+    return _CORPUS_LINES[key]
+
+
+def other_shabads(regions: list[dict], con: sqlite3.Connection | None, own_sid: int | None) -> list[dict]:
+    """
+    The record's `also`: the other shabads a book prints beside a notation as sung to the same tune
+    (Swar Samund: "ਹੋਰ ਸ਼ਬਦ (ਅੰਮ੍ਰਿਤ ਕੀਰਤਨ) –", then "੧. ਮੈ ਅੰਧੁਲੇ ਕੀ ਟੇਕ ਤੇਰਾ (ਅੰਗ-੧੭੪)" and one more), from the
+    layout's `others` lines. The number printed there is a page of the Amrit Kirtan pothi the label names,
+    not an ang of the Granth, so the words name the shabad: the corpus line the merge matched, else the one
+    shabad a line of which begins with the printed words; a line that opens several shabads, or none, keeps
+    its printed text and no id. [{"shabad_id", "ang", "printed", "first_line", "confidence"}], the ang the Granth's.
+    """
+    from rapidfuzz import fuzz
+    from lib.notation_text import parse_ref
+    out: list[dict] = []
+    for region in regions:
+        label = (region.get("text") or "").split("\n")[0]
+        of_granth = "ਅੰਮ੍ਰਿਤ ਕੀਰਤਨ" not in label          # else the numbers are that pothi's pages
+        for item in region.get("others") or []:
+            printed = (item.get("text") or "").strip()
+            ref = (parse_ref(printed) or {}) if of_granth else {}
+            ang = ref.get("ang_from") if ref.get("source", "G") == "G" else None
+            words = _NOT_LETTERS.sub("", _LIST_NUMBER.sub("", printed.split("(")[0]))
+            if len(words) < 8:
+                continue                                   # the label's own tail, a stray mark
+            sid, confidence = None, 0.0
+            for m in sorted(item.get("matches") or [], key=lambda m: -(m.get("score") or 0)):
+                if m.get("shabad_id") is None or (m.get("source") or "G") != "G" or (m.get("score") or 0) < 0.9:
+                    continue
+                at = corpus_facts(con, m["shabad_id"]).get("ang") if con is not None else None
+                if ang is None or (at is not None and abs(at - ang) <= 1):
+                    sid, confidence = m["shabad_id"], 0.9
+                    break
+            if sid is None and con is not None:
+                # the printed words are the head of a line (its first, most often): the shabads a line of which begins so
+                best: dict[int, float] = {}
+                for cand, line in _corpus_lines(con):
+                    if len(line) >= len(words) and line[0] == words[0]:
+                        score = fuzz.ratio(words, line[:len(words)])
+                        if score >= 90:
+                            best[cand] = max(best.get(cand, 0), score)
+                if ang is not None:
+                    best = {c: sc for c, sc in best.items() if abs((corpus_facts(con, c).get("ang") or -9) - ang) <= 1}
+                top = max(best.values(), default=0)
+                near = [c for c, sc in best.items() if sc >= top - 2]
+                if len(near) == 1:
+                    sid, confidence = near[0], 0.7
+            if sid is not None and sid == own_sid:
+                continue
+            facts = corpus_facts(con, sid) if (con is not None and sid is not None) else {}
+            out.append({"shabad_id": sid, "ang": facts.get("ang") if sid is not None else ang, "printed": printed,
+                        "first_line": facts.get("first_line"), "confidence": confidence})
+    return out
+
+
 def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Connection | None,
                    bol_match: dict | None = None) -> dict:
     """
@@ -53,6 +160,11 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
     """
     weight, line_ids, sources = votes_from_lines(merged_lines)
     n_lines = sum(1 for l in merged_lines if l.get("matches"))
+    windowed = None
+    if not weight and con is not None and ref and ref.get("source", "G") == "G" and ref.get("ang_from") and merged_lines:
+        windowed = by_printed_ang(merged_lines, ref, con)
+        if windowed:
+            weight, line_ids, sources = {windowed[0]: windowed[1]}, {windowed[0]: windowed[2]}, ["G"]
     flags: list[str] = []
     total = sum(weight.values())
     winner, share = None, 0.0
@@ -92,6 +204,9 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
         facts = corpus_facts(con, winner) if con is not None else {}
         confidence = 0.6
         method = ["bol"]
+    if windowed:
+        # found by the printed ang, not by a line the merge matched: linked, and weak for the reviewer
+        method, confidence = ["ref"], min(confidence, 0.7)
     confidence = round(min(1.0, confidence), 3)
     source = None
     if sources:

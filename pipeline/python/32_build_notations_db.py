@@ -77,6 +77,9 @@ CREATE TABLE raag_notes (book_key TEXT NOT NULL, n INTEGER NOT NULL, raag_key TE
                          page_start INTEGER NOT NULL, page_end INTEGER NOT NULL, pages TEXT NOT NULL, heading TEXT,
                          text TEXT, image_path TEXT, image_url TEXT, sha256 TEXT, bytes INTEGER,
                          PRIMARY KEY (book_key, n));
+CREATE TABLE notation_shabads (notation_id TEXT NOT NULL, n INTEGER NOT NULL, shabad_id INTEGER, ang INTEGER,
+                               printed TEXT, first_line TEXT, PRIMARY KEY (notation_id, n));
+CREATE INDEX idx_also_shabad ON notation_shabads(shabad_id);
 CREATE INDEX idx_raag_notes_raag ON raag_notes(raag_key);
 CREATE INDEX idx_not_shabad ON notations(shabad_id);
 CREATE INDEX idx_not_raag_used ON notations(raag_used_key, ang);
@@ -85,7 +88,8 @@ CREATE INDEX idx_not_taal ON notations(taal_key, ang);
 CREATE INDEX idx_not_book ON notations(book_key, ordinal);
 CREATE INDEX idx_not_author ON notations(author_key, book_key, ordinal);
 """
-TABLES = ("meta", "raags", "taals", "authors", "books", "notations", "images", "shabad_counts", "raag_notes")
+# notation_shabads is pinned under "optional": the app does without it in a database built before it existed
+TABLES = ("meta", "raags", "taals", "authors", "books", "notations", "images", "shabad_counts", "raag_notes", "notation_shabads")
 
 
 def j(v) -> str | None:
@@ -205,7 +209,8 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
           require_urls: bool, allow_unmeasured: bool, verify_images: bool, release_base: str | None,
           accepted_only: bool = False) -> dict:
     with open(COLUMNS_PATH, encoding="utf-8") as fh:
-        columns = json.load(fh)["tables"]
+        pin = json.load(fh)
+        columns = {**pin["tables"], **pin.get("optional", {})}
     dirs = sorted(d for d in glob.glob(os.path.join(src, "*")) if os.path.exists(os.path.join(d, "notations.jsonl")))
     if books:
         dirs = [d for d in dirs if os.path.basename(d) in books]
@@ -309,6 +314,17 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
                 problems.append("%s: taal key %r unknown to the vocabulary" % (rec["notation_id"], row["taal_key"]))
                 continue
             insert("notations", row)
+            # the other shabads the book prints beside the notation as sung to the same tune (record.also), in the
+            # order printed; one the corpus does not hold keeps its printed line and no id
+            n_also = 0
+            for a in rec.get("also") or []:
+                a_sid = a.get("shabad_id")
+                if a_sid is not None and (a_sid == sid or (known_shabads is not None and a_sid not in known_shabads)):
+                    continue
+                n_also += 1
+                insert("notation_shabads", {"notation_id": rec["notation_id"], "n": n_also, "shabad_id": a_sid, "ang": a.get("ang"),
+                                            "printed": a.get("printed"), "first_line": a.get("first_line")})
+                totals["also"] = totals.get("also", 0) + 1
             ims = list(image_rows(rec, d, book_urls, by_file))
             # the app shows a notation's block cuts (and their thumbs), or every image of one without blocks;
             # those are what tools/publish-notation-images.mjs publishes, and all --require-urls asks for
@@ -380,7 +396,7 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
         insert("shabad_counts", {"shabad_id": sid, "n": n})
     meta_rows = {"schema": str(SCHEMA_VERSION), "parser_version": PARSER_VERSION, "vocab_version": VOCAB_VERSION,
                  "columns_version": "1", "built": built, "books": str(totals["books"]), "notations": str(totals["notations"]),
-                 "shabads": str(len(counts)), "images": str(totals["images"]), "images_published": str(totals["published"]),
+                 "shabads": str(len(counts)), "shabads_also": str(totals.get("also", 0)), "images": str(totals["images"]), "images_published": str(totals["published"]),
                  "images_release_base": release_base or "", "bars": j(_bars()),
                  # accepted: only reviewed notations (manual); all: every record, with its review state per row (auto)
                  "review_mode": "accepted" if accepted_only else "all"}

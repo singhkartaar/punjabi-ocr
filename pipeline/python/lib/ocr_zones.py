@@ -172,6 +172,10 @@ def classify_zones(lines: list[dict], page_w: int, page_h: int, stamps: list[dic
     """
     heights = sorted((ln["bbox"][3] - ln["bbox"][1]) for ln in lines if ln.get("text", "").strip())
     body_h = heights[len(heights) // 2] if heights else 0
+    # a watermark laid across the page ("SIKHBOOKCLUB.COM" on the diagonal) has a box as tall as the
+    # middle of the page: the lines under it are the book's own, and only its words are the stamp's
+    # (is_stamp). A stamp that is a line of text -- "Page 41 of 530" -- claims what lies in its box.
+    line_stamps = [s for s in (stamps or []) if (s["bbox"][3] - s["bbox"][1]) <= max(3 * body_h, 0.05 * page_h)]
     out = []
     for ln in lines:
         rec = dict(ln)
@@ -183,7 +187,7 @@ def classify_zones(lines: list[dict], page_w: int, page_h: int, stamps: list[dic
             pass
         elif not text:
             zone = "body"
-        elif is_stamp(text) or any(_overlaps(rec["bbox"], s["bbox"]) for s in (stamps or [])):
+        elif is_stamp(text) or any(_overlaps(rec["bbox"], s["bbox"]) for s in line_stamps):
             zone = "stamp"
         elif PAGENO.match(text) and (yc < page_h * HEADER_BAND * 1.5 or yc > page_h * (1 - FOOTER_BAND * 1.5)):
             zone = "pageno"

@@ -45,6 +45,13 @@ _MARKER_GLYPH = re.compile(r"^[x×X+०੦0oO°\[\)\(\]ਨਤੇੜੇ੨੩੪�
 _DESCRIPTION_WORDS = re.compile(r"ਸੰਵਾਦੀ|ਸੌਵਾਦੀ|ਵਾਦੀ|ਠਾਠ|ਥਾਟ|ਪਕੜ|ਆਰ[ੋੌ]ਹ|ਅਰੋਹ|ਅਵਰ[ੋੌ]ਹ|ਵਿਸਥਾਰ|ਵਿਸਤਾਰ|ਪਰੀਚੈ|ਪਰਿਚੈ|ਪਰਿਚਯ"
                                 r"|ਵਰਜਿਤ|ਨਿਆਸ|ਪ੍ਰਕ੍ਰਿਤੀ|ਮੁੱਖ ਅੰਗ|ਜਾਤੀ|ਜਾਤ\s*-|ਸਮਾਂ\s*-")
 _RAAG_WORD = re.compile(r"^\W*ਰਾਗ[ੁ]?\b")
+# A book that explains each shabad before its notation (Prof Paramjyot Singh's Swar Samund: the shabad and
+# its reference, "ਭਾਵ-ਅਰਥ" and the meanings, "ਹੋਰ ਸ਼ਬਦ (ਅੰਮ੍ਰਿਤ ਕੀਰਤਨ) –" and the first lines of two more
+# shabads for the same tune, each with its ang; the notation on the facing page). From either label to the
+# notation's heading everything is prose: a sentence of the meanings is no grid row, and the other shabads'
+# lines, which the corpus knows and which carry an ang, are not the notation's shabad (third cut, 5 October 2026).
+_OTHERS_LABEL = re.compile(r"^\W*ਹੋਰ\s+ਸ਼ਬਦ\b")
+_PROSE_LABEL = re.compile(r"^\W*(?:ਭਾਵ\s*[-–—]?\s*ਅਰਥ\W*$|ਹੋਰ\s+ਸ਼ਬਦ\b)")
 
 
 def _describes_raag(region: dict) -> bool:
@@ -165,7 +172,16 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
             regions.append(cur)
             cur = None
 
+    # the running header the manifest names (style.running_header), when it is itself a line of Gurbani
+    # ("ਭਗਤਿ ਹੇਤ ਗਾਵੈ ਰਵਿਦਾਸਾ", the title of Prof Tara Singh's book, over every left-hand page): the corpus
+    # matches it, so by its words it is a verse, and it opened a shabad or joined the one under it
+    named = (style or {}).get("running_header") or []
+    named = [named] if isinstance(named, str) else list(named)
+    prose = False
     for line, role in roles:
+        if named and role == "gurbani" and page_h and line["bbox"][1] < 0.1 * page_h \
+                and _header_line(line.get("text") or "", named):
+            continue
         if role == "pageno" and line.get("zone") == "body" and page_h and 0.08 * page_h < line["bbox"][1] < 0.5 * page_h \
                 and _BRACKET_NUMBER.match((line.get("text") or "").strip()):
             # "(੨)" at the left margin under the raag's heading: the notation's number, not a page's
@@ -174,6 +190,28 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
         if role in ("stamp", "pageno"):
             continue
         n, bbox, text = line.get("n"), list(line["bbox"]), (line.get("text") or "").strip()
+        if role in ("grid", "marker", "text") and not _WORD_CHAR.search(text) \
+                and bbox[3] - bbox[1] < 0.5 * body_h and bbox[2] - bbox[0] < body_h:
+            continue                                  # a speck read as "=" or "'" on a line of its own: a grid row of one mark it is not
+        if _PROSE_LABEL.match(text):
+            prose = "others" if _OTHERS_LABEL.match(text) else "meanings"
+            close()
+        elif prose and (role == "section" or (role == "heading" and parse_heading(text).get("taal"))):
+            prose = False                             # the notation's own heading, or a section label: the prose is over
+        if prose:
+            # the meanings, the other shabads: one region of text, whatever its lines look like
+            if cur and cur.get("prose"):
+                cur["lines"].append(n); cur["bbox"] = _bbox_union([cur["bbox"], bbox]); cur["text"] += "\n" + text
+                if prose == "others":
+                    # a line of the list: another shabad for the tune, with what the corpus made of it (the record's `also`)
+                    cur["others"].append({"text": text, "matches": [{k: m.get(k) for k in ("shabad_id", "line_id", "score", "source")}
+                                                                    for m in (line.get("matches") or [])[:3]]})
+            else:
+                close()
+                cur = {"role": "text", "bbox": bbox, "lines": [n], "text": text, "kinds": [], "prose": True}
+                if prose == "others":
+                    cur["others"] = []
+            continue
         if role in ("heading", "section", "ref", "note", "marker"):
             close()
             region = {"role": role, "bbox": bbox, "lines": [n], "text": text}
@@ -191,6 +229,8 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
         if role in ("gurbani", "text"):
             # a verse block; a text line inside one continues it, a text line
             # alone (an alaap word, an OCR shred) stays text
+            if cur and cur.get("prose"):
+                close()
             if cur and cur["role"] == "shabad":
                 cur["lines"].append(n); cur["bbox"] = _bbox_union([cur["bbox"], bbox]); cur["text"] += "\n" + text
                 cur["kinds"].append(line.get("kind")); cur["merged"].append(line)
@@ -236,7 +276,7 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
             continue
         # the printed reference stands after the verse, or (Gurmat Sangeet Darpan) above it
         beside = regions[i - 1] if ref_before and i > 0 else regions[i + 1] if not ref_before and i + 1 < len(regions) else None
-        over_ref = bool(beside and beside["role"] == "ref" and _verse_shaped(r["text"]))
+        over_ref = bool(beside and beside["role"] == "ref" and (_verse_shaped(r["text"]) or _granth_set(r["text"], beside)))
         if not (_verse_block(r) or over_ref):
             r["role"] = "text"
     # a line naming another scripture (the Kabit Savaiye, the Dasam Bani) stands over its verse in every book,
@@ -268,6 +308,7 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
     regions = _merge_adjacent_grids(regions, body_h)
     if ink is not None:
         regions = _ink_grids(regions, ink, page_w, page_h, body_h)
+        regions = _ruled_grids(regions, ink, page_w, page_h, body_h)
     if ink is not None:
         for r in regions:
             if r["role"] == "grid":
@@ -293,6 +334,7 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
 
 
 _BRACKET_NUMBER = re.compile(r"^\(\s*[0-9੦-੯]{1,3}\s*\)$")
+_WORD_CHAR = re.compile(r"[0-9A-Za-z\u0a05-\u0a39\u0a59-\u0a6f×°]")
 
 
 def _join_number_and_taal(regions: list[dict], body_h: int) -> list[dict]:
@@ -394,6 +436,18 @@ def _verse_shaped(text: str) -> bool:
         return False
     closed = sum(1 for l in lines if l.rstrip("0-9੦-੯ ॥।)")[-1:] in ("।", "॥", ",") or l[-1:] in ("।", "॥", ","))
     return closed / len(lines) >= 0.5
+
+
+def _granth_set(text: str, ref: dict) -> bool:
+    """
+    Two lines or more closed by the Granth's double danda, over a reference that names an ang: a salok
+    of a vaar set in half-lines ("ਸਾਚੁ ਸੀਲ ਸਚੁ ਸੰਜਮੀ / ਸਾ ਪੂਰੀ ਪਰਵਾਰਿ॥"), which the corpus does not match
+    line for line and which is not "verse-shaped" by its line ends (Guru Nanak Dev Raag Ratnaavlee, the
+    Maru Vaar, pp. 106-107: three saloks and their grids read as one notation; third cut, 5 October 2026).
+    """
+    parsed = ref.get("parsed") or {}
+    closed = sum(1 for l in (text or "").split("\n") if "॥" in l)
+    return parsed.get("source", "G") == "G" and bool(parsed.get("ang_from")) and closed >= 2 and not _instruction(text)
 
 
 def _verse_block(region: dict) -> bool:
@@ -551,6 +605,68 @@ def _ink_grids(regions: list[dict], ink, page_w: int, page_h: int, body_h: int) 
             continue
         out.append({"role": "grid", "bbox": bbox, "lines": [], "text": "", "kinds": [], "merged": [], "from_ink": True})
     return sorted(out, key=lambda r: r["bbox"][1])
+
+
+def _ruled_tables(ink, page_w: int, page_h: int, body_h: int) -> list[tuple[int, int]]:
+    """
+    The row bands [(y0, y1)] of the page's ruled tables: two or more vertical rules, each ten lines
+    tall or more, standing over the same rows -- the bars that divide a notation's vibhags from the
+    table's top rule to its bottom one. A rule at the page's edge (a border, a scanner's shadow) and
+    a band as tall as the page (a frame round the whole page) are not a table.
+    """
+    from lib.ocr_grid import vertical_rules
+    edge = int(page_w * 0.06)
+    rules = [r for r in vertical_rules(ink, int(10 * body_h)) if edge < r["x"] < page_w - edge]
+    rules.sort(key=lambda r: r["y0"])
+    bands: list[list] = []                                      # [y0, y1, how many rules]
+    for r in rules:
+        for b in bands:
+            shared = min(b[1], r["y1"]) - max(b[0], r["y0"])
+            if shared >= 0.6 * min(b[1] - b[0], r["y1"] - r["y0"]):
+                b[0], b[1], b[2] = min(b[0], r["y0"]), max(b[1], r["y1"]), b[2] + 1
+                break
+        else:
+            bands.append([r["y0"], r["y1"], 1])
+    return [(b[0], b[1]) for b in bands if b[2] >= 2 and b[1] - b[0] < 0.9 * page_h]
+
+
+def _ruled_grids(regions: list[dict], ink, page_w: int, page_h: int, body_h: int) -> list[dict]:
+    """
+    A notation set in a ruled table is as tall as its bars, whatever the OCR read of it. Tesseract
+    returns a third of such a table, or nothing (Prof Tara Singh's Bhagat Hayt Gavai Ravidasa, p. 96:
+    the sthai read, the antra not; p. 51: a blank page; third cut, 5 October 2026). Where the bars
+    stand the grid stands: the grid regions among them are grown to the bars' top and bottom, and bars
+    with no grid region among them make one, read from the ink. A table that holds a verse or a
+    reference is no notation's and is left alone.
+    """
+    import numpy as np
+    for ya, yb in _ruled_tables(ink, page_w, page_h, body_h):
+        def inside(r):
+            return ya - body_h < (r["bbox"][1] + r["bbox"][3]) / 2 < yb + body_h
+        held = [r for r in regions if inside(r)]
+        if any(r["role"] in ("shabad", "ref") for r in held):
+            continue
+        # the shreds Tesseract read inside the table (a column of specks down a bar) are the grid's own
+        shreds = [r for r in held if r["role"] == "text" and len(r.get("lines") or []) <= 2]
+        regions = [r for r in regions if not any(r is s for s in shreds)]
+        held = [r for r in held if not any(r is s for s in shreds)]
+        grids = [r for r in held if r["role"] == "grid"]
+        if grids:
+            top, low = min(grids, key=lambda r: r["bbox"][1]), max(grids, key=lambda r: r["bbox"][3])
+            if low["bbox"][3] < yb and not any(r is not low and r["bbox"][1] > low["bbox"][3] for r in held):
+                low["bbox"][3] = int(yb)
+                low["from_ink"] = True
+            if top["bbox"][1] > ya and not any(r is not top and r["bbox"][3] < top["bbox"][1] for r in held):
+                top["bbox"][1] = int(ya)
+                top["from_ink"] = True
+            continue
+        edge = int(page_w * 0.04)
+        cols = np.where((ink[ya:yb, edge:page_w - edge] > 0).sum(axis=0) > 2)[0]
+        if len(cols) == 0 or cols.max() - cols.min() < 0.3 * page_w:
+            continue
+        regions.append({"role": "grid", "bbox": [int(edge + cols.min()), int(ya), int(edge + cols.max()) + 1, int(yb)],
+                        "lines": [], "text": "", "kinds": [], "merged": [], "from_ink": True})
+    return sorted(regions, key=lambda r: r["bbox"][1])
 
 
 def _merge_adjacent_grids(regions: list[dict], body_h: int) -> list[dict]:
@@ -781,6 +897,13 @@ def _repeated_tops(layouts: list[dict], style: dict | None = None) -> list[str]:
     return out
 
 
+def _header_line(text: str, named: list[str]) -> bool:
+    """A line that is one of the manifest's running headers, its page number and dandas aside: nearly letter for letter, since a verse may resemble a header."""
+    from difflib import SequenceMatcher
+    key = " ".join(_DIGITS_RE.sub(" ", re.sub("[॥।]", " ", text)).split())
+    return bool(key) and any(SequenceMatcher(None, key, h).ratio() >= 0.85 for h in named)
+
+
 def _is_running(region: dict, page_h: int, repeated: list[str]) -> bool:
     """A top-of-page region that reads like a repeated header -- never one that names a taal: Dyal Singh's consecutive numbered headings resemble each other too."""
     if (region.get("parsed") or {}).get("taal"):
@@ -897,8 +1020,14 @@ def _is_lead(item: dict) -> bool:
     """A heading, or a bare number on a line of its own ("੧੮."), standing between one notation and the next shabad leads the next in; a loose line of text is the tail of the one before."""
     if item["role"] == "heading":
         return True
-    return item["role"] == "text" and len(item["region"].get("lines") or []) <= 1 \
-        and bool(_NUMBER_LINE.match(item["region"].get("text") or ""))
+    if item["role"] != "text" or len(item["region"].get("lines") or []) > 1:
+        return False
+    text = (item["region"].get("text") or "").strip()
+    if _NUMBER_LINE.match(text):
+        return True
+    # "ਗੋਂਡ" alone over the verse: the shabad's raag as the Granth titles it, set as a line of its own
+    raag = parse_heading(text).get("raag") if len(text.split()) <= 2 else None
+    return bool(raag and raag.get("key") and (raag.get("confidence") or 0) >= 0.9)
 
 
 def _grids_after_shabad(seg: dict, real: bool = False) -> bool:
@@ -1021,7 +1150,10 @@ def _segments(items: list[dict], after: bool, pairing: bool = False) -> list[dic
                 # printed elsewhere: Padhti Granth's second kirtankar's "(੨) ਤੀਨਤਾਲ") grids with no shabad at all
                 done = (has(cur, ("shabad",)) and _grids_after_shabad(cur)) \
                     or (not has(cur, ("shabad",)) and any(it["role"] == "grid" and _is_real_grid(it["region"]) for it in cur["items"]))
-                raag_only = names_raag and not p.get("taal") and p.get("number") is None
+                # "13. ਰਾਗ ਰਾਮਕਲੀ" over the raag's vaadi, aaroh and swar-vistaar is a chapter of the book, not a
+                # notation's number (Bhagat Hayt Gavai Ravidasa: the description took the shabad before it)
+                chapter = names_raag and not p.get("taal") and p.get("number") is not None and _description_follows(items, i)
+                raag_only = names_raag and not p.get("taal") and (p.get("number") is None or chapter)
                 nxt = items[i + 1]["role"] if i + 1 < len(items) else "break"
                 # a raag's heading followed by prose, below the top of the page, opens a description;
                 # at the top of a page it is a running header the repetition test missed -- unless what

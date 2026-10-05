@@ -125,5 +125,16 @@
    "sha256",
    "bytes"
   ]
+ },
+ "_optional": "Tables a database may lack: the app checks their columns when they are there and does without them when they are not, so a database built before the table existed still opens. notation_shabads: the other shabads a book prints beside a notation as sung to the same tune (Swar Samund's 'ਹੋਰ ਸ਼ਬਦ'), in the order printed.",
+ "optional": {
+  "notation_shabads": [
+   "notation_id",
+   "n",
+   "shabad_id",
+   "ang",
+   "printed",
+   "first_line"
+  ]
  }
 }

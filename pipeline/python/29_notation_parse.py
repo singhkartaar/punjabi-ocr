@@ -35,7 +35,7 @@ from lib import notation
 from lib.notation import PARSER_VERSION, SCHEMA_VERSION, image_name, make_id, merge_style, notation_slug, validate
 from lib.notation_grid import read_region
 from lib.notation_layout import link_pages, page_layout, raag_descriptions
-from lib.notation_resolve import resolve_shabad
+from lib.notation_resolve import other_shabads, resolve_shabad
 from lib.notation_text import parse_heading
 from lib import notation_vocab
 from lib.notation_vocab import VERSION as VOCAB_VERSION, raag_key_from_corpus
@@ -602,6 +602,10 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
                     "matra_check": matra_check(sections_out, taal_key), "marks": quality["marks"], "watermark": 0.0},
         "flags": sorted(set(flags)), "verified": False,
     }
+    # the other shabads the book sets to this tune, listed beside the notation ("ਹੋਰ ਸ਼ਬਦ"): secondary entries of it
+    also = other_shabads([r for _, r in span.get("text", [])], con, rec["shabad"].get("shabad_id"))
+    if also:
+        rec["also"] = also
     rec["source"]["content_hash"] = notation.content_hash(rec)
     rec["shabad"]["raag"] = res["shabad"].get("raag")
     return rec, images

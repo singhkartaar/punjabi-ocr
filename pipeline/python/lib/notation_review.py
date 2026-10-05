@@ -253,6 +253,16 @@ def match_entry(entry: dict, records: list[dict]) -> dict | None:
     return best
 
 
+def rejected_cut(entry: dict, rec: dict) -> bool:
+    """
+    The record is the cut the entry rejected: on the same pages, or overlapping it by half. A raag's
+    description that had borrowed the shabad before it was rejected (Bhagat Hayt Gavai Ravidasa, "7. ਰਾਗ
+    ਸੋਰਠਿ", pp. 50, 52-53); the shabad's own notation, cut later on pp. 50-51, shares its shabad and its
+    first page and is not what was rejected.
+    """
+    return set(rec.get("pages") or []) == set(entry.get("pages") or []) or drift_of(entry, rec).get("extent_iou", 0.0) >= 0.5
+
+
 def attach(ledger: dict[str, dict], records: list[dict]) -> dict[str, dict]:
     """{notation_id: entry} -- every ledger entry attached to at most one record, keys first, then overlap, no record taken twice."""
     out: dict[str, dict] = {}
@@ -266,6 +276,8 @@ def attach(ledger: dict[str, dict], records: list[dict]) -> dict[str, dict]:
         if any(e is entry for e in out.values()):
             continue
         rec = match_entry(entry, [r for r in records if r["notation_id"] not in taken])
+        if rec is not None and entry.get("status") == "rejected" and not rejected_cut(entry, rec):
+            rec = None                                     # another cut of the same shabad: unreviewed, not "not a notation"
         if rec is not None:
             out[rec["notation_id"]] = entry
             taken.add(rec["notation_id"])
@@ -342,6 +354,10 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
             frozen = json.loads(json.dumps(frozen))
             frozen["verified"] = True
             frozen["review"] = {"key": key, "status": "accepted", "at": entry.get("at"), "round": entry.get("round")}
+            # what was accepted is the cut and the shabad; the other shabads the book lists for the tune are read
+            # beside it, and a fixture frozen before they were read takes them from the fresh record
+            if fresh is not None and fresh.get("also") and not frozen.get("also"):
+                frozen["also"] = fresh["also"]
             restore_images(frozen, entry, images_dir, review_dir)
             if fresh is not None:
                 idx = records.index(fresh)
@@ -359,7 +375,11 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
                                    "changed": not drift_of(entry, fresh)["same"]}
         elif entry["status"] == "rejected":
             out["rejected"] += 1
-            if fresh is not None:
+            # what was rejected is that cut. A cut of the same shabad that has moved to other pages is not it:
+            # a raag's description that had borrowed the shabad before it was rejected, and the reader then
+            # cut the shabad's own notation, on the next page (Bhagat Hayt Gavai Ravidasa p. 50-51) -- shown
+            # for review, not dropped unseen
+            if fresh is not None and rejected_cut(entry, fresh):
                 taken.add(records.index(fresh))
                 replaced[records.index(fresh)] = None
     kept: list[dict] = []
