@@ -39,6 +39,7 @@ _SOURCE_WORDS = (
     ("N", re.compile(r"ਨੰਦ ਲਾਲ|ਗੋਯਾ|ਗ਼ਜ਼ਲ")),
 )
 MAX_ANG = 1430
+_NAMED_SOURCE = re.compile(r"ਭਾਈ ਗੁਰਦਾਸ|ਵਾਰਾਂ ਭਾਈ|ਕਬਿੱਤ|ਕਬਿਤ|ਦਸਮ|ਪਾਤਸ਼ਾਹੀ ੧੦|ਪਾ: ੧੦|ਨੰਦ ਲਾਲ|ਗੋਯਾ")
 _HEADING_WORDS = re.compile(r"(?:^|[\s(:\-—])(?:ਰਾਗ|ਰਾਗੁ|ਤਾਲ|ਤਾਲਾ|ਮਾਤਰਾ|ਮਾਤਰਾਂ|ਮਾਤ੍ਰਾ|ਨੋਟੀਸ਼ਨ)(?=[\s:,\-—)]|$)")
 _NOTE_WORDS = re.compile(r"^\s*[\-—–']*\s*(?:ਨੋਟ|ਨੌਟ|ਨੇਂਟ|ਨੋਂਟ)|ਬਾਕੀ ਤੁਕਾਂ|ਅੰਤਰੇ ਤੇ ਲਾਓ|ਤੇ ਲਾਓ|ਦੀ ਰੀਤ|ਦੀ ਤਰਜ਼|ਵਾਂਗ ਗਾਓ|ਲਿਖਿਆ ਹੈ")
 _HELD_LIKE = re.compile(r"^[Ss$5ऽ਽;,.]+$")
@@ -90,6 +91,14 @@ def parse_ref(text: str) -> dict | None:
             best = got if best is None or (got["ang_from"] and not best["ang_from"]) else best
     if best:
         return best
+    # no bracket: a short line that names another scripture is its source line, set over the verse ("ਵਾਰ ੨੪ ਪਉੜੀ
+    # ਨੰ. ੭ ਭਾਈ ਗੁਰਦਾਸ ਜੀ", Guru Angad Dev Sangeet Darpan); a sentence about it, with its danda, is not
+    if _NAMED_SOURCE.search(text) and len(text.split()) <= 12 and not re.search("[।॥]", text):
+        got = _read_ref(text, bracketed=False)
+        if got and got["source"] != "G":
+            got["text"] = text.strip()
+            got["span"] = (0, len(text))
+            return got
     # no bracket: a trailing phrase such as "ਪੰਨਾ ੭੦੦" or "SGGS 679"
     m = _ANG_WORDS.search(text)
     if m:

@@ -1874,3 +1874,40 @@ class ThirdCutTests(unittest.TestCase):
             self.assertEqual(con.execute("SELECT n FROM shabad_counts WHERE shabad_id = 1248").fetchone(), (1,))     # the notation's own count is its own
             self.assertEqual(con.execute("SELECT value FROM meta WHERE key = 'shabads_also'").fetchone(), ("2",))
             con.close()
+
+    # -- Guru Angad Dev Sangeet Darpan (the second cut re-reviewed, 6 October 2026)
+
+    def test_a_pauri_under_its_unbracketed_source_line_is_the_sections_shabad_and_nothing_crosses_a_raag_description(self):
+        style = merge_style({"ref_position": "before"})
+        grids = lambda n0, y: [_line(n0, "ਅਸਥਾਈ", y, x0=200, x1=330), _line(n0 + 1, "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16", y + 60),
+                               _line(n0 + 2, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y + 120), _line(n0 + 3, "ਸ ਬ | ਦੇ ऽ | ਸ ਬ | ਦੁ ऽ", y + 190), _line(n0 + 4, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 260)]
+        p152 = self._page(152, [_line(1, "(ਸਵਈਏ ਮਹਲੇ ਦੂਜੇ ਕੇ ੨) (੧੩੯੨)", 1133, x0=500, x1=1200), self._verse(2, "ਅਮਿਅ ਦ੍ਰਿਸਟਿ ਸੁਭ ਕਰੈ ਹਰੈ ਅਘ ਪਾਪ ਸਕਲ ਮਲ ॥", 1205, 5372),
+                                self._verse(3, "ਕਾਮ ਕ੍ਰੋਧ ਅਰੁ ਲੋਭ ਮੋਹ ਵਸਿ ਕਰੈ ਸਭੈ ਬਲ ॥", 1270, 5372), _line(4, "ਰਾਗੁ ਦੇਵਗੰਧਾਰੀ ਫਰੋਦਸਤ ਤਾਲ ਮਾਤਰਾਂ-14 ਮੱਧ ਲੈਅ", 1766, bold=True)]
+                          + grids(5, 1851), style=style)
+        p153 = self._page(153, [_line(1, "ਰਾਗੁ ਦੇਵਗੰਧਾਰੀ ਕਹਿਰਵਾ ਤਾਲ ਮਾਤਰਾਂ-8 ਮੱਧ ਲੈਅ", 413, bold=True)] + grids(2, 500), style=style)
+        p154 = self._page(154, [_line(1, "ਰਾਗ ਤੁਖਾਰੀ", 193, bold=True, x0=560, x1=1000),
+                                _line(2, "ਰਾਗੁ-ਤੁਖਾਰੀ ਥਾਟ-ਤੋੜੀ ਸਵਰ-ਦੋਨੋਂ ਨਿਸ਼ਾਦ, ਗੰਧਾਰ ਕੋਮਲ,", 361), _line(3, "ਜਾਤੀ-ਔੜਵ-ਸੰਪੂਰਨ ਵਾਦੀ-ਪੰਚਮ ਸੰਵਾਦੀ-ਸ਼ੜਜ ਸਮਾਂ-ਦਿਨ ਦਾ ਚੌਥਾ ਪਹਿਰ", 504),
+                                _line(4, "ਆਰੋਹ-ਨੁ ਸ, ਗੁ ਮ ਪ, ਨ ਸੰ ਅਵਰੋਹ-ਸੰ ਨ ਧ ਪ, ਨੁ ਧ ਪ, ਮ ਗੁ ਰ ਸ", 563),
+                                _line(5, "ਵਾਰ ੨੪ ਪਉੜੀ ਨੰ. ੭ ਭਾਈ ਗੁਰਦਾਸ ਜੀ", 859, x0=500, x1=1200), _line(6, "(ਸੁਪੁੱਤ੍ਰ ਗੁਰ ਅੰਗਦ)", 932, x0=600, x1=1000),
+                                _line(7, "ਸਬਦੇ ਸਬਦੁ ਮਿਲਾਇਆ ਗੁਰਮੁਖਿ ਅਘੜ ਘੜਾਏ ਗਹਣਾ।। ਭਾਇ ਭਗਤਿ ਭੈ ਚਲਣਾ", 1004), _line(8, "ਆਪੁ ਗਣਾਇ ਨ ਖਲਹਲੁ ਖਹਣਾ।। ਦੀਨ ਦੁਨੀ ਦੀ ਸਾਹਿਬੀ ਗੁਰਮੁਖਿ ਗੋਸ ਨਸੀਨੀ", 1080),
+                                _line(9, "ਬਹਣਾ।। ਪੁਤੁ ਸਪੁਤੁ ਬਬਾਣੇ ਲਹਣਾ।।੭।।", 1147),
+                                _line(10, "ਪਦ ਅਰਥ:- ਗੁਰਮੁਖਿ ਅਘੜੁ ਘੜਾਏ ਗਹਣਾ-ਗੁਰਮੁਖ ਮਨ ਨੂੰ ਘੜਕੇ ਗਹਿਣਾ ਰੂਪ ਬਣਾ ਲੈਂਦੇ ਹਨ।", 1374),
+                                _line(11, "ਸ ਰ | ਗ ਮ | ਪ — | ਧ ਨ", 1440),         # a line of the meanings the OCR made a row of
+                                _line(12, "ਰਾਗੁ ਤੁਖਾਰੀ ਤੀਨ ਤਾਲ ਮਾਤਰਾਂ-16 ਮੱਧ ਲੈਅ", 1642, bold=True)] + grids(13, 1718), style=style)
+        p155 = self._page(155, [_line(1, "ਰਾਗੁ ਤੁਖਾਰੀ ਕਹਿਰਵਾ ਤਾਲ ਮਾਤਰਾਂ-8 ਮੱਧ ਲੈਅ", 228, bold=True)] + grids(2, 300), style=style)
+        roles = [(r["role"], r.get("source")) for r in p154["regions"]]
+        self.assertIn(("ref", None), roles)
+        self.assertIn(("shabad", "B"), roles)                                      # the pauri, a shabad of Bhai Gurdas
+        self.assertTrue(any(r.get("prose") for r in p154["regions"]))                # the word meanings
+        spans = link_pages([p152, p153, p154, p155], style)
+        got = [(s["pages"], s["sid"], [r.get("source") for _, r in s["shabad"] if r.get("source")], bool(s.get("inherited"))) for s in spans]
+        self.assertEqual(got, [([152], 5372, [], False), ([152, 153], 5372, [], True),         # Devgandhari's second taal inherits its pauri
+                               ([154], None, ["B"], False), ([154, 155], None, ["B"], True)])  # Tukhari's own, not Devgandhari's
+        # without the source line the Tukhari notations have no shabad: dropped, never Devgandhari's
+        bare = self._page(154, [_line(1, "ਰਾਗ ਤੁਖਾਰੀ", 193, bold=True, x0=560, x1=1000),
+                                _line(2, "ਰਾਗੁ-ਤੁਖਾਰੀ ਥਾਟ-ਤੋੜੀ ਸਵਰ-ਦੋਨੋਂ ਨਿਸ਼ਾਦ, ਗੰਧਾਰ ਕੋਮਲ,", 361), _line(3, "ਜਾਤੀ-ਔੜਵ-ਸੰਪੂਰਨ ਵਾਦੀ-ਪੰਚਮ ਸੰਵਾਦੀ-ਸ਼ੜਜ", 504),
+                                _line(4, "ਰਾਗੁ ਤੁਖਾਰੀ ਤੀਨ ਤਾਲ ਮਾਤਰਾਂ-16 ਮੱਧ ਲੈਅ", 1642, bold=True)] + grids(5, 1718), style=style)
+        dropped = []
+        spans = link_pages([p152, p153, bare, p155], style, dropped)
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([152], 5372), ([152, 153], 5372)])
+        self.assertTrue(any(154 in d["pages"] for d in dropped))

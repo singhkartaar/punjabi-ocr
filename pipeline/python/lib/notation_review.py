@@ -341,7 +341,7 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
             frozen = (fx or {}).get("record")
             d = drift_of(entry, fresh)
             out["drift"].append(d)
-            if entry.get("comment") and fresh is not None and not d["identical"]:
+            if entry.get("comment") and fresh is not None and not d.get("identical"):
                 # accepted with a note ("a little extra from the next shabad"): the cut has moved since, as the
                 # note hoped -- the fresh cut is shown again with the note, and the fixture waits for the new tick
                 d["noted"] = True
@@ -421,7 +421,7 @@ def check_book(book: str, records: list[dict], review_dir: str | None = None) ->
                 noted.append({**d, "comment": entry["comment"]})
             else:
                 failed.append(d)
-            if entry.get("comment") and not d["identical"] and d["same"]:
+            if entry.get("comment") and not d.get("identical") and d.get("same"):
                 noted.append({**d, "comment": entry["comment"]})       # a small move under a note: shown again too
         elif entry["status"] == "backlog" and fresh is not None and not d["same"]:
             changed.append({**d, "comment": entry.get("comment") or ""})

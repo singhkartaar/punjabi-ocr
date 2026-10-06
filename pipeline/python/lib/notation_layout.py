@@ -51,7 +51,7 @@ _RAAG_WORD = re.compile(r"^\W*ਰਾਗ[ੁ]?\b")
 # notation's heading everything is prose: a sentence of the meanings is no grid row, and the other shabads'
 # lines, which the corpus knows and which carry an ang, are not the notation's shabad (third cut, 5 October 2026).
 _OTHERS_LABEL = re.compile(r"^\W*ਹੋਰ\s+ਸ਼ਬਦ\b")
-_PROSE_LABEL = re.compile(r"^\W*(?:ਭਾਵ\s*[-–—]?\s*ਅਰਥ\W*$|ਹੋਰ\s+ਸ਼ਬਦ\b)")
+_PROSE_LABEL = re.compile(r"^\W*(?:ਭਾਵ\s*[-–—]?\s*ਅਰਥ\W*$|ਪਦ\s*[-–—]?\s*ਅਰਥ\b|ਹੋਰ\s+ਸ਼ਬਦ\b)")      # ਪਦ ਅਰਥ: the word meanings under a pauri (Guru Angad Dev Sangeet Darpan)
 
 
 def _describes_raag(region: dict) -> bool:
@@ -284,7 +284,10 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
     # scriptures store exists (docs/plans/scriptures-2026-10-02.md), a boundary now
     for i, r in enumerate(regions[:-1]):
         nxt = regions[i + 1]
-        if r["role"] == "ref" and (r.get("parsed") or {}).get("source", "G") != "G" and nxt["role"] == "text" and "merged" in nxt \
+        # "(ਸੁਪੁੱਤ੍ਰ ਗੁਰ ਅੰਗਦ)": a bracketed line of attribution between the source line and the verse goes with the source line
+        if nxt["role"] == "text" and len(nxt.get("lines") or []) == 1 and (nxt.get("text") or "").strip().startswith("(") and i + 2 < len(regions):
+            nxt = regions[i + 2]
+        if r["role"] == "ref" and (r.get("parsed") or {}).get("source", "G") != "G" and nxt["role"] in ("text", "shabad") and "merged" in nxt \
                 and len(nxt.get("lines") or []) >= 2:
             nxt["role"], nxt["source"] = "shabad", r["parsed"]["source"]
     if ref_before:
@@ -1135,14 +1138,16 @@ def _segments(items: list[dict], after: bool, pairing: bool = False) -> list[dic
             i = j
             continue
         if role == "heading":
-            if _section_heading(it["region"], has(cur, ("grid",))):
+            intro = _describes_raag(it["region"])                     # "ਰਾਗੁ ਪਰੀਚੈ:-", "ਥਾਟ - ਭੈਰਵ।"
+            if not intro and _section_heading(it["region"], has(cur, ("grid",))):
                 cur["items"].append(it)                 # a section's own heading (ਅੰਤਰਾ, a partaal's next taal): inside the notation
                 i += 1
                 continue
-            p = _named_heading(it["region"]) or {}
-            if not p and (it["region"].get("parsed") or {}).get("number") is not None:
+            # a description's own line names no taal, whatever the fuzzy match made of its words ("ਰਾਗੁ-ਤੁਖਾਰੀ
+            # ਥਾਟ-ਤੋੜੀ ਸਵਰ-ਦੋਨੋਂ ਨਿਸ਼ਾਦ" read as a sawari heading rode along with the notation before it)
+            p = {} if intro else (_named_heading(it["region"]) or {})
+            if not p and not intro and (it["region"].get("parsed") or {}).get("number") is not None:
                 p = {"number": it["region"]["parsed"]["number"]}        # "(੨)" alone: the taal beside it lost by the OCR
-            intro = _describes_raag(it["region"])                     # "ਰਾਗੁ ਪਰੀਚੈ:-", "ਥਾਟ - ਭੈਰਵ।"
             # "ਰਾਗ ਨਦ ਕੱਸ": a heading that names a raag the vocabulary cannot read (OCR) still names one
             names_raag = bool(p.get("raag")) or bool(_RAAG_WORD.match(it["region"].get("text") or ""))
             if p or intro or names_raag:
@@ -1397,8 +1402,11 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
         opener = seg["items"][0]["region"] if seg["items"] and seg["items"][0]["role"] == "heading" else None
         numbered = bool(opener and (opener.get("parsed") or {}).get("number") is not None)
         at_number = any(it["role"] == "note" and _AT_NUMBER.search(it["region"].get("text") or "") for it in seg["items"])
+        # a shabad the corpus did not match line for line is still identified when it is of another source, or when the
+        # book printed its reference (the resolver finds it by the ang; the next taal's notation inherits the same lines)
+        identified = prev is not None and any((it["role"] == "shabad" and it["region"].get("source")) or it["role"] == "ref" for it in prev["items"])
         if not has_shabad and has_content and seg.get("opened_by") == "heading" and not at_number and prev is not None \
-                and prev.get("sid") is not None and not seg.get("after_break") \
+                and (prev.get("sid") is not None or identified) and not seg.get("after_break") \
                 and any(it["role"] == "shabad" for it in prev["items"]):
             # the same shabad set again in another taal, its text not reprinted
             seg["items"] = [it for it in prev["items"] if it["role"] in ("shabad", "ref")] + seg["items"]
@@ -1420,7 +1428,10 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
         if not (has_shabad and has_content) and not edge_shabad and not edge_grid and not counted:
             dropped.append({"why": "no-shabad" if not has_shabad else "no-notation", "pages": pages,
                             "roles": sorted(roles), "opened_by": seg.get("opened_by")})
-            prev = seg if has_shabad else prev
+            # a raag's description is where a new section of the book begins: what follows it does not inherit the
+            # shabad before it (Guru Angad Dev Sangeet Darpan, pp. 152-177: ten notations of three raags took the
+            # Devgandhari pauri when their own, a pauri of Bhai Gurdas, was not read; second cut re-reviewed 6 October 2026)
+            prev = seg if has_shabad else (None if seg.get("opened_by") == "raag" else prev)
             seg_before = None                  # a dropped part between two notations: the gap is not filled
             continue
         if edge_grid or (not after and id(seg["items"][0]) in heads and seg["items"][0]["role"] == "shabad"):
