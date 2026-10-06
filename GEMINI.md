@@ -86,9 +86,32 @@ The notation route (`docs/notations.md` in the private repository;
 here `docs/runbook.md` §5a and `docs/output-format.md`) is being run
 book by book on this machine. What the agent does here, and does not:
 
-- **Work on the series branch** (`music-notations-sangeet-sagar` for
-  Prin. Dyal Singh's Gurmat Sangeet Sagar 1-4, `music-notations-tara-singh`
-  for Prof Tara Singh's ratnavalis), never on `main`. Pull before a run.
+- **Round 3 (October 2026) runs from one script, not by hand.** The
+  branch is `music-notations-second-cut`. The data repository's
+  `ocr/run-round3.sh` does the whole step and pushes its logs with the
+  data, so the private repository's agent (on another Mac, where the
+  reader is maintained) reads the results without anything copied:
+  ```
+  cd ../gurbani-data && git pull && ocr/run-round3.sh books     # the books whole, the gate, the dashboard; pushes
+  ocr/run-round3.sh plan                                        # the list database and the publisher's dry run: uploads nothing
+  ocr/run-round3.sh publish                                     # the uploads, only after the person has seen the dry-run counts
+  ```
+  `books` runs GurShabdSangeet, Gurbani Sangeet 1 and 2 and Samund Sagar,
+  and Mishrat Raag, Guru Nanak Dev Raag Ratnaavlee and Swar Samund when
+  their PDFs are in the library (`~/Documents/Keertan`, any folder). It
+  stops on a missing PDF or a failed step and prints the last 40 lines;
+  the same command again resumes (renders, OCR and merge are cached).
+  While it runs: do not pull, do not edit `lib/`, do not run a second
+  copy. Its `check` lines are read against the table in the private
+  repository's `docs/plans/notations-mac-report.md`: the fixtures were
+  cut on another machine, whose OCR differs on a few pages, so a handful
+  of accepted cards show as moved or lost under any reader; that is not a
+  reason to touch the reader here. **Reader fixes are not made on this
+  machine in round 3**: say what the card shows, and the fix arrives on
+  the branch from the private repository; after a `git pull`,
+  `ocr/run-round3.sh books` again re-parses in minutes.
+- **Earlier series branches** (`music-notations-sangeet-sagar`,
+  `music-notations-tara-singh`) are history; never work on `main`.
 - **The data is not in this repository.** Records, ledgers and fixtures
   live in the private data repository cloned beside this one (the
   `OCR_DIR`, `NOTATIONS_DIR`, `REVIEW_DIR`, `ARTIFACTS_DIR`, `CORPUS_DB`
@@ -133,7 +156,8 @@ book by book on this machine. What the agent does here, and does not:
   `continued-from-prev` mean the pages read ended or began inside it (a
   sampled window, never a whole book).
 - **Commit code on the series branch**, one rule per commit, the rule's
-  reason and the card that showed it in the message; the private
+  reason and the card that showed it in the message, and no
+  `Co-Authored-By` line; the private
   repository ports it back and re-exports. Do not touch the export's file
   set (rule 1), the output contract (rule 3) or the schema
   (`lib/notation.schema.json`, `lib/notation_columns.json`) without
