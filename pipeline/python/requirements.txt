@@ -1,5 +1,5 @@
-onnxruntime>=1.20.0
-numpy>=1.26.0
+onnxruntime==1.30.0     # exactly the server's onnxruntime-node: int8 kernels differ between versions
+numpy==2.5.3           # PCA and quantization run on it; pinned with the runtime
 scikit-learn>=1.4.0
 tokenizers>=0.19.0
 onnx>=1.17.0            # 16_trim_vocab.py rewrites the embedding table

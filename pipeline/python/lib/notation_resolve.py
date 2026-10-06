@@ -150,12 +150,14 @@ def other_shabads(regions: list[dict], con: sqlite3.Connection | None, own_sid: 
 
 
 def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Connection | None,
-                   bol_match: dict | None = None) -> dict:
+                   bol_match: dict | None = None, scriptures: sqlite3.Connection | None = None) -> dict:
     """
     @param merged_lines  the merged lines of the shabad block (with `matches`)
     @param ref           parse_ref() of the printed reference, or None
     @param con           the corpus (gurbani.sqlite or corpus.sqlite) for the shabad's facts
     @param bol_match     a match_text_all() hit on the bol row, if the caller made one
+    @param scriptures    the store of the other scriptures (data/scriptures-full.sqlite, D, B, K), for the facts of
+                         a shabad the merge matched there; their ids never collide with the Granth's
     @returns the record's "shabad" object plus "flags" and "kind_hint"
     """
     weight, line_ids, sources = votes_from_lines(merged_lines)
@@ -176,10 +178,21 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
                      if l.get("matches") and any(m.get("shabad_id") == winner for m in l["matches"])), default=0.0)
     text_ok = winner is not None and share >= 0.5 and (matched_lines >= 2 or (matched_lines == 1 and top_score >= 0.9))
 
-    facts = corpus_facts(con, winner) if (con is not None and winner is not None) else {}
+    # the winner's own scripture: the source its matched lines came from (the Granth unless the merge found it in the other store)
+    winner_source = "G"
+    if winner is not None:
+        of_winner = [m.get("source") or "G" for l in merged_lines for m in (l.get("matches") or []) if m.get("shabad_id") == winner]
+        winner_source = max(set(of_winner), key=of_winner.count) if of_winner else "G"
+    facts = corpus_facts(con, winner, winner_source, scriptures) if winner is not None else {}
     ang = facts.get("ang")
     ref_state = None                    # None: no ref; True: agrees; False: disagrees
-    if ref and ref.get("ang_from") and ang:
+    if winner_source != "G":
+        # a vaar or a bani is cited by its number, not an ang: the printed source agreeing is the witness
+        if ref and ref.get("source"):
+            ref_state = ref["source"] == winner_source
+            if not ref_state:
+                flags.append("ref-conflict")
+    elif ref and ref.get("ang_from") and ang:
         ref_state = (ref["ang_from"] - 1) <= ang <= (ref["ang_to"] + 1)
         if not ref_state:
             flags.append("ref-conflict")
@@ -202,6 +215,7 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
     if not text_ok and bol_match and bol_match.get("score", 0) >= 0.85 and winner is None:
         winner = bol_match["shabad_id"]
         facts = corpus_facts(con, winner) if con is not None else {}
+        winner_source = "G"
         confidence = 0.6
         method = ["bol"]
     if windowed:
@@ -209,7 +223,9 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
         method, confidence = ["ref"], min(confidence, 0.7)
     confidence = round(min(1.0, confidence), 3)
     source = None
-    if sources:
+    if winner is not None:
+        source = winner_source
+    elif sources:
         source = max(set(sources), key=sources.count)
     if ref and ref.get("source") and ref["source"] != "G" and source in (None, "G") and not text_ok:
         source = ref["source"]
@@ -243,8 +259,28 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
     return {"shabad": out, "flags": flags, "kind_hint": kind_hint}
 
 
-def corpus_facts(con: sqlite3.Connection, shabad_id: int) -> dict:
-    """raag, writer, ang, first line and rahao line of a shabad, from gurbani.sqlite or corpus.sqlite."""
+def corpus_facts(con: sqlite3.Connection | None, shabad_id: int, source: str = "G",
+                 scriptures: sqlite3.Connection | None = None) -> dict:
+    """
+    raag, writer, ang, first line and rahao line of a shabad, from gurbani.sqlite or corpus.sqlite; of a shabad
+    of another scripture (source D, B, K) from the scriptures store, where its "raag" is the bani or vaar
+    (`section`) and its ang the source's own page (the vaar's number, the kabit's). {} without the store.
+    """
+    if source != "G":
+        if scriptures is None:
+            return {}
+        try:
+            row = scriptures.execute("SELECT section, writer, ang_start FROM shabads WHERE source=? AND shabad_id=?",
+                                     (source, shabad_id)).fetchone()
+            if not row:
+                return {}
+            first = scriptures.execute("SELECT gurmukhi_uni FROM lines WHERE source=? AND shabad_id=? AND kind IN ('line','rahao') "
+                                       "ORDER BY position_in_shabad LIMIT 1", (source, shabad_id)).fetchone()
+        except sqlite3.Error:
+            return {}
+        return {"raag": row[0], "writer": row[1], "ang": row[2], "first_line": first[0] if first else None, "rahao_line": None}
+    if con is None:
+        return {}
     row = con.execute("SELECT raag, writer, ang_start FROM shabads WHERE shabad_id=?", (shabad_id,)).fetchone()
     if not row:
         return {}

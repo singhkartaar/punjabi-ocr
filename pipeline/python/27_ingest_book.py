@@ -204,6 +204,8 @@ def plan(src: str, metas: list[dict], *, engines: list[str] | None = None, gpu_e
         if not ocr_books:
             return out
     elif notation_books:
+        # the ingested books only, reviewed or not: a run must not fail on every other book under NOTATIONS_DIR
+        # (the M5 Pro's first round-3 run, 6 October 2026; the fix came from there, punjabi-ocr 4c83273)
         book_args = [arg for m in notation_books for arg in ("--book", m["book"])]
         out.append(("notation-db", [script("32_build_notations_db.py")] + book_args + ["--allow-unmeasured"]
                     + (["--gurbani", corpus_db] if has_rows(corpus_db) else [])))

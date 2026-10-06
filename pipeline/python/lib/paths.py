@@ -5,6 +5,14 @@ CORPUS_DB = os.environ.get("CORPUS_DB") or os.path.join(ROOT, "data", "corpus.sq
 # The other protected sources an OCR'd book may quote (Dasam Bani, Bhai Gurdas):
 # 25_fetch_granths.py writes it, 22_ocr_merge.py reads it, and both go on without it.
 GRANTHS_DB = os.environ.get("GRANTHS_DB") or os.path.join(ROOT, "data", "granths.sqlite")
+# The store those sources are built into (pipeline/node/src/18-build-scriptures.js):
+# the Dasam Bani, the Vaaran and the Kabit Savaiye, every line with its source.
+# Where it exists it replaces GRANTHS_DB, which knows only D and B.
+SCRIPTURES_DB = os.environ.get("SCRIPTURES_DB") or os.environ.get("SCRIPTURES_PATH") or os.path.join(ROOT, "artifacts", "scriptures.sqlite")
+# That file is the SERVED store: only the banis the owner selected (pipeline/node/src/lib/banis.json).
+# Matching needs every line -- a quotation from an unselected bani must be recognised for what it
+# is, not forced onto the nearest Granth line -- and reads the FULL store, which never ships.
+SCRIPTURES_FULL_DB = os.environ.get("SCRIPTURES_FULL_DB") or os.path.join(ROOT, "data", "scriptures-full.sqlite")
 ARTIFACTS = os.environ.get("ARTIFACTS_DIR") or os.path.join(ROOT, "artifacts")
 VECTORS = os.path.join(ROOT, "data", "vectors")
 MODEL_DIR = os.environ.get("MODEL_DIR") or os.path.join(ROOT, "vendor", "models", "bge-small-en-v1.5")

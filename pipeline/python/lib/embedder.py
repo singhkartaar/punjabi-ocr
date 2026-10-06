@@ -17,6 +17,26 @@ from lib.models import profile as load_profile
 
 DIM = 384
 MAX_LEN = 160          # Gurbani lines and their translations are short; see token-length report
+
+# ONE TEXT AT A TIME, AS A QUERY IS. The shipped model is dynamically
+# quantized: each int8 activation's scale is computed over the whole input
+# tensor, so in a batch every text's numbers depend on its neighbours -- the
+# longest one, and the padding. A query is always embedded alone. Embedding
+# the corpus 64 at a time put the two a median cosine of 0.98 apart in the
+# index space (pa-ssa, measured 2026-10-02), and shifted a query's top ten by
+# one or two lines. Batch 1 costs nothing here: with no padding to compute,
+# 3,000 lines took 29 s against 32 s at 64. A larger batch is a flag, for an
+# experiment, never the build.
+BATCH_SIZE = 1
+
+
+def build_env(batch_size: int = BATCH_SIZE) -> dict:
+    """What built these vectors, for the manifest: so that 'which runtime made this?' has an answer."""
+    import platform
+    import onnxruntime as ort
+    return {"onnxruntime": ort.__version__, "numpy": np.__version__, "python": platform.python_version(),
+            "platform": f"{platform.system()} {platform.machine()}", "cpu": platform.processor() or platform.machine(),
+            "batch_size": int(batch_size)}
 # BGE's documented retrieval prefix -- kept as a module constant for callers that
 # import it directly; the profile is the source of truth.
 QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
@@ -58,7 +78,7 @@ class Embedder:
             sess_options=opts, providers=["CPUExecutionProvider"])
         self.input_names = {i.name for i in self.session.get_inputs()}
 
-    def encode(self, texts: list[str], batch_size: int = 64, prefix: str | None = None) -> np.ndarray:
+    def encode(self, texts: list[str], batch_size: int = BATCH_SIZE, prefix: str | None = None) -> np.ndarray:
         """Embed texts as DOCUMENTS (doc_prefix applied unless `prefix` overrides it)."""
         pre = self.doc_prefix if prefix is None else prefix
         out = np.zeros((len(texts), self.dim), dtype=np.float32)

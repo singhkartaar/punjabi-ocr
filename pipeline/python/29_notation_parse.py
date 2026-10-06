@@ -40,7 +40,7 @@ from lib.notation_text import parse_heading
 from lib import notation_vocab
 from lib.notation_vocab import VERSION as VOCAB_VERSION, raag_key_from_corpus
 from lib.ocr_pages import parse_pages
-from lib.paths import ARTIFACTS, CORPUS_DB, NOTATIONS_DIR, OCR_DIR, ROOT
+from lib.paths import ARTIFACTS, CORPUS_DB, NOTATIONS_DIR, OCR_DIR, ROOT, SCRIPTURES_DB, SCRIPTURES_FULL_DB
 CROP_PAD = 24
 
 
@@ -69,6 +69,7 @@ def _pool_init(no_grid: bool) -> None:
     """Worker-process initialiser: one corpus connection and one row reader per process, one Tesseract thread each."""
     os.environ.setdefault("OMP_THREAD_LIMIT", "1")
     _POOL["con"] = corpus_connection()
+    _POOL["scriptures"] = scriptures_connection()
     _POOL["engine"] = None
     if not no_grid:
         try:
@@ -80,13 +81,22 @@ def _pool_init(no_grid: bool) -> None:
 
 def _pool_work(job: tuple) -> tuple[dict, list[dict]]:
     span, book, style, seq, book_dir, images_dir, page_files, body_h_of = job
-    return span_record(span, book, style, _POOL["con"], seq, book_dir, images_dir, page_files, _POOL["no_grid"], _POOL["engine"], body_h_of)
+    return span_record(span, book, style, _POOL["con"], seq, book_dir, images_dir, page_files, _POOL["no_grid"], _POOL["engine"], body_h_of,
+                       scriptures=_POOL.get("scriptures"))
 
 
 def default_workers() -> int:
     """NOTATION_WORKERS, else all cores but two: the grid reading is the slow half (about two seconds a page in one process)."""
     env = os.environ.get("NOTATION_WORKERS")
     return max(1, int(env)) if env and env.isdigit() else max(1, (os.cpu_count() or 4) - 2)
+
+
+def scriptures_connection() -> sqlite3.Connection | None:
+    """The other scriptures (Dasam Bani, Bhai Gurdas, Kabit Savaiye): the full store where it is, else the served one, else None."""
+    for path in (SCRIPTURES_FULL_DB, SCRIPTURES_DB):
+        if path and os.path.exists(path) and os.path.getsize(path) > 0:
+            return sqlite3.connect(path)
+    return None
 
 
 def corpus_connection() -> sqlite3.Connection | None:
@@ -378,7 +388,7 @@ def matra_check(sections: list[dict], taal_key: str | None) -> str:
 
 
 def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: str, images_dir: str,
-                page_files: dict[int, str], no_grid: bool, engine=None, body_h_of: dict | None = None) -> tuple[dict, list[dict]]:
+                page_files: dict[int, str], no_grid: bool, engine=None, body_h_of: dict | None = None, scriptures=None) -> tuple[dict, list[dict]]:
     """One notation record from a linked span, plus its image entries."""
     import cv2
     from lib.ocr_grid import binarise, crop_bilevel, thumbnail
@@ -415,7 +425,7 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
             if got:
                 ref = got
                 break
-    res = resolve_shabad(shabad_lines, ref, con)
+    res = resolve_shabad(shabad_lines, ref, con, scriptures=scriptures)
     flags = list(res["flags"])
     kind = "notation"
     if not span["shabad"]:
@@ -483,7 +493,7 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
     # and the only one when the printed text was not read (or not printed)
     bol = bol_witness(sections_out, con, ref)
     if bol:
-        res2 = resolve_shabad(shabad_lines, ref, con, bol_match=bol)
+        res2 = resolve_shabad(shabad_lines, ref, con, bol_match=bol, scriptures=scriptures)
         if res2["shabad"].get("shabad_id") is not None and (res["shabad"].get("shabad_id") is None
                                                             or res2["shabad"]["confidence"] > res["shabad"]["confidence"]):
             if res["shabad"].get("shabad_id") is None:
@@ -766,6 +776,9 @@ def main():
     con = corpus_connection()
     if con is None:
         print("no corpus database (CORPUS_DB or artifacts/gurbani.sqlite): shabads will not be named")
+    scriptures = scriptures_connection()
+    if scriptures is None:
+        print("no scriptures store (data/scriptures-full.sqlite or artifacts/scriptures.sqlite): a Dasam Bani or Bhai Gurdas shabad keeps no facts")
 
     out_dir = os.path.join(args.notations_dir, args.book)
     images_dir = os.path.join(out_dir, "images")
@@ -785,7 +798,7 @@ def main():
         with cf.ProcessPoolExecutor(max_workers=min(args.workers, len(jobs)), initializer=_pool_init, initargs=(args.no_grid,)) as pool:
             results = list(pool.map(_pool_work, [(span, book, style, seq, book_dir, images_dir, page_files, body_h_of) for span, seq in jobs]))
     else:
-        results = [span_record(span, book, style, con, seq, book_dir, images_dir, page_files, args.no_grid, engine, body_h_of)
+        results = [span_record(span, book, style, con, seq, book_dir, images_dir, page_files, args.no_grid, engine, body_h_of, scriptures=scriptures)
                    for span, seq in jobs]
     for (span, _), (rec, images) in zip(jobs, results):
         if rec["shabad"].get("shabad_id") is None and "no-shabad-text" in rec["flags"] and "continued-from-prev" in rec["flags"] \

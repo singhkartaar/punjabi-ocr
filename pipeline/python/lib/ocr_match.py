@@ -98,6 +98,39 @@ class CorpusIndex:
             pass                                          # the extra sources arrive in M1
         return cls(rows)
 
+    @staticmethod
+    def scripture_rows(path: str, sources=None) -> list[tuple]:
+        """
+        The lines of artifacts/scriptures.sqlite (D, B, K), as rows for an index.
+
+        Headings stay out, as the Granth's do: "ਚੌਪਈ ॥" or "ਵਾਰ ੧ ॥" would match
+        the reference a book prints after a quotation. So do the invocations
+        (ੴ ਸਤਿਗੁਰ ਪ੍ਰਸਾਦਿ ॥, ਸ੍ਰੀ ਭਗਉਤੀ ਜੀ ਸਹਾਇ ॥): every scripture opens with
+        one, and a book printing one is quoting none of them in particular.
+        """
+        con = sqlite3.connect("file:%s?mode=ro" % path, uri=True)
+        try:
+            sql = ("SELECT line_id, shabad_id, ang, gurmukhi_uni, source FROM lines "
+                   "WHERE kind NOT IN ('heading', 'invocation')")
+            params: list = []
+            if sources:
+                sql += " AND source IN (%s)" % ",".join("?" * len(sources))
+                params = list(sources)
+            return list(con.execute(sql + " ORDER BY source, line_id", params))
+        finally:
+            con.close()
+
+    @classmethod
+    def from_scriptures(cls, path: str, sources=None, granth_rows=None) -> "CorpusIndex":
+        """
+        An index of the store's lines, with the Granth's when `granth_rows` are
+        given. Two lines of one text are not an ambiguity to match_all, and which
+        of them wins is not defined: a caller that must keep a text the Granth and
+        the Dasam Bani share ("ੴ ਸਤਿਗੁਰ ਪ੍ਰਸਾਦਿ ॥") the Granth's matches the
+        Granth alone first (35_link_scriptures.py does).
+        """
+        return cls(list(granth_rows or []) + cls.scripture_rows(path, sources))
+
     @classmethod
     def from_rows(cls, rows) -> "CorpusIndex":
         return cls(rows)

@@ -102,8 +102,13 @@ const RETRY_BASE_S = Number(process.env.PUBLISH_RETRY_BASE_S ?? 30);   // the te
 const RATE_LIMIT_WAITS_S = [60, 120, 300, 600, 900, 900, 900].map(s => (RETRY_BASE_S ? s : 0));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// GH_STUB names a node script that stands in for the GitHub CLI (the tests'
+// stub). Finding the stub on PATH is not enough: on Windows execFileSync
+// resolves `gh` to gh.exe, so the tests were reaching the real CLI.
+const GH = process.env.GH_STUB ? [process.execPath, process.env.GH_STUB] : ['gh'];
+
 function gh(argv, { json = false } = {}) {
-  const out = execFileSync('gh', argv, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 << 20 });
+  const out = execFileSync(GH[0], [...GH.slice(1), ...argv], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 << 20 });
   return json ? JSON.parse(out) : out;
 }
 
