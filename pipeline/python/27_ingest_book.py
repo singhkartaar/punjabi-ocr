@@ -204,7 +204,8 @@ def plan(src: str, metas: list[dict], *, engines: list[str] | None = None, gpu_e
         if not ocr_books:
             return out
     elif notation_books:
-        out.append(("notation-db", [script("32_build_notations_db.py")]
+        book_args = [arg for m in notation_books for arg in ("--book", m["book"])]
+        out.append(("notation-db", [script("32_build_notations_db.py")] + book_args + ["--allow-unmeasured"]
                     + (["--gurbani", corpus_db] if has_rows(corpus_db) else [])))
     if not ocr_books:
         return out
