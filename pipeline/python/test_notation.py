@@ -1911,3 +1911,22 @@ class ThirdCutTests(unittest.TestCase):
         spans = link_pages([p152, p153, bare, p155], style, dropped)
         self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([152], 5372), ([152, 153], 5372)])
         self.assertTrue(any(154 in d["pages"] for d in dropped))
+
+    def test_the_same_cut_accepted_again_under_another_key_supersedes_the_older_fixture(self):
+        # Samund Sagar pp. 156-157: accepted on Linux as "4288/-/teentaal#1", and again on the M4, whose OCR read no
+        # taal, as "4288/-/-#1" (6 October 2026): one notation, not a record and a lost fixture beside it
+        from lib.notation_review import append_entry, apply_review, assign_keys, entry_of, read_ledger, save_fixture
+        rec = lambda *a, **kw: ReviewLedgerTests._rec(self, *a, **kw)
+        with tempfile.TemporaryDirectory() as d:
+            images = os.path.join(d, "images"); os.makedirs(images)
+            open(os.path.join(images, "test-book-0156-1-1.png"), "wb").write(b"png")
+            old = rec("test-book:0156:1", [156, 157], 4288, raag="-", taal="teentaal", y0=124)
+            assign_keys([old]); e = entry_of(old, "accepted", round_=1); append_entry(e, d); save_fixture(old, e, images, d)
+            new = rec("test-book:0156:1", [156, 157], 4288, raag="-", taal="-", y0=250)
+            assign_keys([new]); e2 = entry_of(new, "accepted", round_=2); append_entry(e2, d); save_fixture(new, e2, images, d)
+            ledger = read_ledger("test-book", d)
+            self.assertEqual(len(ledger), 2)
+            got = apply_review([rec("test-book:0156:1", [156, 157], 4288, raag="-", taal="-", y0=250)], ledger, images, d)
+            self.assertEqual([r["notation_id"] for r in got["records"]], ["test-book:0156:1"])
+            self.assertEqual((got["reused"], got["lost"], got.get("superseded")), (1, 0, 1))
+            self.assertTrue(any(x.get("superseded") for x in got["drift"]))

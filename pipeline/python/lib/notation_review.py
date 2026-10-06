@@ -365,8 +365,17 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
                 replaced[idx] = frozen
                 out["reused"] += 1
             else:
-                out["lost"] += 1
-                extra.append(frozen)
+                # the same cut accepted again under another key (the raag or the taal read differently on another
+                # machine: "4288/-/teentaal#1" and "4288/-/-#1" are one notation): the older fixture is superseded,
+                # not lost, and is not emitted beside the record that stands in its place
+                stands = any(r["notation_id"] == frozen["notation_id"] or iou(extent_of(frozen), extent_of(r)) >= 0.5
+                             for r in records + extra)
+                if stands:
+                    d["superseded"] = True
+                    out["superseded"] = out.get("superseded", 0) + 1
+                else:
+                    out["lost"] += 1
+                    extra.append(frozen)
         elif entry["status"] == "backlog":
             out["backlog"] += 1
             if fresh is not None:

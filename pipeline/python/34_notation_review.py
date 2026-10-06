@@ -379,8 +379,9 @@ def check(args) -> None:
             # under a note any move counts, however small (the fresh cut is shown again)
             noted = [{**d, "comment": notes[d["key"]]} for d in report["drift"]
                      if notes.get(d["key"]) and not d.get("lost") and not d.get("identical", d.get("same"))]
-            lost = [d for d in report["drift"] if d.get("lost")]
-            got.update({"passed": len(report["drift"]) - len(moved) - len(lost), "failed": failed, "lost": lost, "noted": noted,
+            lost = [d for d in report["drift"] if d.get("lost") and not d.get("superseded")]
+            superseded = [d for d in report["drift"] if d.get("superseded")]          # the same cut accepted again under a newer key
+            got.update({"passed": len(report["drift"]) - len(moved) - len(lost) - len(superseded), "failed": failed, "lost": lost, "noted": noted,
                         "ok": not failed and not lost})
         print("%-50s accepted %3d  passed %3d  failed %2d  lost %2d  noted moved %2d  backlog changed %2d  %s"
               % (book[:50], got["accepted"], got["passed"], len(got["failed"]), len(got["lost"]), len(got.get("noted", [])),
