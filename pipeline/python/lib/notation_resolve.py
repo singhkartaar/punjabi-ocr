@@ -231,8 +231,18 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
         source = ref["source"]
 
     shabad_id = winner if confidence >= WEAK else None
-    if shabad_id is None:
+    # a shabad of another scripture is not a Granth shabad_id: the record keeps its source and its facts, and the
+    # match itself under `scripture_match`, for the link pass (37_link_notation_scriptures.py) that writes the
+    # notation's verse into the store's scripture_links -- the Granth's id space stays the Granth's
+    scripture_match = None
+    if shabad_id is not None and winner_source != "G":
+        scripture_match = {"source": winner_source, "shabad_id": shabad_id, "line_ids": list(line_ids.get(winner, [])),
+                           "confidence": confidence, "method": "+".join(method) or "stream"}
+        shabad_id = None
+    if shabad_id is None and scripture_match is None:
         flags.append("unresolved-shabad")
+        method_str = "none"
+    elif shabad_id is None:
         method_str = "none"
     else:
         if confidence < RESOLVED:
@@ -256,6 +266,10 @@ def resolve_shabad(merged_lines: list[dict], ref: dict | None, con: sqlite3.Conn
         "ref": ref, "verified": False,
         "votes": {str(k): round(v, 3) for k, v in sorted(weight.items(), key=lambda kv: -kv[1])[:5]},
     }
+    if scripture_match:
+        out.update({"scripture_match": scripture_match, "source": winner_source, "ang": facts.get("ang"), "writer": facts.get("writer"),
+                    "first_line": facts.get("first_line"), "raag": facts.get("raag"), "raag_key": None, "confidence": confidence})
+        kind_hint = "notation"
     return {"shabad": out, "flags": flags, "kind_hint": kind_hint}
 
 

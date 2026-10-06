@@ -1947,7 +1947,7 @@ class ThirdCutTests(unittest.TestCase):
         """)
         return con
 
-    def test_a_pauri_the_merge_matched_in_the_scriptures_store_is_named_with_its_facts(self):
+    def test_a_pauri_the_merge_matched_in_the_scriptures_store_keeps_its_facts_and_its_match_not_a_granth_id(self):
         from lib.notation_resolve import corpus_facts
         scriptures = self._scriptures()
         granth = ResolveTests._corpus(self)
@@ -1957,39 +1957,17 @@ class ThirdCutTests(unittest.TestCase):
         ref = parse_ref("ਵਾਰ ੨੪ ਪਉੜੀ ਨੰ. ੭ ਭਾਈ ਗੁਰਦਾਸ ਜੀ")
         got = resolve_shabad(block, ref, granth, scriptures=scriptures)
         sh = got["shabad"]
-        self.assertEqual((sh["shabad_id"], sh["source"], sh["ang"], sh["writer"], sh["raag"]), (40701, "B", 24, "Bhai Gurdas Ji", "Vaar 24"))
+        # the Granth's id space stays the Granth's: no shabad_id, the source and the facts from the store, the match kept
+        # for the link pass that writes scripture_links
+        self.assertIsNone(sh["shabad_id"])
+        self.assertEqual((sh["source"], sh["ang"], sh["writer"], sh["raag"]), ("B", 24, "Bhai Gurdas Ji", "Vaar 24"))
         self.assertEqual(sh["first_line"], "ਸਬਦੇ ਸਬਦੁ ਮਿਲਾਇਆ ਗੁਰਮੁਖਿ ਅਘੜੁ ਘੜਾਏ ਗਹਣਾ।")
-        self.assertIn("ref", sh["method"]); self.assertNotIn("ref-conflict", got["flags"])
-        self.assertGreaterEqual(sh["confidence"], 0.8)
-        # without the store the link stands and the facts are empty; a Dasam reference over a Bhai Gurdas match is a conflict
+        self.assertEqual((sh["scripture_match"]["source"], sh["scripture_match"]["shabad_id"], sorted(sh["scripture_match"]["line_ids"])), ("B", 40701, [200701, 200702]))
+        self.assertNotIn("unresolved-shabad", got["flags"]); self.assertNotIn("ref-conflict", got["flags"])
+        self.assertEqual(got["kind_hint"], "notation")
+        # without the store the match is kept and the facts are empty; a Dasam reference over a Bhai Gurdas match is a conflict
         bare = resolve_shabad(block, ref, granth)["shabad"]
-        self.assertEqual((bare["shabad_id"], bare["source"], bare["first_line"]), (40701, "B", None))
+        self.assertEqual((bare["shabad_id"], bare["source"], bare["first_line"], bare["scripture_match"]["shabad_id"]), (None, "B", None, 40701))
         self.assertIn("ref-conflict", resolve_shabad(block, parse_ref("(ਦਸਮ ਗ੍ਰੰਥ, ਜਾਪੁ ਸਾਹਿਬ)"), granth, scriptures=scriptures)["flags"])
         self.assertEqual(corpus_facts(granth, 913)["ang"], 269)                          # the Granth's path as before
 
-    def test_the_database_checks_a_shabad_of_another_scripture_against_its_store(self):
-        import sqlite3
-        build = _script("32_build_notations_db.py")
-        with tempfile.TemporaryDirectory() as d:
-            src = os.path.join(d, "notations", "test-book"); os.makedirs(os.path.join(src, "images"))
-            rec = _record("test-book:0161:1", 40701); rec["page"], rec["pages"] = 161, [161, 162]
-            rec["shabad"].update({"source": "B", "ang": 24, "first_line": "ਸਬਦੇ ਸਬਦੁ ਮਿਲਾਇਆ ਗੁਰਮੁਖਿ ਅਘੜੁ ਘੜਾਏ ਗਹਣਾ।", "writer": "Bhai Gurdas Ji"})
-            notation.write_jsonl(os.path.join(src, "notations.jsonl"),
-                                 notation.meta_for({"book": "test-book", "author": "Test Author", "title": "Test Book", "part": 1, "style": merge_style(None)}, pages=2), [rec])
-            gurbani = os.path.join(d, "gurbani.sqlite")
-            con = sqlite3.connect(gurbani); con.execute("CREATE TABLE shabads (shabad_id INTEGER PRIMARY KEY)"); con.execute("INSERT INTO shabads VALUES (1248)"); con.commit(); con.close()
-            store = os.path.join(d, "scriptures.sqlite")
-            s = self._scriptures(); disk = sqlite3.connect(store); s.backup(disk); disk.close(); s.close()
-            out = os.path.join(d, "artifacts", "notations.sqlite")
-            got = build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, True, False, None, scriptures=store)
-            self.assertEqual(got["resolved"], 1)                                             # a Bhai Gurdas id is not looked for in gurbani.sqlite
-            con = sqlite3.connect(out)
-            self.assertEqual(con.execute("SELECT shabad_id, shabad_source, ang, first_line FROM notations").fetchone(),
-                             (40701, "B", 24, "ਸਬਦੇ ਸਬਦੁ ਮਿਲਾਇਆ ਗੁਰਮੁਖਿ ਅਘੜੁ ਘੜਾਏ ਗਹਣਾ।"))
-            con.close()
-            rec["shabad"]["shabad_id"] = 40999
-            notation.write_jsonl(os.path.join(src, "notations.jsonl"),
-                                 notation.meta_for({"book": "test-book", "author": "Test Author", "title": "Test Book", "part": 1, "style": merge_style(None)}, pages=2), [rec])
-            with self.assertRaises(SystemExit):                                              # an id the store does not hold is refused
-                build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, True, False, None, scriptures=store)
-            build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, True, False, None)   # and passes unchecked without a store

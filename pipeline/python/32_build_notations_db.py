@@ -35,7 +35,7 @@ from lib.notation import PARSER_VERSION, SCHEMA_VERSION, apply_gold, read_jsonl,
 from lib.notation_review import read_ledger
 from lib.notation_render import text_english
 from lib.notation_vocab import RAAGS, TAALS, VERSION as VOCAB_VERSION
-from lib.paths import ARTIFACTS, NOTATIONS_DIR, OCR_DIR, ROOT, SCRIPTURES_DB, SCRIPTURES_FULL_DB
+from lib.paths import ARTIFACTS, NOTATIONS_DIR, OCR_DIR, ROOT
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -207,7 +207,7 @@ def image_rows(rec: dict, book_dir: str, urls: dict[str, str], by_file: dict[str
 
 def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls: dict[str, str],
           require_urls: bool, allow_unmeasured: bool, verify_images: bool, release_base: str | None,
-          accepted_only: bool = False, scriptures: str | None = None) -> dict:
+          accepted_only: bool = False) -> dict:
     with open(COLUMNS_PATH, encoding="utf-8") as fh:
         pin = json.load(fh)
         columns = {**pin["tables"], **pin.get("optional", {})}
@@ -224,13 +224,7 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
     known_shabads: set[int] | None = None
     if con_g is not None:
         known_shabads = {r[0] for r in con_g.execute("SELECT shabad_id FROM shabads")}
-    # the other scriptures' shabads, (source, id), from the store where it is: a Dasam Bani or Bhai Gurdas shabad is
-    # checked against it as the Granth's are against gurbani.sqlite, and passes unchecked without it
-    known_other: set[tuple[str, int]] | None = None
-    if scriptures and os.path.exists(scriptures) and os.path.getsize(scriptures) > 0:
-        con_s = sqlite3.connect(scriptures)
-        known_other = {(r[0], r[1]) for r in con_s.execute("SELECT source, shabad_id FROM shabads")}
-        con_s.close()
+        con_g.close()                   # read once; left open, Windows cannot remove the file after
 
     tmp = out + ".tmp"
     if os.path.exists(tmp):
@@ -310,12 +304,8 @@ def build(src: str, out: str, books: list[str] | None, gurbani: str | None, urls
                 problems.append("%s: invalid after gold: %s" % (rec["notation_id"], errs[:3]))
                 continue
             sid = (rec.get("shabad") or {}).get("shabad_id")
-            sid_source = (rec.get("shabad") or {}).get("source") or "G"
-            if sid is not None and sid_source == "G" and known_shabads is not None and sid not in known_shabads:
+            if sid is not None and known_shabads is not None and sid not in known_shabads:
                 problems.append("%s: shabad_id %s is not in %s" % (rec["notation_id"], sid, gurbani))
-                continue
-            if sid is not None and sid_source != "G" and known_other is not None and (sid_source, sid) not in known_other:
-                problems.append("%s: shabad %s %s is not in %s" % (rec["notation_id"], sid_source, sid, scriptures))
                 continue
             row = notation_row(rec, k + 1)
             if row["raag_used_key"] and not raag_row(row["raag_used_key"]):
@@ -441,8 +431,6 @@ def main() -> None:
     ap.add_argument("--out", default=os.path.join(ARTIFACTS, "notations.sqlite"))
     ap.add_argument("--book", action="append", help="only this book (repeatable)")
     ap.add_argument("--gurbani", help="artifacts/gurbani.sqlite: every shabad_id must exist in it")
-    ap.add_argument("--scriptures", default=next((p for p in (SCRIPTURES_FULL_DB, SCRIPTURES_DB) if os.path.exists(p)), None),
-                    help="the other scriptures' store: a Dasam Bani or Bhai Gurdas shabad must exist in it (default: data/scriptures-full.sqlite, else artifacts/scriptures.sqlite, where present)")
     ap.add_argument("--urls", action="append", default=[], help="JSON {sha256: url} file(s) or globs from the upload tool")
     ap.add_argument("--require-urls", action="store_true", help="refuse an image without a URL")
     ap.add_argument("--allow-unmeasured", action="store_true", help="build a book whose review has not passed")
@@ -451,7 +439,7 @@ def main() -> None:
     ap.add_argument("--release-base", help="the URL prefix the images are published under (recorded in meta)")
     args = ap.parse_args()
     got = build(args.src, args.out, args.book, args.gurbani, load_urls(args.urls), args.require_urls,
-                args.allow_unmeasured, args.verify_images, args.release_base, args.accepted_only, scriptures=args.scriptures)
+                args.allow_unmeasured, args.verify_images, args.release_base, args.accepted_only)
     print("%(books)d book(s), %(notations)d notation(s), %(resolved)d with a shabad (%(shabads)d shabads), "
           "%(verified)d verified, %(images)d image(s) (%(published)d with a URL) -> %(out)s; %(images_manifest)s" % got)
 
