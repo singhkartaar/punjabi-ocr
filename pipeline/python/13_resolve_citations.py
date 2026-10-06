@@ -168,6 +168,18 @@ class FreeIndex:
         return ranked[0][0]
 
 
+def precomputed_citation(p: dict) -> dict:
+    """A quotation the OCR merge (or 35_link_scriptures.py) already placed, as a citations.jsonl row.
+
+    The line range and the scripture travel with it: a Dasam Bani line id read
+    as a Guru Granth Sahib one is a wrong verse, silently.
+    """
+    return {**{k: p[k] for k in ("unit_id", "work", "part", "page", "para_no", "ang", "how")},
+            "span": p["text"][:400], "shabad_id": p["shabad_id"], "line_id": p["line_id"],
+            "line_ids": p["line_ids"], "line_from": p["line_from"], "line_to": p["line_to"],
+            "source": p["source"], "score": p["score"], "method": p["method"]}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--work", default=None, help="one work only")
@@ -203,9 +215,7 @@ def main():
 
     resolved, ambiguous, unresolved = [], 0, 0
     for p in pre:
-        resolved.append({**{k: p[k] for k in ("unit_id", "work", "part", "page", "para_no", "ang", "how")},
-                         "span": p["text"][:400], "shabad_id": p["shabad_id"], "line_id": p["line_id"],
-                         "line_ids": p["line_ids"], "score": p["score"], "method": p["method"]})
+        resolved.append(precomputed_citation(p))
     for span in spans:
         hit = resolve_lexical(span, by_ang)
         if hit is None:

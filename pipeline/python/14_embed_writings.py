@@ -70,7 +70,7 @@ from sklearn.decomposition import PCA
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from lib.documents import embed_long
-from lib.embedder import Embedder
+from lib.embedder import Embedder, BATCH_SIZE, build_env
 from lib.models import first_available, profile
 from lib.paths import ARTIFACTS, ROOT
 from lib.quantize import quantize
@@ -192,14 +192,18 @@ def kept_corpus(db_path: str, rebuilt: set[str]) -> tuple[list[dict], list[dict]
     con.row_factory = sqlite3.Row
     tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     work_cols = {r[1] for r in con.execute("PRAGMA table_info(works)")}
+    unit_cols = {r[1] for r in con.execute("PRAGMA table_info(units)")}
+    # a database from before these columns existed (the English corpora built
+    # in September) simply has none: the work is as it was, with nothing said
+    opt = lambda row, cols, k: row[k] if k in cols else None
     works = []
     for w in con.execute("SELECT * FROM works ORDER BY rowid"):
         if w["work_id"] in rebuilt:
             continue
         works.append({"work": w["work_id"], "title": w["title"], "title_en": w["title_en"], "author": w["author"],
-                      "folder": w["folder"], "original": bool(w["original"]), "quote_policy": w["quote_policy"],
-                      "parts": json.loads(w["parts"] or "[]"), "files": w["files"], "language": w["language"],
-                      "licence": w["licence"], "kept": True,
+                      "folder": opt(w, work_cols, "folder"), "original": bool(w["original"]), "quote_policy": w["quote_policy"],
+                      "parts": json.loads(w["parts"] or "[]"), "files": opt(w, work_cols, "files"),
+                      "language": opt(w, work_cols, "language"), "licence": opt(w, work_cols, "licence"), "kept": True,
                       **{k: w[k] for k in ("kind", "translate", "ang_from", "ang_to") if k in work_cols}})
     meta = {w["work"]: w for w in works}
     cites: dict[int, list[dict]] = {}
@@ -226,8 +230,8 @@ def kept_corpus(db_path: str, rebuilt: set[str]) -> tuple[list[dict], list[dict]
         if w is None:
             continue
         units.append({"work": u["work_id"], "part": u["part"], "page": u["page"], "para_no": u["para_no"],
-                      "marker": u["marker"], **({"section": u["section"]} if u["section"] else {}),
-                      "text": u["text"], "text_src": u["text_src"], "cites": cites.get(u["unit_row"], []),
+                      "marker": u["marker"], **({"section": u["section"]} if opt(u, unit_cols, "section") else {}),
+                      "text": u["text"], "text_src": opt(u, unit_cols, "text_src"), "cites": cites.get(u["unit_row"], []),
                       "unit_id": u["unit_id"], "title": w["title"], "title_en": w["title_en"],
                       "author": w["author"], "quote_policy": w["quote_policy"]})
     con.close()
@@ -414,6 +418,10 @@ def main():
     ap.add_argument("--keep", metavar="DB",
                     help="a built corpus database: its works with no <work>.jsonl in --src are carried over "
                          "as built (kept_corpus), the rest read from --src")
+    ap.add_argument("--units-only", action="store_true",
+                    help="write units.jsonl and stop: for re-linking a corpus whose text is unchanged "
+                         "(35_link_scriptures.py), where the published vectors still hold -- compare the "
+                         "units with the built database before 15_build_writings_db.py rebuilds it")
     ap.add_argument("--translations", action="store_true",
                     help="also take every work of another language that has a <work>.en.jsonl "
                          "(26_translate_writings.py), embedding its English into this corpus; --lang en")
@@ -454,12 +462,43 @@ def main():
                          "source": rec.get("source") or "G", "role": "quotes", "page": rec.get("page"),
                          "ang": rec["ang"], "score": rec["score"],
                          "method": rec["method"], "span": rec["span"][:300]})
+    # The links 35_link_scriptures.py made to the Dasam Bani, the Vaaran and the
+    # Kabit Savaiye: a file of their own, so a resolver rewriting citations.jsonl
+    # cannot take them. One that replaces a weak Granth link drops that link.
+    links_path = os.path.join(src, "scripture-links.jsonl")
+    if os.path.exists(links_path):
+        added = dropped = 0
+        with open(links_path, encoding="utf-8") as fh:
+            for line in fh:
+                rec = json.loads(line)
+                if "_meta" in rec:
+                    continue
+                mine = cites.setdefault(rec["unit_id"], [])
+                gone = rec.get("replaces")
+                if gone:
+                    keep = [c for c in mine if not (c["source"] == gone.get("source", "G") and c["shabad_id"] == gone.get("shabad_id"))]
+                    dropped += len(mine) - len(keep)
+                    mine[:] = keep
+                mine.append({"shabad_id": rec["shabad_id"], "line_id": rec["line_id"],
+                             "line_from": rec["line_from"], "line_to": rec["line_to"],
+                             "source": rec["source"], "role": "quotes", "page": rec.get("page"),
+                             "ang": rec["ang"], "score": rec["score"], "method": rec["method"],
+                             "span": (rec.get("span") or "")[:300]})
+                added += 1
+        print("%d links to the other scriptures (%s), %d Granth links they replace dropped"
+              % (added, os.path.basename(links_path), dropped))
     print("%d resolved citations in %d paragraphs"
           % (sum(len(v) for v in cites.values()), len(cites)))
 
     works, units = [], []
+    # A folder holds more than its works: the citations, the units this writes,
+    # the English of a translated work, 30_line_commentary.py's per-line teeka
+    # (lines-<translator>.jsonl) and 35_link_scriptures.py's links
+    # (scripture-links*.jsonl). None of them is a work, and reading one as a
+    # work fails on its first record.
+    not_works = ("units", "lines-", "scripture-links")
     paths = [p for p in sorted(glob.glob(os.path.join(src, "*.jsonl")))
-             if not (os.path.basename(p) == "citations.jsonl" or os.path.basename(p).startswith("units")
+             if not (os.path.basename(p) == "citations.jsonl" or os.path.basename(p).startswith(not_works)
                      or os.path.basename(p).endswith(".en.jsonl"))]
     if args.keep:
         if not os.path.exists(args.keep):
@@ -518,11 +557,15 @@ def main():
                             ensure_ascii=False) + "\n")
         for u in units:
             fh.write(json.dumps(u, ensure_ascii=False) + "\n")
+    if args.units_only:
+        print("  -> %s (units only: nothing embedded)" % units_path)
+        return
 
     prof = profile(args.model)
     emb = Embedder(args.model, max_len=args.max_len)
     texts = [u["text"] for u in units]
     print("embedding %d units with %s (max_len %d)" % (len(texts), args.model, args.max_len))
+    # one unit at a time, as a query is embedded: embed_long's default (lib/embedder.py BATCH_SIZE)
     vectors, chunked = embed_long(emb, texts, args.max_len)
     print("  %d units were longer than the window and were chunked" % chunked)
 
@@ -568,6 +611,7 @@ def main():
         "lowercase": bool(prof.get("lowercase", True)), "strip_accents": bool(prof.get("strip_accents", True)),
         "max_len": args.max_len, "embed_dim": int(vectors.shape[1]), "index_dim": index_dim,
         "units": len(units), "works": len(works), "chunked_units": int(chunked),
+        "built_with": build_env(BATCH_SIZE),
         "citations": sum(len(u["cites"]) for u in units),
         "links": sum(len(u["cites"]) for u in units),
         "text_lang": args.lang, "query_scripts": defaults["query_scripts"],

@@ -5,7 +5,7 @@
  * repository, and their URLs back into the database and the data.
  *
  *   node tools/publish-notation-images.mjs [--db artifacts/notations.sqlite] [--images <data>/notations]
- *        --repo OWNER/NAME [--book KEY ...] [--all-roles]
+ *        --repo OWNER/NAME [--book KEY ...] [--release NAME] [--all-roles]
  *        [--thumbs] [--max N] [--rate 30] [--per-hour 1800] [--per-release 900] [--batch 25] [--dry-run] [--verify [--sample N]] [--prune]
  *
  * What is published: the images the app shows -- a notation's `block`
@@ -18,7 +18,10 @@
  *
  * Where: one series of releases a book, `notations-<book>-v1`, then
  * `notations-<book>-v1-p2`, `-p3` ... when a release holds --per-release
- * assets (GitHub caps a release at 1000). Each image is one asset named
+ * assets (GitHub caps a release at 1000); with --release NAME every book
+ * of the run shares the series `notations-NAME-v1`, `-p2` ... instead (for
+ * short works -- a few pages, one or two notations each -- that would
+ * otherwise be a release apiece). Each image is one asset named
  * after its content -- `<notation id, : as ->-<n>-<kind>-<sha8>.png` --
  * uploaded once per book whatever rows share it, so a rerun uploads only
  * what is missing and a changed crop gets a new name instead of
@@ -83,6 +86,7 @@ const IMAGES = path.resolve(opt('--images', process.env.NOTATIONS_DIR || path.jo
 const REVIEW = path.resolve(opt('--review-dir', process.env.REVIEW_DIR || path.join(path.dirname(IMAGES), 'review')));
 const REPO = opt('--repo', process.env.NOTATION_ASSETS_REPO || null);
 const ONLY = new Set(opts('--book'));
+const RELEASE = opt('--release', null);               // one release series for every book of the run
 const ALL_ROLES = flag('--all-roles');
 const THUMBS = flag('--thumbs');                      // the app shows the first crop when a thumbnail is not published
 const DRY = flag('--dry-run');
@@ -102,8 +106,13 @@ const RETRY_BASE_S = Number(process.env.PUBLISH_RETRY_BASE_S ?? 30);   // the te
 const RATE_LIMIT_WAITS_S = [60, 120, 300, 600, 900, 900, 900].map(s => (RETRY_BASE_S ? s : 0));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// GH_STUB names a node script that stands in for the GitHub CLI (the tests'
+// stub). Finding the stub on PATH is not enough: on Windows execFileSync
+// resolves `gh` to gh.exe, so the tests were reaching the real CLI.
+const GH = process.env.GH_STUB ? [process.execPath, process.env.GH_STUB] : ['gh'];
+
 function gh(argv, { json = false } = {}) {
-  const out = execFileSync('gh', argv, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 << 20 });
+  const out = execFileSync(GH[0], [...GH.slice(1), ...argv], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 << 20 });
   return json ? JSON.parse(out) : out;
 }
 
@@ -205,16 +214,22 @@ async function main() {
   const update = DRY ? null : db.prepare('UPDATE images SET url = ? WHERE sha256 = ? AND notation_id LIKE ?');
   let uploaded = 0, kept = 0, orphans = 0, elsewhere = 0, stopped = false;
   const sent = [];                                    // when each upload of this run went, for the hourly ceiling
+  // what any row of the database names: in a shared release, an asset of this book is an orphan only if no row at all
+  // names it (the book's own rows decide in a release of its own)
+  const everyName = new Set(all.filter(r => r.sha256).map(assetName));
+  const everyStem = new Set(all.map(rowStem));
+  const planned = new Map();                          // a release this dry run would create, by tag: never listed on GitHub
   for (const book of books) {
+    const series = RELEASE || book;
     const mine = rows.filter(r => r.notation_id.startsWith(book + ':'));
     // one asset a content hash: the first row that carries it names it
     const want = new Map();
     for (const r of mine) if (r.sha256 && !want.has(r.sha256)) want.set(r.sha256, { row: r, name: assetName(r), file: path.join(IMAGES, r.path) });
     const shaOfName = new Map([...want.values()].map(w => [w.name, w.row.sha256]));
     const shards = [];
-    for (let k = 1; tags.has(tagOf(book, k)); k++) {
-      const tag = tagOf(book, k);
-      shards.push({ tag, assets: await withRetries(`list ${tag}`, () => assetsOf(tag)) });
+    for (let k = 1; tags.has(tagOf(series, k)); k++) {
+      const tag = tagOf(series, k);
+      shards.push(planned.get(tag) || { tag, assets: await withRetries(`list ${tag}`, () => assetsOf(tag)) });
     }
     const have = new Set();                              // names published, across the book's releases, finished uploads only
     const haveStems = new Set();                         // the same, less the hash: an image published from another machine's cut
@@ -241,8 +256,10 @@ async function main() {
       todo.push({ ...w, file: good });
     }
     // an asset no image names: neither its name nor its notation, n and kind (never another machine's copy of a shown image)
-    const stale = shards.flatMap(s => s.assets.filter(a => !shaOfName.has(a.name) && !allNames.has(a.name) && !wantStems.has(stemOf(a.name)))
-      .map(a => ({ tag: s.tag, name: a.name })));
+    const orphan = RELEASE
+      ? a => a.name.startsWith(book + '-') && !everyName.has(a.name) && !everyStem.has(stemOf(a.name))
+      : a => !shaOfName.has(a.name) && !allNames.has(a.name) && !wantStems.has(stemOf(a.name));
+    const stale = shards.flatMap(s => s.assets.filter(orphan).map(a => ({ tag: s.tag, name: a.name })));
     orphans += stale.length;
     const gone = want.size - todo.length - (kept - keptBefore) - (elsewhere - elsewhereBefore);
     console.log(`${book}: ${want.size} image(s): ${kept - keptBefore} published, ${todo.length} to upload`
@@ -255,19 +272,20 @@ async function main() {
     while (todo.length && uploaded < MAX) {
       if (room <= 0) {
         k += 1;
-        const tag = tagOf(book, k);
+        const tag = tagOf(series, k);
         console.log(`  ${tag}: creating the release`);
         if (!DRY) {
           await withRetries(`create ${tag}`, () => gh(['release', 'create', tag, '--repo', REPO,
-            '--title', `Notation images: ${book}${k > 1 ? ` (part ${k})` : ''}`,
-            '--notes', `Scan crops of ${book}, a keertan notation book, as the notations database of the Gurbani app points at them. `
+            '--title', `Notation images: ${series}${k > 1 ? ` (part ${k})` : ''}`,
+            '--notes', `Scan crops of ${RELEASE ? `${RELEASE}, short keertan notation works` : `${book}, a keertan notation book`}, as the notations database of the Gurbani app points at them. `
                        + 'Built by 32_build_notations_db.py, uploaded by tools/publish-notation-images.mjs. One asset per image, named after its content.']));
         }
         tags.add(tag);
         shards.push({ tag, assets: [] });
+        if (DRY) planned.set(tag, shards[shards.length - 1]);
         room = PER_RELEASE;
       }
-      const tag = tagOf(book, k);
+      const tag = tagOf(series, k);
       const batch = todo.splice(0, Math.min(BATCH, room, MAX - uploaded));
       if (DRY) {
         console.log(`  would upload ${batch.length} to ${tag}: ${batch.slice(0, 2).map(b => b.name).join(', ')}${batch.length > 2 ? ', ...' : ''}`);

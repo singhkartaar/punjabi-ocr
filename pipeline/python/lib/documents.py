@@ -16,7 +16,7 @@ adopted (README), kept so it can be re-tested.
 from __future__ import annotations
 import re
 import numpy as np
-from lib.embedder import l2_normalize
+from lib.embedder import l2_normalize, BATCH_SIZE
 from lib.sources import load_texts, source_lang, parse_source
 
 SEPARATOR = {"pa": " ॥ ", "en": " "}
@@ -51,7 +51,7 @@ def split_to_fit(emb, text: str, max_tokens: int) -> list[str]:
     return chunks
 
 
-def embed_long(emb, texts: list[str], max_tokens: int, batch_size: int = 64, progress=None):
+def embed_long(emb, texts: list[str], max_tokens: int, batch_size: int = BATCH_SIZE, progress=None):
     """
     Embed texts as documents; a text over the window is chunked and its chunk
     vectors averaged, then re-normalised. Returns (vectors, chunked_count).
@@ -102,7 +102,7 @@ def shabad_documents(con, source: str):
     return {sid: r + o for sid, (r, o) in docs.items() if r or o}
 
 
-def embed_documents(emb, docs: dict, source: str, max_tokens: int = 500, batch_size: int = 16):
+def embed_documents(emb, docs: dict, source: str, max_tokens: int = 500, batch_size: int = BATCH_SIZE):
     """
     Embed each document; a document longer than the model's window is split
     into consecutive chunks of whole lines and the chunk vectors averaged.

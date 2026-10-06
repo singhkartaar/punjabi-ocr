@@ -55,7 +55,7 @@ from lib.ocr_text import GURMUKHI, LATIN, key_positions, normalise, script_of, s
 from lib.ocr_vote import H_OVERLAP, align_boxes, box_overlap, is_block, joined_text, segment_block, vote
 from lib.ocr_zones import (classify_zones, footnote_rule_y, header_of, is_stamp, page_columns_with_source,
                            smooth_hints, vertical_rule)
-from lib.paths import CORPUS_DB, GRANTHS_DB, MAHANKOSH_DB, OCR_DIR, ROOT
+from lib.paths import CORPUS_DB, GRANTHS_DB, MAHANKOSH_DB, OCR_DIR, ROOT, SCRIPTURES_FULL_DB
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -69,7 +69,14 @@ PROSE_COVERAGE = 0.6
 _RAAG_HEADING = re.compile(r"ਮਹਲਾ\s*[੧-੯ਮ]|ਮਃ\s*[੧-੯]")   # ਮਹਲਾ ੧ / ਮਃ ੧
 
 
-def load_index(corpus: str, granths: str) -> CorpusIndex | None:
+def load_index(corpus: str, granths: str, scriptures: str | None = None) -> CorpusIndex | None:
+    """
+    The Granth's lines, then the other scriptures'. The full store
+    (data/scriptures-full.sqlite: every source, selected or not) is preferred to granths.sqlite,
+    which predates it and knows only D and B. The window a page header gives is
+    the Granth's (Merger.sources); the other scriptures are found by the global
+    pass, at its stricter threshold and under the same margin rule.
+    """
     rows = []
     if corpus and os.path.exists(corpus) and os.path.getsize(corpus) > 0:
         con = sqlite3.connect(corpus)
@@ -78,7 +85,9 @@ def load_index(corpus: str, granths: str) -> CorpusIndex | None:
         rows += [(*r, "G") for r in con.execute(
             "SELECT line_id, shabad_id, ang, gurmukhi_uni FROM lines WHERE kind != 'heading' ORDER BY line_id")]
         con.close()
-    if granths and os.path.exists(granths) and os.path.getsize(granths) > 0:
+    if scriptures and os.path.exists(scriptures) and os.path.getsize(scriptures) > 0:
+        rows += CorpusIndex.scripture_rows(scriptures)
+    elif granths and os.path.exists(granths) and os.path.getsize(granths) > 0:
         con = sqlite3.connect(granths)
         try:
             rows += list(con.execute("SELECT line_id, shabad_id, ang, text, source FROM granth_lines"))
@@ -793,6 +802,8 @@ def main():
     ap.add_argument("--no-lexicon", action="store_true")
     ap.add_argument("--corpus", default=CORPUS_DB)
     ap.add_argument("--granths", default=GRANTHS_DB)
+    ap.add_argument("--scriptures", default=SCRIPTURES_FULL_DB,
+                    help="the full scripture store (data/scriptures-full.sqlite); preferred to --granths where it exists")
     ap.add_argument("--kosh", default=MAHANKOSH_DB)
     ap.add_argument("--out", default=OCR_DIR)
     ap.add_argument("--out-name", default="merged",
@@ -838,7 +849,7 @@ def main():
             weights[k.strip()] = float(v)
 
     t0 = time.time()
-    index = load_index(args.corpus, args.granths) if lang == "pa" else None
+    index = load_index(args.corpus, args.granths, args.scriptures) if lang == "pa" else None
     lexicon = None if args.no_lexicon else Lexicon.from_sources(args.kosh if lang == "pa" else None, args.corpus)
     corrector = None if (args.no_correct or lexicon is None) else Corrector(lexicon, Confusions.load(CONFUSIONS))
     print("%s (%s): engines %s, pivot %s; corpus %s lines; lexicon %s; %.0fs to load"

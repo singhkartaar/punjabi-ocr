@@ -292,7 +292,9 @@ refused for the rest of that hour. The tool stays under that by itself:
 30 uploads a minute and at most 1,800 in any rolling hour (`--rate`,
 `--per-hour`), thumbnails only with `--thumbs` (the app shows the first
 crop instead), and a refusal waited out. Both machines publish under
-the same account, so they share the limit: run one at a time.
+the same account, so they share the limit: run one at a time. Short
+works of a page or two (the Raags-PU excerpts) go into one release for
+all of them with `--release <name>` instead of a release apiece.
 
 ## 6. Paid services, only through a cap
 
