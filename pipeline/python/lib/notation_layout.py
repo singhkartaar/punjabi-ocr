@@ -51,6 +51,13 @@ _RAAG_WORD = re.compile(r"^\W*ਰਾਗ[ੁ]?\b")
 # notation's heading everything is prose: a sentence of the meanings is no grid row, and the other shabads'
 # lines, which the corpus knows and which carry an ang, are not the notation's shabad (third cut, 5 October 2026).
 _OTHERS_LABEL = re.compile(r"^\W*ਹੋਰ\s+ਸ਼ਬਦ\b")
+# the book's own label before the shabad ("ਸ਼ਬਦ :-- ਗਉੜੀ ਮਹਲਾ ੫ ॥ ..."): Sangeet Sagar sets it in bold at the foot of
+# every page, under the grids, the reference in brackets at its end ("[ਅੰਗ-੧੯੯]"); Tesseract reads the bold word
+# apart from its line as often as not, and the one-line shabads as fragments (11 October 2026)
+SHABAD_LABEL = re.compile(r"^\W*(?:ਸ਼ਬਦ|ਸਬਦ)\s*(?:[:ਃ=]+\s*[-–—=]*|[-–—]{2,})")
+_SHABAD_LABEL_WORD = re.compile(r"^\W*(?:ਸ਼ਬਦ|ਸਬਦ)\W*$")
+_LABEL_TAIL = re.compile(r"^[:ਃ=\-–—]|[।॥]")
+LABEL_BLOCK_LINES = 9                       # a labelled shabad runs this many line heights below its label at most
 _PROSE_LABEL = re.compile(r"^\W*(?:ਭਾਵ\s*[-–—]?\s*ਅਰਥ\W*$|ਪਦ\s*[-–—]?\s*ਅਰਥ\b|ਹੋਰ\s+ਸ਼ਬਦ\b)")      # ਪਦ ਅਰਥ: the word meanings under a pauri (Guru Angad Dev Sangeet Darpan)
 
 
@@ -143,6 +150,55 @@ def classify_line(line: dict) -> str:
     return "text"
 
 
+def _labelled_block(roles: list[tuple], body_h: int) -> tuple[list[tuple], set]:
+    """
+    The book's own label before the shabad ("ਸ਼ਬਦ :--", Sangeet Sagar, at
+    the foot of every page under the grids): from the line it opens down
+    to the printed reference every line is the shabad's, whatever the OCR
+    made of it -- a one-line shabad gives the corpus no second line to
+    vote with, and its words, read as fragments, pass for a bol row or a
+    heading. The block ends at the reference (role `ref`), at a section
+    label or a heading with a taal, or LABEL_BLOCK_LINES line heights down.
+    Returns the roles with those lines `gurbani`, and the set of their n's.
+    """
+    k0 = None
+    for k, (line, role) in enumerate(roles):
+        if role in ("stamp", "pageno"):
+            continue
+        text = (line.get("text") or "").strip()
+        if SHABAD_LABEL.match(text):
+            k0 = k
+            break
+        if _SHABAD_LABEL_WORD.match(text) and line.get("bold"):
+            # the bold word alone, the rest of its line read as fragments beside it: one of them begins
+            # with the label's colon or dash, or holds a danda
+            y0, y1, x1 = line["bbox"][1], line["bbox"][3], line["bbox"][2]
+            beside = [o for o, _ in roles if o is not line and o["bbox"][0] >= x1
+                      and min(o["bbox"][3], y1) - max(o["bbox"][1], y0) > 0.5 * (y1 - y0)]
+            if any(_LABEL_TAIL.search((o.get("text") or "").strip()) or _GRANTH_HEADING.search(o.get("text") or "") for o in beside):
+                k0 = k
+                break
+    if k0 is None:
+        return roles, set()
+    top = roles[k0][0]["bbox"][1]
+    out = list(roles)
+    labelled: set = set()
+    for k, (line, role) in enumerate(roles):
+        if role in ("stamp", "pageno") or line["bbox"][1] < top - 0.6 * body_h:
+            continue
+        text = (line.get("text") or "").strip()
+        if k > k0 and (line["bbox"][1] > top + LABEL_BLOCK_LINES * body_h or role == "section"
+                       or (role == "heading" and parse_heading(text).get("taal"))):
+            break
+        ref = parse_ref(text)
+        if k > k0 and ref and ref.get("ang_from") and text[:1] in ("[", "("):
+            out[k] = (line, "ref")                      # the reference closes the block
+            break
+        out[k] = (line, "gurbani")
+        labelled.add(line.get("n"))
+    return out, labelled
+
+
 def _bbox_union(boxes: list[list[int]]) -> list[int]:
     return [min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes)]
 
@@ -162,6 +218,7 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
     lines.sort(key=lambda l: (l["bbox"][1], l["bbox"][0]))
     roles = [(l, classify_line(l)) for l in lines]
     body_h = body_h or _median([l["bbox"][3] - l["bbox"][1] for l, r in roles if r in ("text", "gurbani", "heading")] or [40])
+    roles, labelled = _labelled_block(roles, body_h)
 
     regions: list[dict] = []
     cur: dict | None = None
@@ -187,6 +244,9 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
             # "(੨)" at the left margin under the raag's heading: the notation's number, not a page's
             # (Guru Nanak Sangeet Padhti Granth sets the number at the left margin and the taal at the right)
             role = "heading"
+        if role == "ref" and page_h and line["bbox"][1] < 0.1 * page_h and len((line.get("text") or "").split()) <= 4 \
+                and _BRACKET_NUMBER.match((parse_ref(line.get("text") or "") or {}).get("text") or ""):
+            role = "pageno"                           # "(੨੯੭) ਹਮੀਰ": the running header's page number in brackets (Sangeet Sagar)
         if role in ("stamp", "pageno"):
             continue
         n, bbox, text = line.get("n"), list(line["bbox"]), (line.get("text") or "").strip()
@@ -270,9 +330,13 @@ def page_layout(merged_lines: list[dict], page_w: int, page_h: int, style: dict,
     # Kabitt of Bhai Gurdas, Dasam Bani, which the corpus does not hold).
     # Prose that mentions a line, tabla bols under a taal heading, and OCR
     # noise that happens to hold a danda are text.
+    # the lines under the book's own label ("ਸ਼ਬਦ :--") are the shabad, whatever the OCR made of them
+    for r in regions:
+        if labelled and r["role"] in ("shabad", "text") and labelled & set(r.get("lines") or []):
+            r["role"], r["labelled"] = "shabad", True
     ref_before = (style or {}).get("ref_position") == "before"
     for i, r in enumerate(regions):
-        if r["role"] != "shabad":
+        if r["role"] != "shabad" or r.get("labelled"):
             continue
         # the printed reference stands after the verse, or (Gurmat Sangeet Darpan) above it
         beside = regions[i - 1] if ref_before and i > 0 else regions[i + 1] if not ref_before and i + 1 < len(regions) else None
@@ -523,7 +587,7 @@ def _split_shabad_head(regions: list[dict]) -> list[dict]:
     out: list[dict] = []
     for r in regions:
         merged = r.get("merged") or []
-        if r["role"] == "shabad" and merged:
+        if r["role"] == "shabad" and merged and not r.get("labelled"):
             k = next((i for i, m in enumerate(merged) if m.get("matches")), None)
             if k is not None and k >= 2:
                 keep = 0
@@ -1078,14 +1142,33 @@ def _segments(items: list[dict], after: bool, pairing: bool = False) -> list[dic
             broke = True
             i += 1
             continue
+        if after and cur is not None and cur["items"] and it["page"] != cur["items"][-1]["page"] and not has(cur, ("shabad",)) \
+                and not (has(cur, ("heading",)) or any(x["role"] == "grid" and (len(x["region"].get("lines") or []) > 2 or x["region"].get("from_ink"))
+                                                       for x in cur["items"])):
+            # what stood under the shabad at the foot of the page (the frame, a footer, a speck read as a heading or a
+            # number) is nobody's; only a heading with a taal at the very end leads the next page's notation in
+            lead = []
+            while cur["items"] and cur["items"][-1]["role"] == "heading" and (_named_heading(cur["items"][-1]["region"]) or {}).get("taal"):
+                lead.insert(0, cur["items"].pop())
+            close()
+            if lead:
+                cur = open_(items=lead, opened_by="heading")
         if cur is None:
             cur = open_(after_break=broke)
             broke = False
         if role == "shabad":
             group = []
             j = i
-            while j < len(items) and items[j]["role"] in ("shabad", "ref"):
-                group.append(items[j])
+            while j < len(items):
+                if items[j]["role"] == "ref" and after and items[j]["page"] != group[0]["page"]:
+                    break                               # a reference stands on its shabad's page: the next page's is not this one's
+                if items[j]["role"] in ("shabad", "ref"):
+                    group.append(items[j])
+                elif after and items[j]["role"] == "marker" and j + 1 < len(items) and items[j + 1]["role"] == "ref" \
+                        and items[j + 1]["page"] == items[j]["page"]:
+                    group.append(items[j])              # a speck of the frame read as a mark between the verse and its reference
+                else:
+                    break
                 j += 1
             has_ref = any(g["role"] == "ref" for g in group)
             nxt_role = items[j]["role"] if j < len(items) else "break"
@@ -1174,8 +1257,9 @@ def _segments(items: list[dict], after: bool, pairing: bool = False) -> list[dic
                     lead = []
                     while cur["items"] and cur["items"][-1]["role"] == "heading" and _is_lead(cur["items"][-1]):
                         lead.insert(0, cur["items"].pop())
+                    fresh = cur["after_break"] and not cur["items"]      # nothing closed: the heading is still the first thing after the break
                     close()
-                    cur = open_(items=lead, opened_by="raag" if (raag_only or intro) else "heading")
+                    cur = open_(items=lead, opened_by="raag" if (raag_only or intro) else "heading", after_break=fresh)
             cur["items"].append(it)
             i += 1
             continue
@@ -1405,8 +1489,11 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
         # a shabad the corpus did not match line for line is still identified when it is of another source, or when the
         # book printed its reference (the resolver finds it by the ang; the next taal's notation inherits the same lines)
         identified = prev is not None and any((it["role"] == "shabad" and it["region"].get("source")) or it["role"] == "ref" for it in prev["items"])
+        # "straight after": on the notation's page or the next -- not across a run of dropped pages (Ishar Sangeet Sagar's
+        # taal appendix, pp. 149-152, took p. 86's shabad over the index and the prose between; 11 October 2026)
+        adjacent = prev is not None and pages and pages[0] - max(it["page"] for it in prev["items"]) <= 1
         if not has_shabad and has_content and seg.get("opened_by") == "heading" and not at_number and prev is not None \
-                and (prev.get("sid") is not None or identified) and not seg.get("after_break") \
+                and (prev.get("sid") is not None or identified) and not seg.get("after_break") and adjacent \
                 and any(it["role"] == "shabad" for it in prev["items"]):
             # the same shabad set again in another taal, its text not reprinted
             seg["items"] = [it for it in prev["items"] if it["role"] in ("shabad", "ref")] + seg["items"]

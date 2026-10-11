@@ -137,8 +137,15 @@ def layouts_for(book_dir: str, pages: list[dict], style: dict, force: bool) -> l
         meta, lines = load_jsonl(merged_path)
         img = cv2.imread(os.path.join(book_dir, "pages", rec["file"]), cv2.IMREAD_GRAYSCALE)
         ink = binarise(img) if img is not None else None
-        lay = page_layout(lines, meta.get("page_w") or rec["w"], meta.get("page_h") or rec["h"], style, page,
-                          ink=ink, body_h=meta.get("body_h"))
+        page_w, page_h = meta.get("page_w") or rec["w"], meta.get("page_h") or rec["h"]
+        lay = page_layout(lines, page_w, page_h, style, page, ink=ink, body_h=meta.get("body_h"))
+        if (style or {}).get("shabad_position") == "after":
+            # the line at the foot of the page the page-level reading lost to the frame: read the strip again
+            extra, drop = foot_lines(img, lay, lines, page_w, page_h, con=_foot_corpus())
+            if extra:
+                lines = [l for l in lines if l.get("n") not in drop] + extra
+                lay = page_layout(lines, page_w, page_h, style, page, ink=ink, body_h=meta.get("body_h"))
+                lay["foot_repair"] = {"added": [l["text"] for l in extra], "replaced": sorted(drop)}
         lay["version"] = PARSER_VERSION
         lay["page_w"], lay["page_h"] = meta.get("page_w") or rec["w"], meta.get("page_h") or rec["h"]
         # the merged lines of the shabad blocks travel with the layout: the resolver needs their matches
@@ -146,6 +153,211 @@ def layouts_for(book_dir: str, pages: list[dict], style: dict, force: bool) -> l
             json.dump(lay, fh, ensure_ascii=False)
         out.append(lay)
     return out
+
+
+_FOOT: dict = {}
+_INK_WORD = re.compile(r"[^\s'\"~`^*_]")                    # a word with anything to it beyond the specks Tesseract reads off a frame
+_GURMUKHI_WORD = re.compile(r"[\u0a05-\u0a39\u0a59-\u0a5e][\u0a01-\u0a04\u0a3c-\u0a4d\u0a70-\u0a71]*[\u0a05-\u0a39\u0a59-\u0a5e]")   # two letters, matras between
+
+
+def _foot_corpus():
+    if "con" not in _FOOT:
+        _FOOT["con"] = corpus_connection()
+    return _FOOT["con"]
+
+
+def _strip_reader():
+    """Tesseract for a strip of the page, in `pan`; None when it is not installed."""
+    if "engine" not in _FOOT:
+        try:
+            from lib.ocr_engines import TesseractEngine
+            _FOOT["engine"] = TesseractEngine(psm=4, tess_lang="pan")
+        except SystemExit:
+            _FOOT["engine"] = None
+    return _FOOT["engine"]
+
+
+def _covered(a: list, b: list) -> float:
+    """The share of box a that box b covers."""
+    w = min(a[2], b[2]) - max(a[0], b[0])
+    h = min(a[3], b[3]) - max(a[1], b[1])
+    if w <= 0 or h <= 0:
+        return 0.0
+    return (w * h) / max(1, (a[2] - a[0]) * (a[3] - a[1]))
+
+
+def _frame_top(img, y0: int, y1: int, page_w: int) -> int:
+    """
+    The top of the frame's bottom border (Sangeet Sagar): looked for from the foot of the band upward, the first
+    run of three rows or more with ink over 40% of the width -- the lowest ink on the page is the border, never a
+    line of text. y1 when there is none.
+    """
+    try:
+        import numpy as np
+        x0, x1 = int(page_w * 0.06), int(page_w * 0.94)
+        band = img[y0:y1, x0:x1]
+        if band.size == 0:
+            return y1
+        dark = (band < 128).mean(axis=1) > 0.4
+        run = 0
+        for k in range(len(dark) - 1, -1, -1):
+            run = run + 1 if dark[k] else 0
+            if run >= 3:
+                top = k
+                while top > 0 and dark[top - 1]:
+                    top -= 1
+                return int(y0 + top) - 2
+        return y1
+    except Exception:
+        return y1
+
+
+def _ref_of(text: str | None) -> dict | None:
+    from lib.notation_text import parse_ref
+    ref = parse_ref(text or "")
+    return ref if ref and ref.get("ang_from") else None
+
+
+def _split_ref(words: list[dict]) -> list[list[dict]]:
+    """The words before the bracketed reference, and the reference's own; what follows the bracket on the line is the frame's."""
+    for i, w in enumerate(words):
+        if (w.get("text") or "")[:1] not in ("[", "("):
+            continue
+        j = next((k + 1 for k in range(i, len(words)) if re.search(r"[\]\)]", words[k]["text"])), None)
+        if j is None:                                      # no closing bracket read: the reference ends at its number
+            j = next((k + 1 for k in range(i, len(words)) if re.search(r"[੦-੯0-9]", words[k]["text"])
+                      and _ref_of(" ".join(x["text"] for x in words[i:k + 1]))), None)
+        if j is not None and _ref_of(" ".join(x["text"] for x in words[i:j])):
+            return [p for p in (words[:i], words[i:j]) if p]
+    return [words]
+
+
+def _gives_ref(got: list[dict]) -> bool:
+    """A reference somewhere in the strip's lines, whole or as the tail of a line."""
+    return any(_ref_of(l.get("text")) or any(_ref_of(" ".join(w["text"] for w in part)) for part in _split_ref(l.get("words") or []))
+               for l in got)
+
+
+def foot_lines(img, lay: dict, lines: list[dict], page_w: int, page_h: int, con=None, read=None) -> tuple[list[dict], set]:
+    """
+    Sangeet Sagar sets one notation a page inside a decorative frame, the
+    shabad on a line at the foot under the grids, its reference at the
+    line's end: the page-level reading loses that line, or its right half
+    with the reference, to the frame, or reads it as fragments at odd
+    heights that no corpus line matches (pp. 293, 350, 397, 399 of the
+    first sample, 11 October 2026). On a page of a book that sets the
+    shabad after its grids, with grids and, under the last of them, no
+    shabad read whole -- nothing, or only the labelled block with no line
+    the corpus matched, or a matched one with no reference -- the band
+    under the last grid is read again as a strip, Tesseract psm 4 then 6.
+    A strip line that covers two or more unmatched merged lines (or one
+    short one) is those fragments read whole and replaces them; otherwise
+    only the words no merged line covers come back. New lines carry the
+    reference on a line of their own and are matched against the corpus
+    within the printed ang, as is the labelled line the merge left
+    unmatched. Returns the new lines and the n's of the fragments they
+    replace. Nothing is read where nothing is missing.
+
+    @param read  (bbox, psm) -> Tesseract line records, for the tests; the default reads `img`
+    """
+    from lib.notation_layout import SHABAD_LABEL
+    regions = lay.get("regions") or []
+    h = min(lay.get("body_h") or 40, 60)              # a line's height for the geometry (the merge's median runs wild on a page of few lines)
+    # the last grid above the shabad block (a speck of the frame read as a mark on the shabad's own line, or as a
+    # grid row under it, is no grid to measure from)
+    anchor = min([r["bbox"][1] for r in regions if r["role"] == "shabad"] or [page_h])
+    bottoms = [r["bbox"][3] for r in regions if r["role"] in ("grid", "marker") and r["bbox"][1] < anchor - 0.5 * h]
+    if not bottoms:
+        return [], set()
+    y0, y1 = max(bottoms) + 2, int(page_h * 0.95)
+    if img is not None:
+        y1 = min(y1, _frame_top(img, y0, y1, page_w))
+    if y1 - y0 < h:
+        return [], set()
+    below = [r for r in regions if r["bbox"][1] >= y0 - 10]
+    refs = [r for r in below if r["role"] == "ref" and (r.get("parsed") or {}).get("ang_from")]
+    labelled = [r for r in below if r["role"] == "shabad" and r.get("labelled")]
+    if any(r["role"] == "shabad" and not r.get("labelled") for r in below):
+        return [], set()                           # a shabad read whole: nothing to repair
+    matched = any(m.get("matches") for r in labelled for m in (r.get("merged") or []))
+    if labelled and matched and refs:
+        return [], set()                           # the labelled line is known to the corpus and its reference is read
+    if read is None:
+        engine = _strip_reader()
+        if engine is None or img is None:
+            return [], set()
+
+        def read(bbox, psm):
+            return engine.recognise_region(img, bbox, "pa", psm=psm)
+    bbox = [int(page_w * 0.06), y0, int(page_w * 0.94), y1]
+    body = [l for l in lines if l.get("bbox") and l.get("zone") in (None, "body")]
+    matched_boxes = [l["bbox"] for l in body if l.get("matches")]
+    taken: list[list] = []                        # the strip words kept so far: the second mode adds only what the first missed
+    out: list[dict] = []
+    drop: set = set()
+    n = max([l.get("n") or 0 for l in lines] + [0]) + 1
+    for psm in (4, 6):
+        try:
+            got = read(bbox, psm)
+        except Exception:
+            got = []
+        for ln in got:
+            words = [w for w in (ln.get("words") or []) if _INK_WORD.search(w.get("text") or "")]
+            if not words:
+                continue
+            lbox = [min(w["bbox"][0] for w in words), min(w["bbox"][1] for w in words),
+                    max(w["bbox"][2] for w in words), max(w["bbox"][3] for w in words)]
+            text_len = len(" ".join(w["text"] for w in words))
+            # the unmatched merged lines this line covers: its own fragments, when two or more (or one short one)
+            frags = [l for l in body if not l.get("matches") and not _ref_of(l.get("text")) and l.get("n") not in drop
+                     and _covered(l["bbox"], lbox) >= 0.5]
+            whole = len(frags) >= 2 or (len(frags) == 1 and 2 * len(frags[0].get("text") or "") < text_len)
+            # the line's parts first (the verse, the reference; what follows the bracket is the frame's), then within
+            # each the words nothing already covers
+            parts = []
+            for part in _split_ref(words):
+                keep = [w for w in part if not any(_covered(w["bbox"], b) >= 0.5 for b in matched_boxes + taken)]
+                if not whole:
+                    keep = [w for w in keep if not any(_covered(w["bbox"], l["bbox"]) >= 0.5 for l in body if l.get("n") not in drop)]
+                if keep and (_ref_of(" ".join(w["text"] for w in keep)) or sum(1 for w in keep if _GURMUKHI_WORD.search(w["text"])) >= 2):
+                    parts.append(keep)
+            if not parts:
+                continue
+            if whole and not (any(_ref_of(" ".join(w["text"] for w in p)) for p in parts)
+                              or sum(1 for p in parts for w in p if _GURMUKHI_WORD.search(w["text"])) >= 3):
+                continue                                   # specks of the frame: not a line to replace anything with
+            if whole:
+                drop.update(l["n"] for l in frags)
+            for part in parts:
+                text = " ".join(w["text"] for w in part)
+                box = [min(w["bbox"][0] for w in part), min(w["bbox"][1] for w in part),
+                       max(w["bbox"][2] for w in part), max(w["bbox"][3] for w in part)]
+                out.append({"n": n, "zone": "body", "bbox": box, "text": text, "kind": "commentary", "bold": False, "col": 0,
+                            "conf": round(sum(float(w.get("conf") or 0) for w in part) / len(part), 3),
+                            "repaired": "foot", "psm": psm})
+                taken.append(box)
+                n += 1
+    if not out:
+        return [], set()
+    index = corpus_index(con) if con is not None else None
+    if index is not None:
+        from lib.ocr_match import match_text_all
+        ref = next((_ref_of(l["text"]) for l in out if _ref_of(l["text"])), None) or (refs[0]["parsed"] if refs else None)
+        hints = {"ang_from": ref["ang_from"], "ang_to": ref.get("ang_to") or ref["ang_from"]} if ref else None
+        unmatched = [x for x in body if x["bbox"][1] >= y0 - 10 and not x.get("matches") and x.get("n") not in drop]
+        for l in out + unmatched:
+            if _ref_of(l.get("text")):
+                continue
+            text = SHABAD_LABEL.sub("", l.get("text") or "").strip()
+            if len(text.replace(" ", "")) < 6:
+                continue
+            try:
+                found = (match_text_all(text, index, hints) if hints else []) or match_text_all(text, index, None)
+            except Exception:
+                found = []
+            if found:
+                l["matches"], l["kind"] = found, "gurbani"
+    return out, drop
 
 
 _AT_NUMBER = re.compile("(?:ਸ਼ਬਦ|ਸਬਦ)\\s*ਨੰ[:ਃ.]?\\s*([੦-੯0-9]+)")

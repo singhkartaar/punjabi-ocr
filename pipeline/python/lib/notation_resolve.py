@@ -73,9 +73,15 @@ def by_printed_ang(merged_lines: list[dict], ref: dict, con: sqlite3.Connection)
             if score >= 85:
                 found[sid].append((line_id, score / 100.0))
     ranked = sorted(found.items(), key=lambda kv: (-len(kv[1]), -sum(sc for _, sc in kv[1])))
-    if not ranked or len(ranked[0][1]) < 2 or (len(ranked) > 1 and len(ranked[1][1]) == len(ranked[0][1])):
+    if not ranked:
         return None
     sid, hits = ranked[0]
+    second = ranked[1][1] if len(ranked) > 1 else []
+    # a shabad the book prints in one line ("ਸ਼ਬਦ :-- ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ ਜਾਨੈ ॥.....", Sangeet Sagar, 11 October 2026)
+    # has no second line to vote with: that line found whole in the window, and no other shabad's, is enough
+    one_line = len(hits) == 1 and hits[0][1] >= 0.92 and not second and len(merged_lines) <= 2
+    if (len(hits) < 2 and not one_line) or (second and len(second) == len(hits)):
+        return None
     return sid, sum(sc for _, sc in hits) / len(hits), [lid for lid, _ in hits]
 
 

@@ -82,6 +82,7 @@ def parse_ref(text: str) -> dict | None:
     """
     if not text:
         return None
+    text = _stray_close(text)
     best = None
     for m in _BRACKET.finditer(text):
         got = _read_ref(m.group(1), bracketed=True)
@@ -109,6 +110,20 @@ def parse_ref(text: str) -> dict | None:
             got["span"] = (m.start(), len(text))
             return got
     return None
+
+
+# "[ਮਲਾਰ ਮਹਲਾ ੫, ਅੰਗ--੧੨੭੩1", "[ਅੰਗ-੧੩੨੨1]": Tesseract reads the closing bracket after the ang as a 1 or an l
+# (Sangeet Sagar, 11 October 2026); only after a Gurmukhi digit, so "(p. 11)" keeps its 11
+_STRAY_BEFORE_CLOSE = re.compile(r"(?<=[੦-੯])\s*[1lI|](?=\s*[\]\)])")
+_UNCLOSED_TAIL = re.compile(r"(?<=[੦-੯])\s*[1lI|।]?\s*$")
+
+
+def _stray_close(text: str) -> str:
+    t = _STRAY_BEFORE_CLOSE.sub("", text)
+    s = t.lstrip()
+    if s[:1] in ("[", "(") and not re.search(r"[\]\)]", s):
+        t = _UNCLOSED_TAIL.sub("]", t)
+    return t
 
 
 def _read_ref(inner: str, bracketed: bool) -> dict | None:

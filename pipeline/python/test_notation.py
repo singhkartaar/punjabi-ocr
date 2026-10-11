@@ -13,6 +13,7 @@ the byte. Regenerate the expectations from this side only:
 import json
 import importlib.util
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -1295,6 +1296,251 @@ class DbTests(unittest.TestCase):
             notation.write_jsonl(os.path.join(src, "notations.jsonl"), notation.meta_for({"book": "test-book", "author": "A", "title": "T"}), recs)
             with self.assertRaises(SystemExit):
                 build.build(os.path.join(d, "notations"), out, None, gurbani, {}, False, True, False, None)
+
+
+class LabelledShabadTests(unittest.TestCase):
+    """
+    Sangeet Sagar (11 October 2026): one notation a page inside a frame, the shabad on a line at the foot under the
+    grids after the book's own label "ਸ਼ਬਦ :--", the reference in brackets at its end -- often one line.
+    """
+    STYLE = {"shabad_position": "after"}
+
+    def _page(self, page, lines, page_h=2322):
+        lay = page_layout(lines, 1724, page_h, merge_style(self.STYLE), page)
+        lay["page_w"], lay["page_h"] = 1724, page_h
+        return lay
+
+    def _head(self, raag="ਸਾਰੰਗ"):
+        return [_line(1, "ਰਾਗ :--%s" % raag, 180, bold=True, x0=600, x1=1100), _line(2, "ਤਾਲ :--ਤਿੰਨ", 260, x0=1200, x1=1500),
+                _line(3, "*ਸਥਾਈ*", 340, x0=750, x1=900)]
+
+    def _grids(self, n0=4, y=420):
+        return [_line(n0, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y), _line(n0 + 1, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", y + 80),
+                _line(n0 + 2, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 160), _line(n0 + 3, "x ੨ ੦ ੩", y + 240, x0=200, x1=1400)]
+
+    def test_the_bracket_after_the_ang_read_as_a_one(self):
+        for text in ("[ਮਲਾਰ ਮਹਲਾ ੫, ਅੰਗ--੧੨੭੩1", "[ਅੰਗ-੧੩੨੨1]", "[ਸੂਹੀ ਰਵਿਦਾਸ ਜੀ, ਅੰਗ--੭੯੩1"):
+            ref = parse_ref(text)
+            self.assertIsNotNone(ref, text)
+            self.assertEqual(ref["ang_from"], {"੧੨੭੩": 1273, "੧੩੨੨": 1322, "੭੯੩": 793}[re.findall("[੦-੯]+", text)[-1]], text)
+        self.assertEqual(parse_ref("(SGGS p. 11)")["ang_from"], 11)       # an ASCII 11 is not a stray bracket
+        self.assertEqual(classify_line(_line(6, "[ਮਲਾਰ ਮਹਲਾ ੫, ਅੰਗ--੧੨੭੩1", 2028, x0=1118, x1=1566)), "ref")
+
+    def test_the_label_opens_the_shabad_down_to_the_reference_whatever_the_fragments_look_like(self):
+        # p. 293: the bold word apart, the line in fragments at slightly different heights, the second line read whole
+        foot = [_line(9, "ਗੁਰ ਪੂਰੇ ਸੁਪ੍ਸੰਨ ਭਏ ਸਦਾ ਸੂਖ", 1960, x0=1043, x1=1455, h=50),
+                _line(10, "ਜਾਪੀਐ", 1962, x0=783, x1=877, h=35), _line(11, "੫॥ ਮਨਿ", 1966, x0=603, x1=690, h=32),
+                _line(12, "ਤਨਿ", 1966, x0=706, x1=767, h=31), _line(13, ":-- ਕਲਿਆਨ", 1967, x0=272, x1=457, h=31),
+                _line(14, "ਸ਼ਬਦ", 1975, kind="heading", bold=True, x0=181, x1=268, h=24),
+                _line(15, "ਮਹਲਾ", 1975, x0=473, x1=552, h=23),
+                _line(16, "[ਅੰਗ--੧੩੨੨]", 1998, x0=1357, x1=1563, h=50),
+                _line(17, "ਵਟਾ", 2118, kind="heading", bold=True, x0=168, x1=199, h=13)]
+        lay = self._page(293, self._head("ਸ੍ਰੀ ਕਲਿਆਣ") + self._grids() + foot)
+        shabads = [r for r in lay["regions"] if r["role"] == "shabad"]
+        self.assertEqual(len(shabads), 1)
+        self.assertTrue(shabads[0].get("labelled"))
+        self.assertEqual(sorted(shabads[0]["lines"]), [9, 10, 11, 12, 13, 14, 15])
+        self.assertEqual([r["role"] for r in lay["regions"] if r["bbox"][1] >= 1990][:1], ["ref"])
+        self.assertNotIn("grid", [r["role"] for r in lay["regions"] if r["bbox"][1] >= 1900])
+        spans = link_pages([lay], merge_style(self.STYLE))
+        self.assertEqual(len(spans), 1)
+        self.assertEqual(spans[0]["pages"], [293])
+        self.assertEqual(spans[0]["ref"]["parsed"]["ang_from"], 1322)
+        self.assertIn("ਮਨਿ", "\n".join(r["text"] for _, r in spans[0]["shabad"]))
+
+    def test_a_one_line_shabad_is_its_pages_notation_and_the_next_page_keeps_its_own(self):
+        # p. 350: one line, no corpus match; p. 351: one matched line, the reference's bracket read as a 1
+        a = self._page(350, self._head("ਬਸੰਤ ਮੁਖਾਰੀ") + self._grids()
+                       + [_line(17, "ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ ਜਾਨੈ ॥.....", 2031, x0=156, x1=900, h=46),
+                          _line(18, "[ਸੂਹੀ ਰਵਿਦਾਸ ਜੀ, ਅੰਗ--੭੯੩]", 2032, x0=1100, x1=1560, h=40)])
+        m = [{"shabad_id": 4594, "line_id": 54444, "score": 1.0, "source": "G"}]
+        b = self._page(351, self._head("ਮਿਸ਼ਰਤ ਭੈਰਵੀ") + self._grids()
+                       + [_line(4, "ਸ਼ਬਦ :=ਹੇ ਗੋਬਿੰਦ ਹੇ ਗੋਪਾਲ ਹੇ ਦਇਆਲ ਲਾਲ ॥੧॥ ਰਹਾਉ ॥.....", 2016, kind="gurbani", matches=m, x0=176, x1=895, h=47),
+                          _line(5, "ਨ", 2020, x0=1399, x1=1407, h=7),
+                          _line(6, "[ਮਲਾਰ ਮਹਲਾ ੫, ਅੰਗ--੧੨੭੩1", 2028, x0=1118, x1=1566, h=31)])
+        spans = link_pages([a, b], merge_style(self.STYLE))
+        self.assertEqual([s["pages"] for s in spans], [[350], [351]])
+        self.assertEqual([s["ref"]["parsed"]["ang_from"] for s in spans], [793, 1273])
+        self.assertEqual([s["sid"] for s in spans], [None, 4594])
+
+    def test_what_stands_under_the_shabad_at_the_foot_of_the_page_is_nobodys(self):
+        # p. 238's frame and footer read as text under the reference; p. 239's heading not read at all
+        m = [{"shabad_id": 4284, "line_id": 1, "score": 0.97, "source": "G"}]
+        a = self._page(238, self._head() + self._grids()
+                       + [_line(20, "ਸ਼ਬਦ :--ਮਨ ਕਹਾ ਲੁਭਾਈਐ ਆਨ ਕਉ ॥.....", 2044, kind="gurbani", matches=m, x0=160, x1=900, h=46),
+                          _line(21, "ਨ", 2046, x0=1399, x1=1407, h=7),
+                          _line(22, "[ਸਾਰਗ ਮਹਲਾ ੫, ਅੰਗ-੧੨੦੮]", 2053, x0=1100, x1=1560, h=40),
+                          _line(23, "5. 59. 6੭ ੮8...", 2108, x0=160, x1=400, h=20)])
+        m2 = [{"shabad_id": 4402, "line_id": 2, "score": 0.97, "source": "G"}]
+        b = self._page(239, self._grids(1, 450)
+                       + [_line(8, "ਸ਼ਬਦ :-- ਲਾਲ ਲਾਲ ਮੋਹਨ ਗੋਪਾਲ ਤੂ ॥", 1709, kind="gurbani", matches=m2, x0=160, x1=900, h=46),
+                          _line(9, "[ਅੰਗ--੧੨੩੧]", 1861, x0=1300, x1=1560, h=40)])
+        spans = link_pages([a, b], merge_style(self.STYLE))
+        self.assertEqual([s["pages"] for s in spans], [[238], [239]])
+        self.assertEqual([s["ref"]["parsed"]["ang_from"] for s in spans], [1208, 1231])    # the stray mark does not part the verse from its reference
+
+    def test_a_number_or_a_heading_read_off_the_frame_at_the_foot_is_nobodys_too(self):
+        m = [{"shabad_id": 4356, "line_id": 1, "score": 0.97, "source": "G"}]
+        a = self._page(240, self._head() + self._grids()
+                       + [_line(20, "ਸ਼ਬਦ :-- ਸਾਰਗ ਮਹਲਾ ੫॥ ਹਰਿ ਕੇ ਨਾਮਹੀਨ ਬੇਤਾਲ ॥", 1792, kind="gurbani", matches=m, x0=145, x1=977, h=47),
+                          _line(21, "[ਅੰਗ-੧੨੨੨]", 1992, x0=1337, x1=1545, h=35),
+                          _line(22, "ਵਟਾ", 2118, kind="heading", bold=True, x0=168, x1=199, h=13),
+                          _line(23, "2 ੨੧੭.", 2131, kind="heading", bold=True, x0=160, x1=199, h=11)])
+        m2 = [{"shabad_id": 3894, "line_id": 2, "score": 0.97, "source": "G"}]
+        b = self._page(241, self._grids(1, 450)
+                       + [_line(8, "ਸ਼ਬਦ :-- ਜਾ ਤੂ ਮੇਰੈ ਵਲਿ ਹੈ ਤਾ ਕਿਆ ਮੁਹਛੰਦਾ ॥", 1709, kind="gurbani", matches=m2, x0=160, x1=900, h=46),
+                          _line(9, "[ਅੰਗ--੧੦੯੬]", 1861, x0=1300, x1=1560, h=40)])
+        spans = link_pages([a, b], merge_style(self.STYLE))
+        self.assertEqual([s["pages"] for s in spans], [[240], [241]])
+        # a heading with a taal at the very foot leads the next page's grids in
+        c = self._page(242, self._head() + self._grids() + [_line(20, "ਸ਼ਬਦ :-- ਸੁਭ ਬਚਨ ਬੋਲਿ ਗੁਨ ਅਮੋਲ ॥", 1792, kind="gurbani", matches=m, x0=145, x1=977, h=47),
+                                                           _line(21, "[ਅੰਗ-੧੨੨੯]", 1992, x0=1337, x1=1545, h=35), _line(22, "ਰਾਗ ਕਾਮੋਦ ਤਾਲ ਤਿੰਨਤਾਲ", 2150, bold=True, x0=500, x1=1100)])
+        d = self._page(243, self._grids(1, 300) + [_line(8, "ਸ਼ਬਦ :-- ਜਾ ਤੂ ਮੇਰੈ ਵਲਿ ਹੈ ਤਾ ਕਿਆ ਮੁਹਛੰਦਾ ॥", 1709, kind="gurbani", matches=m2, x0=160, x1=900, h=46)])
+        spans = link_pages([c, d], merge_style(self.STYLE))
+        self.assertEqual([s["pages"] for s in spans], [[242], [242, 243]])
+        self.assertEqual(spans[1]["heading"]["text"], "ਰਾਗ ਕਾਮੋਦ ਤਾਲ ਤਿੰਨਤਾਲ")
+
+    def test_a_heading_straight_after_a_gap_in_the_pages_inherits_no_shabad(self):
+        # Ishar Sangeet Sagar's taal appendix (pp. 149-152) read after p. 87: not notations of p. 86's shabad
+        m = [{"shabad_id": 4010, "line_id": 3, "score": 0.97, "source": "G"}]
+        a = self._page(86, [_line(1, "ਰਾਗੁ ਕੇਦਾਰਾ ਤਿੰਨ ਤਾਲ", 180, bold=True, x0=600, x1=1100)] + self._grids(2, 300)
+                       + [_line(8, "ਕੇਦਾਰਾ ਮਹਲਾ ੫ ॥ ਹਰਿ ਬਿਨੁ ਜਨਮੁ ਅਕਾਰਥ ਜਾਤ ॥", 1200, kind="gurbani", matches=m)])
+        b = self._page(149, [_line(1, "ਤਿੰਨ ਤਾਲ ਦੀ ਆਡ ਕੁਆਡ ਮ: 16", 170, bold=True, x0=500, x1=1200)] + self._grids(2, 350))
+        spans = link_pages([a, b], merge_style(self.STYLE))
+        self.assertEqual([s["pages"] for s in spans if s["sid"] == 4010], [[86]])
+        self.assertEqual([s["pages"] for s in spans if s["inherited"]], [])
+        # the same with pages of prose and an index read between (the back of the book): still nobody's shabad
+        # (three lines a page: pages of text, not of prose, so no break stands before p. 149 -- the distance alone must tell)
+        between = [self._page(p, [_line(k, "ਇਹ ਰਾਗ ਕਲਿਆਣ ਠਾਠ ਦਾ ਸੰਪੂਰਨ ਰਾਗ ਹੈ । ਇਸ ਦੀ ਆਰੋਹੀ ਵਿਚ ਮਧਮ ਅਤੇ ਨਿਖਾਦ ਵਰਜਿਤ ਹਨ ।", 300 + 80 * k) for k in range(1, 4)])
+                   for p in (133, 134)]
+        self.assertTrue(all(lay["kind"] != "prose" for lay in between))
+        spans = link_pages([a] + between + [b], merge_style(self.STYLE))
+        self.assertEqual([s["pages"] for s in spans if s["sid"] == 4010], [[86]])
+        self.assertEqual([s["pages"] for s in spans if s["inherited"]], [])
+
+
+class FootRepairTests(unittest.TestCase):
+    """The strip under the last grid read again when the page-level OCR lost the labelled line, its reference, or read it as fragments."""
+
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("parse29", os.path.join(HERE, "29_notation_parse.py"))
+        self.p29 = importlib.util.module_from_spec(spec); spec.loader.exec_module(self.p29)
+
+    def _lay(self, regions, body_h=31):
+        return {"page": 350, "regions": regions, "body_h": body_h}
+
+    @staticmethod
+    def _word(text, x0, x1, y0=2031, y1=2077, conf=0.9):
+        return {"text": text, "bbox": [x0, y0, x1, y1], "conf": conf}
+
+    @staticmethod
+    def _tess_line(words, conf=0.9):
+        return {"bbox": [min(w["bbox"][0] for w in words), min(w["bbox"][1] for w in words), max(w["bbox"][2] for w in words),
+                         max(w["bbox"][3] for w in words)], "text": " ".join(w["text"] for w in words), "words": words, "conf": conf}
+
+    def test_a_truncated_labelled_line_is_replaced_by_the_strips_whole_one_the_reference_on_its_own_line(self):
+        # p. 350: the merge read the left half of the line; the strip reads it whole, and the reference after it
+        lines = [_line(14, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", 1900, x0=111, x1=1615, h=40),
+                 _line(17, "ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ", 2031, x0=156, x1=589, h=46)]
+        regions = [{"role": "grid", "bbox": [111, 1193, 1615, 1979], "lines": [14]},
+                   {"role": "shabad", "bbox": [156, 2031, 589, 2077], "lines": [17], "labelled": True, "merged": [lines[1]]}]
+        words = [self._word("ਸ਼ਬਦ", 156, 268), self._word(":--ਸਹ", 272, 360), self._word("ਕੀ", 370, 420), self._word("ਸਾਰ", 430, 500),
+                 self._word("ਸੁਹਾਗਨਿ", 510, 589), self._word("ਜਾਨੈ", 600, 690), self._word("॥.....", 700, 800),
+                 self._word("[ਸੂਹੀ", 1118, 1200), self._word("ਰਵਿਦਾਸ", 1210, 1330), self._word("ਜੀ,", 1340, 1380),
+                 self._word("ਅੰਗ--੭੯੩1", 1390, 1560), self._word("0", 1600, 1610)]
+        calls = []
+
+        def read(bbox, psm):
+            calls.append((bbox, psm))
+            return [self._tess_line(words)]
+        got, drop = self.p29.foot_lines(None, self._lay(regions), lines, 1724, 2328, con=None, read=read)
+        self.assertEqual([(c[1], c[0][1] >= 1979, c[0][0] > 0) for c in calls], [(4, True, True), (6, True, True)])
+        self.assertEqual([l["text"] for l in got], ["ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ ਜਾਨੈ ॥.....", "[ਸੂਹੀ ਰਵਿਦਾਸ ਜੀ, ਅੰਗ--੭੯੩1"])
+        self.assertEqual(drop, {17})                                   # the half line gives way to the whole one
+        self.assertEqual([l["n"] for l in got], [18, 19])
+        self.assertEqual(got[1]["bbox"][:2], [1118, 2031])
+        self.assertEqual(classify_line(got[1]), "ref")
+        self.assertTrue(all(l["repaired"] == "foot" and l["zone"] == "body" for l in got))
+        # the second mode read the same words: nothing added twice
+        self.assertEqual(len(got), 2)
+
+    def test_fragments_at_odd_heights_give_way_to_the_line_read_whole(self):
+        # p. 293: six fragments of one line, none matched; the strip's line covers them all
+        frags = [_line(10, "ਜਾਪੀਐ", 1962, x0=783, x1=877, h=35), _line(11, "੫॥ ਮਨਿ", 1966, x0=603, x1=690, h=32),
+                 _line(12, "ਤਨਿ", 1966, x0=706, x1=767, h=31), _line(13, ":-- ਕਲਿਆਨ", 1967, x0=272, x1=457, h=31),
+                 _line(14, "ਸ਼ਬਦ", 1975, kind="heading", bold=True, x0=181, x1=268, h=24), _line(15, "ਮਹਲਾ", 1975, x0=473, x1=552, h=23)]
+        kept = _line(9, "ਗੁਰ ਪੂਰੇ ਸੁਪ੍ਸੰਨ ਭਏ ਸਦਾ ਸੂਖ", 1960, x0=1043, x1=1455, h=50)
+        ref = _line(16, "[ਅੰਗ--੧੩੨੨]", 1998, x0=1357, x1=1563, h=50)
+        lines = [_line(8, "ਸ ਰੇ | ਗ ਮ", 1900, h=40)] + frags + [kept, ref]
+        regions = [{"role": "grid", "bbox": [132, 1100, 1618, 1940], "lines": [8]},
+                   {"role": "shabad", "bbox": [181, 1960, 1455, 2010], "lines": [9, 10, 11, 12, 13, 14, 15], "labelled": True, "merged": frags + [kept]},
+                   {"role": "ref", "bbox": [1357, 1998, 1563, 2048], "lines": [16], "parsed": parse_ref("[ਅੰਗ--੧੩੨੨]")}]
+        strip = [self._word(t, x0, x1, 1962, 2008) for t, x0, x1 in
+                 (("ਸ਼ਬਦ", 181, 268), (":--", 272, 300), ("ਕਲਿਆਨ", 310, 457), ("ਮਹਲਾ", 473, 552), ("੫॥", 603, 640), ("ਮਨਿ", 650, 690),
+                  ("ਤਨਿ", 706, 767), ("ਜਾਪੀਐ", 783, 877), ("ਭਗਵਾਨ॥", 890, 1030), ("ਗੁਰ", 1043, 1090), ("ਪੂਰੇ", 1100, 1170),
+                  ("ਸੁਪ੍ਸੰਨ", 1180, 1290), ("ਭਏ", 1300, 1350), ("ਸਦਾ", 1360, 1410), ("ਸੂਖ", 1420, 1455))]
+        strip2 = [self._word(t, x0, x1, 2000, 2046) for t, x0, x1 in (("ਕਲਿਆਨ", 181, 300), ("॥੧॥ਰਹਾਉ॥.....", 310, 520), ("[ਅੰਗ--੧੩੨੨]", 1357, 1563))]
+        read = lambda bbox, psm: [self._tess_line(strip), self._tess_line(strip2)] if psm == 4 else []
+        got, drop = self.p29.foot_lines(None, self._lay(regions), lines, 1724, 2325, read=read)
+        # the fragments and the line already read whole give way to the strip's line (the same words, in order); the
+        # reference line stays as the merge read it, and the strip's words over it are not added again
+        self.assertEqual(drop, {9, 10, 11, 12, 13, 14, 15})
+        self.assertEqual([l["text"] for l in got], ["ਸ਼ਬਦ :-- ਕਲਿਆਨ ਮਹਲਾ ੫॥ ਮਨਿ ਤਨਿ ਜਾਪੀਐ ਭਗਵਾਨ॥ ਗੁਰ ਪੂਰੇ ਸੁਪ੍ਸੰਨ ਭਏ ਸਦਾ ਸੂਖ",
+                                                    "ਕਲਿਆਨ ॥੧॥ਰਹਾਉ॥....."])
+
+    def test_nothing_is_read_where_nothing_is_missing(self):
+        lines = [_line(14, "ਸ ਰੇ | ਗ ਮ", 1900, h=40)]
+        read = lambda bbox, psm: self.fail("read")
+        grid = {"role": "grid", "bbox": [111, 1193, 1615, 1979], "lines": [14]}
+        ref = {"role": "ref", "bbox": [1100, 2032, 1560, 2072], "lines": [18], "parsed": parse_ref("[ਅੰਗ--੭੯੩]")}
+        m = _line(17, "ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ ਜਾਨੈ ॥", 2031, kind="gurbani", matches=[{"shabad_id": 2985, "line_id": 1, "score": 0.97, "source": "G"}])
+        whole = [grid, {"role": "shabad", "bbox": [156, 2031, 900, 2077], "lines": [17]}, ref]
+        self.assertEqual(self.p29.foot_lines(None, self._lay(whole), lines, 1724, 2328, read=read), ([], set()))
+        labelled_known = [grid, {"role": "shabad", "bbox": [156, 2031, 900, 2077], "lines": [17], "labelled": True, "merged": [m]}, ref]
+        self.assertEqual(self.p29.foot_lines(None, self._lay(labelled_known), lines, 1724, 2328, read=read), ([], set()))
+        no_grid = [{"role": "text", "bbox": [156, 300, 900, 2077], "lines": [1]}]
+        self.assertEqual(self.p29.foot_lines(None, self._lay(no_grid), lines, 1724, 2328, read=read), ([], set()))
+        # grids to the foot of the page (the shabad on the next page): the band is too thin to hold a line
+        tall = [{"role": "grid", "bbox": [111, 300, 1615, 2200], "lines": [14]}]
+        self.assertEqual(self.p29.foot_lines(None, self._lay(tall), lines, 1724, 2328, read=read), ([], set()))
+        # a speck read as a mark on the shabad's own line does not push the band under the shabad (p. 238)
+        marked = [grid, {"role": "shabad", "bbox": [156, 2031, 900, 2077], "lines": [17], "labelled": True, "merged": [m]},
+                  {"role": "marker", "bbox": [1399, 2046, 1407, 2053], "lines": [19], "text": "ਨ"}, ref]
+        self.assertEqual(self.p29.foot_lines(None, self._lay(marked), lines, 1724, 2328, read=read), ([], set()))
+        # a reference line is never given up for the strip's reading of it, nor are specks a line
+        u2 = _line(17, "ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ", 2031, x0=156, x1=589, h=46)
+        r2 = _line(18, "[ਸੂਹੀ ਰਵਿਦਾਸ ਜੀ, ਅੰਗ--੭੯੩]", 2032, x0=1100, x1=1560, h=40)
+        junk = [self._word(t, x0, x1, 2032, 2072) for t, x0, x1 in (("(ਸ'ਚ0", 1100, 1200), ("ਮਰਲ'", 1210, 1300), ("੫੧,", 1310, 1360), ("0ਚ01-", 1370, 1560))]
+        got, dropped = self.p29.foot_lines(None, self._lay([grid, {"role": "shabad", "bbox": [156, 2031, 589, 2077], "lines": [17], "labelled": True, "merged": [u2]}, ref]),
+                                           [lines[0], u2, r2], 1724, 2328, read=lambda b, p: [self._tess_line(junk)])
+        self.assertEqual((got, dropped), ([], set()))
+        # a labelled line the corpus did not match is read again even with its reference beside it
+        calls = []
+        u = _line(17, "ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ", 2031, x0=156, x1=589, h=46)
+        unknown = [grid, {"role": "shabad", "bbox": [156, 2031, 589, 2077], "lines": [17], "labelled": True, "merged": [u]}, ref]
+        self.p29.foot_lines(None, self._lay(unknown), [lines[0], u], 1724, 2328, read=lambda b, p: calls.append(p) or [])
+        self.assertEqual(calls, [4, 6])
+
+    def test_the_second_mode_adds_what_the_first_missed(self):
+        # p. 399: psm 4 reads the reference alone, psm 6 the whole line; the frame's specks under it are no line
+        lines = [_line(14, "ਸ ਰੇ | ਗ ਮ", 1900, h=40)]
+        regions = [{"role": "grid", "bbox": [130, 864, 1620, 1993], "lines": [14]}]
+        words6 = [self._word(t, x0, x1, 2030, 2075) for t, x0, x1 in
+                  (("ਸ਼ਬਦ", 150, 260), (":--", 265, 300), ("ਮਿਲਿ", 320, 400), ("ਮਾਤ", 410, 480), ("ਪਿਤਾ", 490, 570), ("ਪਿੰਡੁ", 580, 660),
+                   ("ਕਮਾਇਆ", 670, 800), ("॥.....", 810, 900), ("[ਮਾਰੂ", 1160, 1250), ("ਮਹਲਾ", 1260, 1340), ("੧,", 1350, 1380),
+                   ("ਅੰਗ-੯੮੯]", 1390, 1560), ("ਕੇ", 1570, 1600))]
+        words4 = [self._word(t, x0, x1, 2030, 2075) for t, x0, x1 in (("[ਮਾਰੂ", 1160, 1250), ("ਮਹਲਾ", 1260, 1340), ("੧,", 1350, 1380), ("ਅੰਗ-੯੮੯]", 1390, 1560))]
+
+        def read(bbox, psm):
+            if psm == 4:
+                return [self._tess_line(words4)]
+            return [self._tess_line(words6, 0.8),
+                    self._tess_line([self._word("656", 150, 200, 2090, 2110), self._word("ਨ-2", 210, 260, 2090, 2110)], 0.3)]
+        got, drop = self.p29.foot_lines(None, self._lay(regions), lines, 1724, 2332, read=read)
+        self.assertEqual([(l["text"], l["psm"]) for l in got], [("[ਮਾਰੂ ਮਹਲਾ ੧, ਅੰਗ-੯੮੯]", 4), ("ਸ਼ਬਦ :-- ਮਿਲਿ ਮਾਤ ਪਿਤਾ ਪਿੰਡੁ ਕਮਾਇਆ ॥.....", 6)])
+        self.assertEqual(drop, set())
+        self.assertEqual(parse_ref(got[0]["text"])["ang_from"], 989)
+
 
 if __name__ == "__main__":
     if "--write-expected" in sys.argv:
