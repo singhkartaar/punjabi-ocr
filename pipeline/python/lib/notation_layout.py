@@ -909,8 +909,10 @@ def _items(layouts: list[dict], style: dict | None = None, prose_breaks: bool = 
             role = r["role"]
             if role == "heading" and _running_header(r, page_h):
                 continue
-            if first and role in ("heading", "text") and _is_running(r, page_h, repeated):
-                continue                                   # "424. ਗੁਰੂ ਅਰਜਨ ਦੇਵ ਰਾਗ ਰਤਨਾਵਲੀ": the book's running header
+            if first and role in ("heading", "text") and _is_running(r, page_h, repeated) \
+                    and not (not prose_breaks and _chapter_heading(r)[1] is not None):
+                continue                                   # "424. ਗੁਰੂ ਅਰਜਨ ਦੇਵ ਰਾਗ ਰਤਨਾਵਲੀ": the book's running header -- but in a
+                                                           # chapter cut "1. SIREE" first on its page, like the running headers after it, is the chapter's
             if role == "heading" and _shabad_heading(r):
                 role = "shabad"
                 r = {**r, "role": "shabad", "kinds": ["heading"], "merged": r.get("merged") or []}
@@ -1358,8 +1360,8 @@ def _chapters(items: list[dict]) -> list[dict]:
     for it in items:
         if it["role"] in ("heading", "text"):
             p = it["region"].get("parsed") or {}
-            if not p.get("section") and not p.get("taal") and (p.get("number") is not None or (it["role"] == "heading" and p.get("raag"))
-                                                                 or _chapter_heading(it["region"])[0] is not None):
+            if not p.get("section") and ((not p.get("taal") and (p.get("number") is not None or (it["role"] == "heading" and p.get("raag"))))
+                                         or _chapter_heading(it["region"])[0] is not None):
                 listy[it["page"]] = listy.get(it["page"], 0) + 1
     list_page = {pg for pg, n in listy.items() if n >= 3}
 
@@ -1393,7 +1395,8 @@ def _chapters(items: list[dict]) -> list[dict]:
             continue
         p = (it["region"].get("parsed") or {}) if it["role"] == "heading" else {}
         listed = it["page"] in list_page
-        num, num_raag = _chapter_heading(it["region"]) if it["role"] in ("heading", "text") and not p.get("section") and not p.get("taal") and not listed else (None, None)
+        # (a taal the parser guessed from the raag's name -- "੧੬. ਆਸਾਵਰੀ" read as sawari -- does not make it a taal heading)
+        num, num_raag = _chapter_heading(it["region"]) if it["role"] in ("heading", "text") and not p.get("section") and not listed else (None, None)
         raag = (p.get("raag") or {}).get("key") if it["role"] == "heading" and not listed and not p.get("taal") and not p.get("section") \
             and len((it["region"].get("text") or "").split()) <= 3 else None
         holds = cur is not None and grid_lines(cur) >= CHAPTER_GRID_LINES

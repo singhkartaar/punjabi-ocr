@@ -1515,6 +1515,24 @@ class RaagChapterTests(unittest.TestCase):
         spans = link_pages(three + [four, grids], merge_style(self.STYLE))
         self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([46, 47, 48], 3), ([50, 51], 4)])
 
+    def test_a_raag_the_parser_takes_for_a_taal_and_a_first_heading_that_looks_like_the_running_header(self):
+        # p. 77: "੧੬. ਆਸਾਵਰੀ" -- the parser hears the taal sawari in the raag's name; the chapter opens all the same.
+        # Sikh Musicology p. 38: "1. SIREE" first on its page, like the running headers "Sikh Musicology / Siree 28" after it
+        fifteen = self._chapter("੧੫", "ਆਸਾ", 74, 1818, "ਸੋ ਦਰੁ ਤੇਰਾ ਕੇਹਾ ਸੋ ਘਰੁ ਕੇਹਾ ਜਿਤੁ ਬਹਿ ਸਰਬ ਸਮਾਲੇ ॥")
+        sixteen = self._chapter("੧੬", "ਆਸਾਵਰੀ", 77, 1950, "ਮੈ ਮਨਿ ਤਨਿ ਪ੍ਰੇਮੁ ਨਾਮੁ ਆਧਾਰੁ ॥")
+        self.assertEqual(parse_heading("੧੬. ਆਸਾਵਰੀ").get("taal", {}).get("key"), "sawari")
+        spans = link_pages(fifteen + sixteen, merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([74, 75, 76], 15), ([77, 78, 79], 16)])
+        eng = self._page(38, [_line(1, "1. SIREE", 200, kind="heading", bold=True, x0=700, x1=1000),
+                              _line(2, "Siree raaga occupies a prime place in the musicological system of Sri Guru Granth Sahib.", 400)])
+        rest = [self._page(39, [_line(1, "Sikh Musicology / Siree 28", 100, x0=200, x1=800), _line(2, "सिरी राग गुरमत संगीत का प्रमुख राग है।", 400)]),
+                self._page(40, [_line(1, "Sikh Musicology / Siree 29", 100, x0=200, x1=800), _line(2, "RAAGA SIREE TEENTAAL", 300, kind="heading", bold=True)] + self._grids(3, 450)),
+                self._page(41, [_line(1, "Sikh Musicology / Siree 30", 100, x0=200, x1=800), _line(2, "राग सिरी तीनताल", 300, kind="heading", bold=True)] + self._grids(3, 450)),
+                self._page(42, [_line(1, "Sikh Musicology / Maajh 31", 100, x0=200, x1=800), _line(2, "2. MAAJH", 300, kind="heading", bold=True, x0=700, x1=1000),
+                                _line(3, "Having roots in punjabi folk music, Raaga Maajh is one of the lesser known.", 400)])]
+        spans = link_pages([eng] + rest, merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([38, 39, 40, 41], 1)])
+
     def test_the_index_after_the_last_chapter_is_not_its_pages(self):
         # pp. 224-225: the back index, pages of short lines with no grid, after the last chapter's grid
         index = [self._page(p, [_line(1, "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ", 300, kind="heading", bold=True, x0=500, x1=1300)]
