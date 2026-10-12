@@ -1363,6 +1363,18 @@ class LabelledShabadTests(unittest.TestCase):
         self.assertEqual([s["ref"]["parsed"]["ang_from"] for s in spans], [793, 1273])
         self.assertEqual([s["sid"] for s in spans], [None, 4594])
 
+    def test_the_reference_alone_at_the_foot_closes_the_pages_notation(self):
+        # p. 140 (whole book, 12 October 2026): the strip gave the bracket, not the words of the verse before it; the
+        # notation is still the page's, and the next page keeps its own
+        a = self._page(140, self._head("ਆਸਾ") + self._grids()
+                       + [_line(8, "[ਆਸਾ ਮਹਲਾ ੫, ਅੰਗ--੩੮੫]", 2050, x0=1131, x1=1557, h=30)])
+        b = self._page(141, self._head("ਆਸਾ") + self._grids()
+                       + [_line(8, "ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ ਜਾਨੈ ॥.....", 2031, x0=156, x1=900, h=46),
+                          _line(9, "[ਸੂਹੀ ਰਵਿਦਾਸ ਜੀ, ਅੰਗ--੭੯੩]", 2032, x0=1100, x1=1560, h=40)])
+        spans = link_pages([a, b], merge_style(self.STYLE))
+        self.assertEqual([s["pages"] for s in spans], [[140], [141]])
+        self.assertEqual([(s.get("ref") or {}).get("parsed", {}).get("ang_from") for s in spans], [385, 793])
+
     def test_what_stands_under_the_shabad_at_the_foot_of_the_page_is_nobodys(self):
         # p. 238's frame and footer read as text under the reference; p. 239's heading not read at all
         m = [{"shabad_id": 4284, "line_id": 1, "score": 0.97, "source": "G"}]
@@ -1454,7 +1466,7 @@ class FootRepairTests(unittest.TestCase):
             calls.append((bbox, psm))
             return [self._tess_line(words)]
         got, drop = self.p29.foot_lines(None, self._lay(regions), lines, 1724, 2328, con=None, read=read)
-        self.assertEqual([(c[1], c[0][1] >= 1979, c[0][0] > 0) for c in calls], [(4, True, True), (6, True, True)])
+        self.assertEqual([(c[1], c[0][1] >= 1979, c[0][0] > 0) for c in calls], [(4, True, True)])   # the label and the reference in hand: no second mode
         self.assertEqual([l["text"] for l in got], ["ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ ਜਾਨੈ ॥.....", "[ਸੂਹੀ ਰਵਿਦਾਸ ਜੀ, ਅੰਗ--੭੯੩1"])
         self.assertEqual(drop, {17})                                   # the half line gives way to the whole one
         self.assertEqual([l["n"] for l in got], [18, 19])
@@ -1488,6 +1500,32 @@ class FootRepairTests(unittest.TestCase):
         self.assertEqual([l["text"] for l in got], ["ਸ਼ਬਦ :-- ਕਲਿਆਨ ਮਹਲਾ ੫॥ ਮਨਿ ਤਨਿ ਜਾਪੀਐ ਭਗਵਾਨ॥ ਗੁਰ ਪੂਰੇ ਸੁਪ੍ਸੰਨ ਭਏ ਸਦਾ ਸੂਖ",
                                                     "ਕਲਿਆਨ ॥੧॥ਰਹਾਉ॥....."])
 
+    def test_the_bands_are_measured_from_the_frame_when_the_last_grid_took_the_foot_line(self):
+        # p. 55 (whole book, 12 October 2026): the grid region runs to 2050, over the foot line at 2012-2099, and the
+        # frame's border is at 2099: the strip under the grid is too thin, the band at the frame's foot reads the line;
+        # the grid's last row above the label is left where it is
+        lines = [_line(14, "ਸ ਰੇ | ਗ ਮ", 1900, h=40), _line(23, "੨॥% ।੦", 1624, x0=190, x1=253, h=393)]
+        regions = [{"role": "grid", "bbox": [154, 455, 1644, 1514], "lines": [10]},
+                   {"role": "grid", "bbox": [150, 1591, 1641, 2050], "lines": [14, 23]}]
+        verse = [self._word(t, x0, x1, 2012, 2084) for t, x0, x1 in
+                 (("ਸ਼ਬਦ", 196, 290), (":--ਗੋਬਿੰਦ", 300, 480), ("ਗੋਬਿੰਦ", 490, 600), ("ਗੋਬਿੰਦ", 610, 700), ("ਮਈ॥....", 710, 751))]
+        bracket = [self._word(t, x0, x1, 2035, 2076) for t, x0, x1 in (("[ਬਿਲਾਵਲੁ", 1118, 1290), ("ਮਹਲਾ", 1300, 1400), ("੫,", 1410, 1450), ("ਅੰਗ-੮੨੨]", 1460, 1584))]
+        row = [self._word(t, x0, x1, 1948, 2012) for t, x0, x1 in (("ਦ਼!", 200, 240), ("5", 300, 320), ("5", 400, 420), ("51", 500, 540))]
+        calls = []
+
+        def read(bbox, psm):
+            calls.append((bbox[1], bbox[3], psm))
+            if bbox[1] > 2012:
+                return []                              # the thin strip under the grid holds nothing whole
+            line = lambda ws: {"bbox": [min(w["bbox"][0] for w in ws), min(w["bbox"][1] for w in ws), max(w["bbox"][2] for w in ws),
+                                        max(w["bbox"][3] for w in ws)], "text": " ".join(w["text"] for w in ws), "words": ws, "conf": 0.9}
+            return [line(row), line(bracket)] if psm == 4 else [line(row), line(verse + bracket)]
+
+        got, drop = self.p29.foot_lines(None, self._lay(regions, body_h=55), lines, 1724, 2328, con=None, read=read, frame=2099)
+        self.assertEqual(calls, [(1978, 2099, 4), (1978, 2099, 6)])      # no strip under the grid (47 px); the second band gives both
+        self.assertEqual([l["text"] for l in got], ["[ਬਿਲਾਵਲੁ ਮਹਲਾ ੫, ਅੰਗ-੮੨੨]", "ਸ਼ਬਦ :--ਗੋਬਿੰਦ ਗੋਬਿੰਦ ਗੋਬਿੰਦ ਮਈ॥...."])
+        self.assertEqual(drop, set())                                     # the grid's row above the label is not touched
+
     def test_nothing_is_read_where_nothing_is_missing(self):
         lines = [_line(14, "ਸ ਰੇ | ਗ ਮ", 1900, h=40)]
         read = lambda bbox, psm: self.fail("read")
@@ -1519,7 +1557,7 @@ class FootRepairTests(unittest.TestCase):
         u = _line(17, "ਸ਼ਬਦ :--ਸਹ ਕੀ ਸਾਰ ਸੁਹਾਗਨਿ", 2031, x0=156, x1=589, h=46)
         unknown = [grid, {"role": "shabad", "bbox": [156, 2031, 589, 2077], "lines": [17], "labelled": True, "merged": [u]}, ref]
         self.p29.foot_lines(None, self._lay(unknown), [lines[0], u], 1724, 2328, read=lambda b, p: calls.append(p) or [])
-        self.assertEqual(calls, [4, 6])
+        self.assertEqual(calls, [4, 6, 4, 6, 4, 6])        # three bands (no frame to measure from), two modes each, nothing kept
 
     def test_the_second_mode_adds_what_the_first_missed(self):
         # p. 399: psm 4 reads the reference alone, psm 6 the whole line; the frame's specks under it are no line

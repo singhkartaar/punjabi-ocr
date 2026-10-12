@@ -157,6 +157,8 @@ def layouts_for(book_dir: str, pages: list[dict], style: dict, force: bool) -> l
 
 _FOOT: dict = {}
 _INK_WORD = re.compile(r"[^\s'\"~`^*_]")                    # a word with anything to it beyond the specks Tesseract reads off a frame
+_REF_SHAPED = re.compile(r"^\W*[\[(].*(?:ਅੰਗ|ਅਗ|ਪੰਨਾ)")                   # a bracketed reference whose number was misread
+_LABEL_WORD = re.compile(r"ਸ਼ਬਦ|ਸਬਦ")                            # the book's label before the shabad, however the rest of the line was read
 _GURMUKHI_WORD = re.compile(r"[\u0a05-\u0a39\u0a59-\u0a5e][\u0a01-\u0a04\u0a3c-\u0a4d\u0a70-\u0a71]*[\u0a05-\u0a39\u0a59-\u0a5e]")   # two letters, matras between
 
 
@@ -238,7 +240,8 @@ def _gives_ref(got: list[dict]) -> bool:
                for l in got)
 
 
-def foot_lines(img, lay: dict, lines: list[dict], page_w: int, page_h: int, con=None, read=None) -> tuple[list[dict], set]:
+def foot_lines(img, lay: dict, lines: list[dict], page_w: int, page_h: int, con=None, read=None,
+               frame: int | None = None) -> tuple[list[dict], set]:
     """
     Sangeet Sagar sets one notation a page inside a decorative frame, the
     shabad on a line at the foot under the grids, its reference at the
@@ -259,21 +262,32 @@ def foot_lines(img, lay: dict, lines: list[dict], page_w: int, page_h: int, con=
     replace. Nothing is read where nothing is missing.
 
     @param read  (bbox, psm) -> Tesseract line records, for the tests; the default reads `img`
+    @param frame the top of the frame's bottom border, for the tests; the default finds it in `img`
     """
     from lib.notation_layout import SHABAD_LABEL
     regions = lay.get("regions") or []
-    h = min(lay.get("body_h") or 40, 60)              # a line's height for the geometry (the merge's median runs wild on a page of few lines)
+    h = min(max(lay.get("body_h") or 40, 30), 60)     # a line's height for the geometry (the merge's median runs wild on a page of few lines)
+    if not any(r["role"] == "grid" for r in regions):
+        return [], set()                           # no notation on the page: nothing at its foot to look for
     # the last grid above the shabad block (a speck of the frame read as a mark on the shabad's own line, or as a
     # grid row under it, is no grid to measure from)
     anchor = min([r["bbox"][1] for r in regions if r["role"] == "shabad"] or [page_h])
     bottoms = [r["bbox"][3] for r in regions if r["role"] in ("grid", "marker") and r["bbox"][1] < anchor - 0.5 * h]
-    if not bottoms:
-        return [], set()
-    y0, y1 = max(bottoms) + 2, int(page_h * 0.95)
-    if img is not None:
-        y1 = min(y1, _frame_top(img, y0, y1, page_w))
-    if y1 - y0 < h:
-        return [], set()
+    cap = int(page_h * 0.95)
+    # the frame's bottom border, looked for over the lower quarter of the page: the last grid region often takes the
+    # foot line, and the border under it, into itself (pp. 55, 62, 140, 151 of the whole book), so the bands are
+    # measured from the border, not from the grid -- the strip under the last grid when it stands clear of the foot,
+    # then the foot of the frame itself, two line heights and a fifteenth of the page tall
+    if frame is None:
+        frame = _frame_top(img, int(page_h * 0.75), cap, page_w) if img is not None else cap
+    bands: list[tuple[int, int]] = []
+    if bottoms and frame - (max(bottoms) + 2) >= h:
+        bands.append((max(bottoms) + 2, frame))
+    for k in (int(2.2 * h), int(page_h * 0.065)):
+        band = (max(0, frame - k), frame)
+        if band not in bands:
+            bands.append(band)
+    y0, y1 = min(b[0] for b in bands), frame
     below = [r for r in regions if r["bbox"][1] >= y0 - 10]
     refs = [r for r in below if r["role"] == "ref" and (r.get("parsed") or {}).get("ang_from")]
     labelled = [r for r in below if r["role"] == "shabad" and r.get("labelled")]
@@ -289,24 +303,37 @@ def foot_lines(img, lay: dict, lines: list[dict], page_w: int, page_h: int, con=
 
         def read(bbox, psm):
             return engine.recognise_region(img, bbox, "pa", psm=psm)
-    bbox = [int(page_w * 0.06), y0, int(page_w * 0.94), y1]
     body = [l for l in lines if l.get("bbox") and l.get("zone") in (None, "body")]
     matched_boxes = [l["bbox"] for l in body if l.get("matches")]
-    taken: list[list] = []                        # the strip words kept so far: the second mode adds only what the first missed
+    taken: list[list] = []                        # the strip words kept so far: a later read adds only what the earlier missed
     out: list[dict] = []
     drop: set = set()
     n = max([l.get("n") or 0 for l in lines] + [0]) + 1
-    for psm in (4, 6):
+
+    def enough() -> bool:                         # the labelled line and a reference are in hand: the other bands have nothing to add
+        return any(_LABEL_WORD.search(l["text"]) for l in out) and (refs or any(_ref_of(l["text"]) for l in out))
+
+    for (b0, b1), psm in ((b, p) for b in bands for p in (4, 6)):
+        if enough():
+            break
         try:
-            got = read(bbox, psm)
+            got = read([int(page_w * 0.06), b0, int(page_w * 0.94), b1], psm)
         except Exception:
             got = []
+        rows = []
         for ln in got:
             words = [w for w in (ln.get("words") or []) if _INK_WORD.search(w.get("text") or "")]
-            if not words:
+            if words:
+                rows.append((ln, words, [min(w["bbox"][0] for w in words), min(w["bbox"][1] for w in words),
+                                         max(w["bbox"][2] for w in words), max(w["bbox"][3] for w in words)]))
+        # the strip's rows above the labelled line (or the reference's row, or, with neither, the lowest line of
+        # text) are the last grid's: a bol row would pass for a line of verse
+        tops = [lbox[1] for ln, words, lbox in rows
+                if _LABEL_WORD.search(ln.get("text") or "") or _gives_ref([{"text": ln.get("text"), "words": words}])]
+        floor = (min(tops) if tops else b1 - 1.6 * h) - 0.4 * h
+        for ln, words, lbox in rows:
+            if lbox[1] < floor:
                 continue
-            lbox = [min(w["bbox"][0] for w in words), min(w["bbox"][1] for w in words),
-                    max(w["bbox"][2] for w in words), max(w["bbox"][3] for w in words)]
             text_len = len(" ".join(w["text"] for w in words))
             # the unmatched merged lines this line covers: its own fragments, when two or more (or one short one)
             frags = [l for l in body if not l.get("matches") and not _ref_of(l.get("text")) and l.get("n") not in drop
@@ -346,8 +373,8 @@ def foot_lines(img, lay: dict, lines: list[dict], page_w: int, page_h: int, con=
         hints = {"ang_from": ref["ang_from"], "ang_to": ref.get("ang_to") or ref["ang_from"]} if ref else None
         unmatched = [x for x in body if x["bbox"][1] >= y0 - 10 and not x.get("matches") and x.get("n") not in drop]
         for l in out + unmatched:
-            if _ref_of(l.get("text")):
-                continue
+            if _ref_of(l.get("text")) or _REF_SHAPED.match(l.get("text") or ""):
+                continue                               # the reference, read right or with its number spoiled: never a line of verse
             text = SHABAD_LABEL.sub("", l.get("text") or "").strip()
             if len(text.replace(" ", "")) < 6:
                 continue
@@ -691,7 +718,10 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
                 continue
             skind = sec.get("kind") or "other"
             counts_by_kind[skind] = counts_by_kind.get(skind, 0) + 1
-            out_sec = {"kind": skind, "n": sec.get("n") or counts_by_kind[skind], "lines": lines}
+            # an unnumbered section after a numbered one of its kind ("ਅੰਤਰਾ 2 ਜੈ ਗੋਪਾਲ", then "ਅੰਤਰਾ ਤਿਨ ਤਾਲ", Ishar
+            # Sangeet Sagar p. 101) takes the next number, not its count: the validator refuses a duplicate
+            used = [s["n"] for s in sections_out if s["kind"] == skind and s.get("n") is not None]
+            out_sec = {"kind": skind, "n": sec.get("n") or max([counts_by_kind[skind]] + [u + 1 for u in used]), "lines": lines}
             if sec.get("label") and sec["label"].get("text"):
                 out_sec["label"] = sec["label"]["text"]
             if sec.get("taal") and (sec["taal"] or {}).get("key"):

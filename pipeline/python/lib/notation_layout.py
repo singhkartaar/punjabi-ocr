@@ -54,7 +54,7 @@ _OTHERS_LABEL = re.compile(r"^\W*ਹੋਰ\s+ਸ਼ਬਦ\b")
 # the book's own label before the shabad ("ਸ਼ਬਦ :-- ਗਉੜੀ ਮਹਲਾ ੫ ॥ ..."): Sangeet Sagar sets it in bold at the foot of
 # every page, under the grids, the reference in brackets at its end ("[ਅੰਗ-੧੯੯]"); Tesseract reads the bold word
 # apart from its line as often as not, and the one-line shabads as fragments (11 October 2026)
-SHABAD_LABEL = re.compile(r"^\W*(?:ਸ਼ਬਦ|ਸਬਦ)\s*(?:[:ਃ=]+\s*[-–—=]*|[-–—]{2,})")
+SHABAD_LABEL = re.compile(r"^(?:\W*\S{1,2}\s+)?\W*(?:ਸ਼ਬਦ|ਸਬਦ)\s*(?:[:ਃ=]+\s*[-–—=]*|[-–—]{2,})")   # one short stray token may precede it ("੬ ਸ਼ਬਦ :--")
 _SHABAD_LABEL_WORD = re.compile(r"^\W*(?:ਸ਼ਬਦ|ਸਬਦ)\W*$")
 _LABEL_TAIL = re.compile(r"^[:ਃ=\-–—]|[।॥]")
 LABEL_BLOCK_LINES = 9                       # a labelled shabad runs this many line heights below its label at most
@@ -174,7 +174,7 @@ def _labelled_block(roles: list[tuple], body_h: int) -> tuple[list[tuple], set]:
             # with the label's colon or dash, or holds a danda
             y0, y1, x1 = line["bbox"][1], line["bbox"][3], line["bbox"][2]
             beside = [o for o, _ in roles if o is not line and o["bbox"][0] >= x1
-                      and min(o["bbox"][3], y1) - max(o["bbox"][1], y0) > 0.5 * (y1 - y0)]
+                      and min(o["bbox"][3], y1) - max(o["bbox"][1], y0) > 0.5 * min(y1 - y0, o["bbox"][3] - o["bbox"][1])]
             if any(_LABEL_TAIL.search((o.get("text") or "").strip()) or _GRANTH_HEADING.search(o.get("text") or "") for o in beside):
                 k0 = k
                 break
@@ -1263,6 +1263,14 @@ def _segments(items: list[dict], after: bool, pairing: bool = False) -> list[dic
             cur["items"].append(it)
             i += 1
             continue
+        if after and role == "ref" and not has(cur, ("shabad",)) and (it["region"].get("parsed") or {}).get("ang_from") \
+                and any(x["role"] == "grid" and x["page"] == it["page"] for x in cur["items"]):
+            # the printed reference at the foot of the grids' own page with no line of verse read above it (p. 140
+            # of Sangeet Sagar: the strip gave the bracket, not the words): the notation ends here all the same
+            cur["items"].append(it)
+            close()
+            i += 1
+            continue
         cur["items"].append(it)
         i += 1
     close()
@@ -1512,7 +1520,11 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
         parsed = (opener or {}).get("parsed") or {}
         counted = has_content and not has_shabad and numbered and "grid" in roles \
             and ((parsed.get("raag") and parsed.get("taal")) or at_number)
-        if not (has_shabad and has_content) and not edge_shabad and not edge_grid and not counted:
+        # the printed reference at the foot of the grids with no line of verse read above it (Sangeet Sagar p. 140, the
+        # strip gave the bracket alone): the notation is still the page's, named by its ang
+        referenced = after and has_content and not has_shabad and "grid" in roles \
+            and any(it["role"] == "ref" and (it["region"].get("parsed") or {}).get("ang_from") for it in seg["items"])
+        if not (has_shabad and has_content) and not edge_shabad and not edge_grid and not counted and not referenced:
             dropped.append({"why": "no-shabad" if not has_shabad else "no-notation", "pages": pages,
                             "roles": sorted(roles), "opened_by": seg.get("opened_by")})
             # a raag's description is where a new section of the book begins: what follows it does not inherit the
