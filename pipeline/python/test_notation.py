@@ -1431,6 +1431,116 @@ class LabelledShabadTests(unittest.TestCase):
         self.assertEqual([s["pages"] for s in spans if s["inherited"]], [])
 
 
+class RaagChapterTests(unittest.TestCase):
+    """
+    style.cut == "raag" (Dr Gurnam Singh's two ratnakars and Sikh Musicology, 12 October 2026): a run of numbered raag
+    chapters, one shabad and its notation each, the description before them; a chapter is cut whole, page by page.
+    """
+    STYLE = {"cut": "raag"}
+
+    def _page(self, page, lines, kind=None, page_h=2800):
+        lay = page_layout(lines, 1800, page_h, merge_style(self.STYLE), page)
+        lay["page_w"], lay["page_h"] = 1800, page_h
+        if kind:
+            lay["kind"] = kind
+        return lay
+
+    @staticmethod
+    def _verse(n, text, y, sid, **kw):
+        return _line(n, text, y, kind="gurbani", matches=[{"shabad_id": sid, "line_id": n * 10, "score": 0.98, "source": "G"}], **kw)
+
+    def _grids(self, n0, y=600):
+        return [_line(n0, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y), _line(n0 + 1, "ਮੋ ਤੀ | ਤ ਮੰ | ਦ ਰ | ਊ ਸ", y + 80),
+                _line(n0 + 2, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 160), _line(n0 + 3, "x ੨ ੦ ੩", y + 240, x0=200, x1=1400)]
+
+    def _chapter(self, n, raag, p0, sid, text):
+        # Sri Guru Granth Sahib Raag Ratnakar: the description page, the shabad page, the grid page
+        desc = self._page(p0, [_line(1, "%s. %s" % (n, raag), 300, kind="heading", bold=True, x0=700, x1=1100),
+                               _line(2, "ਇਹ ਰਾਗ ਗੁਰਮਤਿ ਸੰਗੀਤ ਦਾ ਪ੍ਰਮੁੱਖ ਰਾਗ ਹੈ । ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਵਿਚ ਇਸ ਰਾਗ ਅਧੀਨ ਬਾਣੀ ਦਰਜ ਹੈ ।", 400),
+                               _line(3, "ਆਰੋਹ : ਸ ਰੇ ਮ ਪ ਧ ਸੰ ।", 1200), _line(4, "ਅਵਰੋਹ : ਸੰ ਨੀ ਧ ਪ ਮ ਗ ਰੇ ਸ ।", 1260)], kind="prose")
+        shabad = self._page(p0 + 1, [self._verse(1, text, 500, sid), self._verse(2, "ਤਿਸੁ ਸੇਵੀ ਮਨੁ ਨ ਡੋਲਾਈ ॥ ਸਾਚੈ ਸਬਦਿ ਮਨੁ ਲਾਈ ॥੧॥", 580, sid),
+                                     _line(3, "(ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ, ਪੰਨਾ ੧੪)", 700, x0=1000, x1=1500)])
+        grid = self._page(p0 + 2, [_line(1, "ਰਾਗ %s ਮਹਲਾ ੧ ਤਿੰਨ ਤਾਲ" % raag, 300, kind="heading", bold=True)] + self._grids(2, 450))
+        return [desc, shabad, grid]
+
+    def test_a_chapter_is_its_numbered_heading_to_the_next_cut_whole_with_the_description(self):
+        for text in ("੧. ਸਿਰੀ", "੨੮. ਟੋਡੀ", "1. SIREE", "4. ਆਸਾ ਰਾਗ"):
+            self.assertEqual(classify_line(_line(1, text, 300, kind="heading", bold=True, x0=700, x1=1100)), "heading", text)
+        pages = self._chapter("੧", "ਸਿਰੀ", 32, 54, "ਮੋਤੀ ਤ ਮੰਦਰ ਊਸਰਹਿ ਰਤਨੀ ਤ ਹੋਹਿ ਜੜਾਉ ॥") + self._chapter("੨", "ਮਾਝ", 35, 277, "ਮੇਰਾ ਮਨੁ ਲੋਚੈ ਗੁਰ ਦਰਸਨ ਤਾਈ ॥")
+        dropped = []
+        spans = link_pages(pages, merge_style(self.STYLE), dropped)
+        self.assertEqual([(s["pages"], s["sid"], s["chapter"]) for s in spans], [([32, 33, 34], 54, 1), ([35, 36, 37], 277, 2)])
+        self.assertEqual(spans[0]["description"]["pages"], [32])
+        self.assertTrue(spans[0]["description"]["text"].startswith("੧. ਸਿਰੀ"))
+        self.assertEqual(spans[0]["heading"]["parsed"]["raag"]["key"], "sri_raag")
+        self.assertEqual(spans[0]["ref"]["parsed"]["ang_from"], 14)
+        self.assertEqual(dropped, [])
+
+    def test_the_contents_and_the_raag_table_only_move_the_start_and_the_front_matter_is_no_chapter(self):
+        # the index (pp. 6-9) lists every chapter with a number; the raag table on p. 12 again; the preface has none
+        index = self._page(6, [_line(1, "ਵਿਸ਼ਾ ਸੂਚੀ", 300, kind="heading", bold=True, x0=700, x1=1000)]
+                           + [_line(2 + k, "%d. %s" % (k + 1, r), 500 + 80 * k, kind="heading", bold=True, x0=300, x1=900) for k, r in enumerate(("ਸਿਰੀ ਰਾਗ", "ਮਾਝ ਰਾਗ", "ਗਉੜੀ ਰਾਗ"))])
+        preface = self._page(10, [_line(1, "ਗੁਰਮਤਿ ਸੰਗੀਤ ਪਰੰਪਰਾ", 300, kind="heading", bold=True, x0=600, x1=1200),
+                                  _line(2, "ਗੁਰਮਤਿ ਸੰਗੀਤ ਸ਼ਬਦ ਕੀਰਤਨ ਦੀ ਪਰੰਪਰਾ ਹੈ ਜੋ ਗੁਰੂ ਸਾਹਿਬਾਨ ਨੇ ਆਪ ਤੋਰੀ । ਇਸ ਦਾ ਆਧਾਰ ਰਾਗ ਹੈ ।", 400),
+                                  self._verse(3, "ਕਲਜੁਗ ਮਹਿ ਕੀਰਤਨੁ ਪਰਧਾਨਾ ॥", 600, 3200)], kind="prose")
+        spans = link_pages([index, preface] + self._chapter("੧", "ਸਿਰੀ", 32, 54, "ਮੋਤੀ ਤ ਮੰਦਰ ਊਸਰਹਿ ਰਤਨੀ ਤ ਹੋਹਿ ਜੜਾਉ ॥"), merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["sid"], s["chapter"]) for s in spans], [([32, 33, 34], 54, 1)])
+
+    def test_a_misread_chapter_number_follows_the_sequence(self):
+        # p. 160: "੪੩. ਨਟ" read as "8੩. ਨਟ" (the Gurmukhi four for an eight): the chapter after 42 is 43
+        pages = self._chapter("੪੨", "ਨਟ ਨਾਰਾਇਣ", 157, 3620, "ਮੇਰੇ ਮਨ ਸੇਵ ਸਫਲ ਹਰਿ ਘਾਲ ॥") + self._chapter("8੩", "ਨਟ", 160, 3628, "ਰਾਮ ਹਉ ਕਿਆ ਜਾਨਾ ਕਿਆ ਭਾਵੈ ॥")
+        spans = link_pages(pages, merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([157, 158, 159], 42), ([160, 161, 162], 43)])
+
+    def test_the_index_after_the_last_chapter_is_not_its_pages(self):
+        # pp. 224-225: the back index, pages of short lines with no grid, after the last chapter's grid
+        index = [self._page(p, [_line(1, "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ", 300, kind="heading", bold=True, x0=500, x1=1300)]
+                            + [_line(2 + k, "%s ਰਾਗ" % r, 500 + 160 * k, kind="heading", bold=True, x0=300, x1=600) for k, r in enumerate(("ਸਿਰੀ", "ਮਾਝ", "ਗਉੜੀ", "ਆਸਾ"))]
+                            + [self._verse(10 + k, t, 580 + 160 * k, sid) for k, (t, sid) in enumerate((("ਸ਼ਬਦ ਸੁਰ ਲਿਪੀ : ਮੋਤੀ ਤ ਮੰਦਰ ਊਸਰਹਿ ਰਤਨੀ ਤ ਹੋਹਿ ਜੜਾਉ ॥", 54), ("ਸ਼ਬਦ ਸੁਰ ਲਿਪੀ : ਮੇਰਾ ਮਨੁ ਲੋਚੈ ਗੁਰ ਦਰਸਨ ਤਾਈ ॥", 277)))]
+                            + [_line(20 + k, "੩੨ ੩੫ | ੩੮ ੪੧", 1400 + 70 * k, x0=1300, x1=1500) for k in range(3)])   # the page numbers read as a grid
+                 for p in (224, 225)]
+        pages = self._chapter("੬੨", "ਜੈਜਾਵੰਤੀ", 219, 4901, "ਜੈਜਾਵੰਤੀ ਮਹਲਾ ੯ ॥ ਰਾਮੁ ਸਿਮਰਿ ਰਾਮੁ ਸਿਮਰਿ ਇਹੈ ਤੇਰੈ ਕਾਜਿ ਹੈ ॥") + index
+        spans = link_pages(pages, merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([219, 220, 221], 62)])
+        # two windows: the chapter after a gap keeps its printed number, however far from the one before
+        pages = self._chapter("੩੧", "ਤਿਲੰਗ ਕਾਫੀ", 123, 2790, "ਚੇਤਨਾ ਹੈ ਤਉ ਚੇਤ ਲੈ ਨਿਸਿ ਦਿਨਿ ਮੈ ਪ੍ਰਾਨੀ ॥") + self._chapter("੪੨", "ਨਟ ਨਾਰਾਇਣ", 157, 3620, "ਮੇਰੇ ਮਨ ਸੇਵ ਸਫਲ ਹਰਿ ਘਾਲ ॥")
+        spans = link_pages(pages, merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([123, 124, 125], 31), ([157, 158, 159], 42)])
+
+    def test_a_raag_heading_that_lost_its_number_opens_the_next_chapter_and_an_appendix_of_numbered_lines_is_none(self):
+        # Gur Shabad Raag Ratnakar p. 20: "5. ਗੂਜਰੀ ਰਾਗ" read as "ਗੂਜਰੀ ਰਾਗ" over the shabad and the grid; and Sikh
+        # Musicology p. 296: an appendix listing every raag under a numbered heading with a shred read as a grid
+        four = self._chapter("4", "ਆਸਾ ਰਾਗ", 17, 1818, "ਸੋ ਦਰੁ ਤੇਰਾ ਕੇਹਾ ਸੋ ਘਰੁ ਕੇਹਾ ਜਿਤੁ ਬਹਿ ਸਰਬ ਸਮਾਲੇ ॥")
+        five = self._page(20, [_line(1, "ਗੂਜਰੀ ਰਾਗ", 320, kind="heading", bold=True, x0=700, x1=1000),
+                               self._verse(2, "ਹਰਿ ਕੇ ਜਨ ਸਤਿਗੁਰ ਸਤਪੁਰਖਾ ਬਿਨਉ ਕਰਉ ਗੁਰ ਪਾਸਿ ॥", 300, 1928),
+                               self._verse(3, "ਹਮ ਕੀਰੇ ਕਿਰਮ ਸਤਿਗੁਰ ਸਰਣਾਈ ਕਰਿ ਦਇਆ ਨਾਮੁ ਪਰਗਾਸਿ ॥੧॥", 360, 1928)] + self._grids(4, 600))
+        spans = link_pages(four + [five], merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["sid"], s["chapter"], s["chapter_fixed"]) for s in spans], [([17, 18, 19], 1818, 4, False), ([20], 1928, 5, True)])
+        appendix = self._page(296, [_line(1, "Sikh Musicology / Appendix 2", 100, x0=200, x1=800)]
+                              + [x for k, r in enumerate(("31. Tilang", "1. Siree", "32. Soohee", "2. Maajh"))
+                                 for x in (_line(2 + 2 * k, r, 300 + 160 * k, kind="heading", bold=True, x0=300, x1=700), _line(3 + 2 * k, "S R | G M", 380 + 160 * k, x0=300, x1=500))])
+        spans = link_pages(four + [five, appendix], merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([17, 18, 19], 4), ([20], 5)])
+
+    def test_the_same_number_again_continues_the_chapter_and_a_chapter_with_no_shabad_is_kept(self):
+        # Sikh Musicology: the English page, the Hindi page with the same heading, the grid pages; no line matches
+        eng = self._page(38, [_line(1, "1. SIREE", 300, kind="heading", bold=True, x0=700, x1=1000),
+                              _line(2, "Siree raaga occupies a prime place in the musicological system of Sri Guru Granth Sahib.", 400),
+                              _line(3, "Motee ta mandar oosareh ratnee ta hohi jarhaao.", 900), _line(4, "(Sri Guru Granth Sahib, 14)", 1000, x0=1000, x1=1500)])
+        hin = self._page(39, [_line(1, "1. सिरी", 300, kind="heading", bold=True, x0=700, x1=1000), _line(2, "सिरी राग गुरमत संगीत का प्रमुख राग है।", 400)])
+        grid_e = self._page(40, [_line(1, "RAAGA SIREE TEENTAAL", 300, kind="heading", bold=True)] + self._grids(2, 450))
+        grid_h = self._page(41, [_line(1, "राग सिरी तीनताल", 300, kind="heading", bold=True)] + self._grids(2, 450))
+        nxt = self._page(42, [_line(1, "2. MAAJH", 300, kind="heading", bold=True, x0=700, x1=1000), _line(2, "Having roots in punjabi folk music, Raaga Maajh is one of the lesser known.", 400)])
+        spans = link_pages([eng, hin, grid_e, grid_h, nxt], merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["sid"], s["chapter"]) for s in spans], [([38, 39, 40, 41], None, 1)])
+        self.assertEqual(spans[0]["description"]["pages"], [38, 39])
+        # the ruled table the OCR read nothing of, found from the ink alone (p. 223): a notation all the same
+        for lay in (grid_e, grid_h):
+            lay["regions"] = [r for r in lay["regions"] if r["role"] != "grid"] + [{"role": "grid", "bbox": [100, 450, 1700, 2400], "lines": [], "text": "", "from_ink": True}]
+        spans = link_pages([eng, hin, grid_e, grid_h, nxt], merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([38, 39, 40, 41], 1)])
+
+
 class FootRepairTests(unittest.TestCase):
     """The strip under the last grid read again when the page-level OCR lost the labelled line, its reference, or read it as fragments."""
 

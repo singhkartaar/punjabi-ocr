@@ -180,6 +180,10 @@ def is_heading_like(text: str) -> bool:
     t = (text or "").strip()
     if not t or len(t.split()) > 14 or is_note_like(t):
         return False
+    # "੧. ਸਿਰੀ", "੨੮. ਟੋਡੀ", "1. SIREE": a chapter's number before the raag's name alone (Dr Gurnam Singh's ratnakars)
+    bare = re.sub(r"^\s*[੦-੯0-9]+[.)]\s*", "", t)
+    if bare != t and len(bare.split()) <= 3 and normalise_raag(bare)["method"] == "alias":
+        return True
     if len(re.findall(r"[\u0a05-\u0a39\u0a59-\u0a5e]", t)) < 3:
         return False                                 # 'N..O" \'': fewer than three Gurmukhi letters, no heading
     if section_label(t):

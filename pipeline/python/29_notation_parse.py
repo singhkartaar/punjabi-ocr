@@ -781,13 +781,17 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
         boxes += [r["bbox"] for pg, r in span["shabad"] if pg == p]
         boxes += [r["bbox"] for sec in span["sections"] for pg, r in sec["grids"] + sec["markers"] if pg == p]
         boxes += [ext for (si_, pg), ext in extents.items() if pg == p]
-        if not boxes:
-            continue
         img = page_image(p)
         if img is None:
             continue
         ph, pw = img.shape[:2]
         margin = int(pw * 0.03)
+        if style.get("cut") == "raag":
+            # a chapter is cut whole, page by page: the printed area, the stamp under it left out
+            targets.append(("block", p, [margin, int(ph * 0.02), pw - margin, printed_bottom(book_dir, p, ph)]))
+            continue
+        if not boxes:
+            continue
         targets.append(("block", p, [margin, min(b[1] for b in boxes), pw - margin, max(b[3] for b in boxes)]))
     for si, sec in enumerate(span["sections"]):
         by_page: dict[int, list[list[int]]] = {}
@@ -860,7 +864,53 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
         rec["also"] = also
     rec["source"]["content_hash"] = notation.content_hash(rec)
     rec["shabad"]["raag"] = res["shabad"].get("raag")
+    if style.get("cut") == "raag":
+        rec["chapter"] = span.get("chapter")
+        rec["description"] = span.get("description")
     return rec, images
+
+
+def printed_bottom(book_dir: str, page: int, page_h: int) -> int:
+    """The foot of the page's printed area: above the stamp the merge zoned at the bottom, or 95.5% of the page."""
+    path = os.path.join(book_dir, "merged", "%04d.jsonl" % page)
+    tops = []
+    if os.path.exists(path):
+        _, lines = load_jsonl(path)
+        tops = [l["bbox"][1] for l in lines if l.get("zone") == "stamp" and l.get("bbox") and l["bbox"][1] > 0.85 * page_h]
+    return max(int(page_h * 0.5), (min(tops) - 8) if tops else int(page_h * 0.955))
+
+
+def chapter_shabads(records: list[dict], source_book: str, notations_dir: str) -> int:
+    """
+    style.shabads_from: a chapter with no shabad of its own takes the same
+    chapter's shabad from another book of the same chapters (Sikh Musicology's
+    roman and Devanagari verse matches no corpus line; its 31 chapters are
+    Gur Shabad Raag Ratnakar's 31, in the same order). Method `chapter`,
+    flag `shabad-by-chapter`; a record of no section stays partial. Returns
+    the count filled.
+    """
+    path = os.path.join(notations_dir, source_book, "notations.jsonl")
+    if not os.path.exists(path):
+        print("  shabads_from: no records of %s under %s" % (source_book, notations_dir))
+        return 0
+    _, src = load_jsonl(path)
+    by_chapter: dict[int, dict] = {}
+    for r in src:
+        if r.get("chapter") is not None and (r.get("shabad") or {}).get("shabad_id") is not None and r["chapter"] not in by_chapter:
+            by_chapter[r["chapter"]] = r["shabad"]
+    n = 0
+    for rec in records:
+        ch = rec.get("chapter")
+        if ch is None or rec["shabad"].get("shabad_id") is not None or ch not in by_chapter:
+            continue
+        sh = dict(by_chapter[ch])
+        sh["method"], sh["confidence"] = "chapter", round(min(0.8, float(sh.get("confidence") or 0.8)), 3)
+        rec["shabad"] = sh
+        rec["flags"] = sorted(set(f for f in rec.get("flags") or [] if f != "unresolved-shabad") | {"shabad-by-chapter"})
+        if rec.get("kind") == "non-gurbani":
+            rec["kind"] = "notation" if rec.get("sections") else "partial"
+        n += 1
+    return n
 
 
 def cut_image(img, im: dict, images_dir: str) -> str:
@@ -1072,6 +1122,9 @@ def main():
         all_images.extend({**im, "notation_id": rec["notation_id"]} for im in images)
 
     borrowed = borrow_shabads(records)
+    if style.get("cut") == "raag" and style.get("shabads_from"):
+        by_chapter = chapter_shabads(records, style["shabads_from"], args.notations_dir)
+        print("  shabads_from %s: %d chapter(s) took its shabad" % (style["shabads_from"], by_chapter))
     index = {"pages": [], "entries": [], "matched": 0, "credible": False, "front_pages_read": 0}
     index_use = {"filled": 0, "conflicts": 0, "agreed": 0}
     offset = {"offset": None, "votes": {}, "witnesses": {}, "split": False}

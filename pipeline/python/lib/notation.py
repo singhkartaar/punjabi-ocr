@@ -28,7 +28,7 @@ import re
 from lib.notation_vocab import KOMAL_ALLOWED, RAAGS, SWARA_ORDER, TAALS, TIVRA_ALLOWED, VERSION as VOCAB_VERSION
 
 SCHEMA_VERSION = 1
-PARSER_VERSION = "0.2.7"
+PARSER_VERSION = "0.2.8"
 
 KINDS = ("notation", "partial", "reet-ref", "non-gurbani")
 SCRIPTS = ("gurmukhi", "latin", "devanagari")
@@ -36,21 +36,24 @@ SECTION_KINDS = ("sthai", "antara", "sanchari", "abhog", "alaap", "taan", "tihai
 LINE_KINDS = ("avartan", "free")
 DIVS = (1, 2, 3, 4, 6, 8)
 SOURCES = ("G", "D", "B", "K", "N")
-RESOLVE_METHODS = ("stream+ref+bol", "stream+ref", "stream+bol", "stream", "ref-window", "ref+bol", "bol", "book-ref", "index", "manual", "none")
+RESOLVE_METHODS = ("stream+ref+bol", "stream+ref", "stream+bol", "stream", "ref-window", "ref+bol", "bol", "book-ref", "index", "chapter", "manual", "none")
 FLAGS = frozenset([
     "unresolved-shabad", "weak-shabad", "ref-conflict", "no-shabad-text", "no-section-label",
     "taal-mismatch", "taal-unknown", "raag-unknown", "style-contradiction", "continues-next-page",
     "continued-from-prev", "empty-beat", "unread-cell", "tick-on-non-ma", "diagonal-watermark",
     "partial-grid", "unmatched-text", "taal-changes", "raag-differs", "shabad-by-book-ref",
     "shabad-inherited", "span-capped", "shabad-by-bol", "shabad-by-index", "index-conflict", "long-span",
+    "shabad-by-chapter",
 ])
 DEFAULT_STYLE = {"swar_row": "above", "shabad_position": "before", "matra_row": False,
                  "marker_row": "below", "table": "bars", "labels": False, "script": "gurmukhi",
                  "running_header": None,      # the book's running header text (or a list), dropped at the top of a page
                  "ref_position": "after",     # where the Granth reference stands: after the verse, or before it (Gurmat Sangeet Darpan)
-                 "pairing": None}             # "section": shabads and notations pair by order within a raag section (Guru Nanak Sangeet Padhti Granth)
+                 "pairing": None,             # "section": shabads and notations pair by order within a raag section (Guru Nanak Sangeet Padhti Granth)
+                 "cut": None,                 # "raag": the book is a run of numbered raag chapters, one shabad and its notation each, cut whole with the description (Dr Gurnam Singh)
+                 "shabads_from": None}        # a book key: a chapter with no shabad of its own takes the same chapter's shabad from that book (Sikh Musicology from Gur Shabad Raag Ratnakar)
 STYLE_VALUES = {"swar_row": ("above", "below"), "shabad_position": ("before", "after", "either"), "ref_position": ("after", "before"),
-                "pairing": (None, "section"),
+                "pairing": (None, "section"), "cut": (None, "raag"),
                 "marker_row": ("below", "above", "none"), "table": ("ruled", "bars", "none"),
                 "script": SCRIPTS}
 

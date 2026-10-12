@@ -1,5 +1,5 @@
 {
- "version": "2026.09.3",
+ "version": "2026.10.1",
  "_about": "Raags, taals and notation symbols the keertan books print, keyed once for both the pipeline and the web app. The mirror packages/search-core/src/notation-vocab.json must be byte-identical (tools/sync-notation-vocab.mjs). English aliases marked in `banidb` are the spellings BaniDB's /v2/raags returns; the corpus's shabads.raag is checked against them by a corpus-gated test. Sections carry Devanagari and Latin labels too; a Paluskar book (sam 1, khali +, tali as matra numbers, duration marks under the bols) is not parsed in this version.",
  "raags": [
   {
@@ -78,7 +78,8 @@
      "Gauri",
      "Gaudi",
      "Gori",
-     "Gowri"
+     "Gowri",
+     "Gaorhee"
     ]
    },
    "banidb": "Raag Gauree"
@@ -383,7 +384,8 @@
      "Gujri",
      "Goojaree",
      "Gujari",
-     "Gurjari"
+     "Gurjari",
+     "Goojree"
     ]
    },
    "banidb": "Raag Gujri"
@@ -408,7 +410,8 @@
      "Dayv Gandhaaree",
      "Dev Gandhari",
      "Devgandhari",
-     "Dev Gandhaari"
+     "Dev Gandhaari",
+     "Devgandhaaree"
     ]
    },
    "banidb": "Raag Dayv Gandhaaree"
@@ -431,7 +434,8 @@
      "Raag Bihaagraa",
      "Bihaagraa",
      "Bihagra",
-     "Bihagara"
+     "Bihagara",
+     "Bihaagrhaa"
     ]
    },
    "banidb": "Raag Bihaagraa"
@@ -547,7 +551,8 @@
      "Jaithsree",
      "Jaitsri",
      "Jaitshri",
-     "Jaitsari"
+     "Jaitsari",
+     "Jaitsree"
     ]
    },
    "banidb": "Raag Jaithsree"
@@ -598,7 +603,8 @@
      "Baihaaree",
      "Bairari",
      "Bairadi",
-     "Bairaree"
+     "Bairaree",
+     "Bairaarhee"
     ]
    },
    "banidb": "Raag Baihaaree"
@@ -921,7 +927,8 @@
      "Raag Maalee Gauraa",
      "Maalee Gauraa",
      "Mali Gaura",
-     "Maligaura"
+     "Maligaura",
+     "Maalee Gaorhaa"
     ]
    },
    "banidb": "Raag Maalee Gauraa"
@@ -1027,7 +1034,8 @@
      "Kaydaaraa",
      "Kedara",
      "Kedar",
-     "Kaydaara"
+     "Kaydaara",
+     "Kedaaraa"
     ]
    },
    "banidb": "Raag Kaydaaraa"
@@ -1169,7 +1177,8 @@
      "Kanra",
      "Kanada",
      "Kanhra",
-     "Kanara"
+     "Kanara",
+     "Kaanrhaa"
     ]
    },
    "banidb": "Raag Kaanraa"
@@ -1304,7 +1313,8 @@
      "Jaijaavantee",
      "Jaijaivanti",
      "Jaijaiwanti",
-     "Jaijawanti"
+     "Jaijawanti",
+     "Jaijaawantee"
     ]
    },
    "banidb": "Raag Jaijaavantee"

@@ -798,6 +798,9 @@ def _running_header(region: dict, page_h: int) -> bool:
     text = (region.get("text") or "").strip()
     if p.get("number") is None and len(text.split()) <= 3:
         return True
+    bare = re.sub(r"^\s*[0-9੦-੯]{1,3}[.)]\s*", "", text)
+    if bare != text and len(bare.split()) <= 3 and p.get("number") is not None:
+        return False                    # "੧. ਸਿਰੀ", "30. TILANG": a chapter's number before the raag's name, not a page number
     return bool(re.match(r"^[0-9੦-੯]{1,4}\b", text) or re.search(r"\b[0-9੦-੯]{1,4}\s*$", text))
 
 
@@ -880,7 +883,7 @@ CONTENT_ROLES = ("grid", "section", "marker", "note", "text")     # what makes a
 NOTATION_ROLES = ("grid", "section", "marker")                   # what says the grids have begun
 
 
-def _items(layouts: list[dict], style: dict | None = None) -> list[dict]:
+def _items(layouts: list[dict], style: dict | None = None, prose_breaks: bool = True) -> list[dict]:
     """
     Every region of the pages read, in reading order, as {"page", "role",
     "region", "first"} -- `first` marks the first region of a page. A gap in
@@ -895,10 +898,11 @@ def _items(layouts: list[dict], style: dict | None = None) -> list[dict]:
     for lay in layouts:
         page = lay["page"]
         page_h = lay.get("page_h") or 0
-        if (prev is not None and page != prev + 1) or lay.get("kind") == "prose":
+        prose = lay.get("kind") == "prose" and prose_breaks            # a chapter cut keeps its pages of prose: the raag's description
+        if (prev is not None and page != prev + 1) or prose:
             items.append({"page": page, "role": "break", "region": None, "first": True})
         prev = page
-        if lay.get("kind") == "prose":
+        if prose:
             continue
         first = True
         for r in lay["regions"]:
@@ -1277,6 +1281,103 @@ def _segments(items: list[dict], after: bool, pairing: bool = False) -> list[dic
     return segs
 
 
+_MIXED_DIGITS = re.compile(r"[0-9][੦-੯]|[੦-੯][0-9]")       # "8੩": a Gurmukhi four read as an eight beside a Gurmukhi digit
+CHAPTER_GRID_LINES = 3                                       # a chapter holds a notation once its grids have this many lines
+
+
+def _chapters(items: list[dict]) -> list[dict]:
+    """
+    style.cut == "raag" (Dr Gurnam Singh's ratnakars, Sikh Musicology): the
+    book is a run of numbered raag chapters, one shabad and its notation
+    each, the raag's description before them, and a chapter is everything
+    from its numbered heading to the next one's, cut whole. A numbered
+    heading opens the next chapter once the open one holds a grid (three
+    grid lines); before that (the contents, the raag table, a preface's
+    numbered lines) it only moves the start -- unless its number is the
+    open chapter's own (Sikh Musicology's Hindi page repeats the English
+    heading). A number that breaks the sequence by more than three, or
+    mixes scripts ("8੩" for ੪੩, "531." for 31), is the next in sequence. A
+    heading that names another raag, no taal, with text or verse under it
+    rather than a grid, opens the next chapter unnumbered when the OCR
+    lost the number ("ਗੂਜਰੀ ਰਾਗ", Gur Shabad Raag Ratnakar p. 20). A
+    chapter ends with its last grid page: an index or an appendix read
+    after it is not its pages. A gap in the pages read closes a chapter;
+    what stands before the first numbered heading has no chapter and is
+    dropped later.
+    """
+    segs: list[dict] = []
+    cur: dict | None = None
+    last_closed: int | None = None
+
+    # a page of three headings or more that name a raag or carry a number is a list (the contents, the raag table,
+    # the back index, an appendix of every raag): nothing on it opens a chapter, and its shreds read as grids are no notation
+    listy: dict[int, int] = {}
+    for it in items:
+        if it["role"] == "heading":
+            p = it["region"].get("parsed") or {}
+            if not p.get("section") and not p.get("taal") and (p.get("number") is not None or p.get("raag")):
+                listy[it["page"]] = listy.get(it["page"], 0) + 1
+    list_page = {pg for pg, n in listy.items() if n >= 3}
+
+    def grid_lines(seg) -> int:
+        # a grid found from the ink (a ruled table the OCR read nothing of: Sikh Musicology's) holds a notation as a read one does
+        return sum(max(len(it["region"].get("lines") or []), CHAPTER_GRID_LINES if it["region"].get("from_ink") else 0)
+                   for it in seg["items"] if it["role"] == "grid" and _is_real_grid(it["region"]) and it["page"] not in list_page)
+
+    def close():
+        nonlocal cur, last_closed
+        if cur and cur["items"]:
+            last = max([it["page"] for it in cur["items"] if it["role"] in NOTATION_ROLES and it["page"] not in list_page] or [None])
+            if last is not None:
+                cur["items"] = [it for it in cur["items"] if it["page"] <= last]
+            cur["sid"] = _sid_of([it["region"] for it in cur["items"] if it["role"] == "shabad"])
+            cur["grid_lines"] = grid_lines(cur)
+            if cur["chapter"] is not None and cur["grid_lines"] >= CHAPTER_GRID_LINES:
+                last_closed = cur["chapter"]
+            segs.append(cur)
+        cur = None
+
+    def open_(it, num, fixed=False):
+        nonlocal cur
+        cur = {"items": [it], "sid": None, "after_break": False, "opened_by": "chapter", "chapter": num, "chapter_fixed": fixed,
+               "raag": ((it["region"].get("parsed") or {}).get("raag") or {}).get("key")}
+
+    for i, it in enumerate(items):
+        if it["role"] == "break":
+            close()
+            last_closed = None                  # the sequence is known only across pages read together
+            continue
+        p = (it["region"].get("parsed") or {}) if it["role"] == "heading" else {}
+        listed = it["page"] in list_page
+        num = p.get("number") if not p.get("section") and not listed else None
+        raag = (p.get("raag") or {}).get("key") if it["role"] == "heading" and not listed and not p.get("taal") and not p.get("section") \
+            and len((it["region"].get("text") or "").split()) <= 3 else None
+        holds = cur is not None and grid_lines(cur) >= CHAPTER_GRID_LINES
+        before = cur["chapter"] if (holds and cur.get("chapter") is not None) else last_closed   # the chapter this one follows
+        expected = (before + 1) if before is not None else None
+        if num is not None and (cur is None or cur.get("chapter") != num):
+            fixed = False
+            if expected is not None and num != expected and (_MIXED_DIGITS.search(it["region"].get("text") or "") or abs(num - expected) > 3):
+                num, fixed = expected, True
+            if cur is not None and holds:
+                close()
+                open_(it, num, fixed)
+                continue
+            if cur is None or cur.get("chapter") != num:
+                open_(it, num, fixed)       # nothing of a chapter yet: this heading is the start
+                continue
+        elif num is None and raag and cur is not None and holds and cur.get("raag") and raag != cur["raag"] \
+                and i + 1 < len(items) and items[i + 1]["role"] in ("text", "shabad", "note", "ref"):
+            close()
+            open_(it, expected, fixed=True)
+            continue
+        if cur is None:
+            cur = {"items": [], "sid": None, "after_break": True, "opened_by": None, "chapter": None, "chapter_fixed": False, "raag": None}
+        cur["items"].append(it)
+    close()
+    return segs
+
+
 def _pair_by_section(segs: list[dict]) -> list[dict]:
     """
     style.pairing == "section" (Guru Nanak Sangeet Padhti Granth): the book is
@@ -1470,13 +1571,14 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
     no shabad before them, are kept as partial notations.
     """
     after = style.get("shabad_position") == "after"
-    items = _items(layouts, style)
+    chapters = style.get("cut") == "raag"
+    items = _items(layouts, style, prose_breaks=not chapters)
     if not items:
         return []
     pages_read = sorted({it["page"] for it in items if it["role"] != "break"})
     first_read, last_read = (pages_read[0], pages_read[-1]) if pages_read else (None, None)
     pairing = style.get("pairing") == "section"
-    segs = _segments(items, after, pairing)
+    segs = _chapters(items) if chapters else _segments(items, after, pairing)
     if pairing:
         segs = _pair_by_section(segs)
     # the last item of each run of consecutive pages read (a window ends there, or the book)
@@ -1520,6 +1622,27 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
         parsed = (opener or {}).get("parsed") or {}
         counted = has_content and not has_shabad and numbered and "grid" in roles \
             and ((parsed.get("raag") and parsed.get("taal")) or at_number)
+        if chapters:
+            # a chapter is kept for its grid, shabad or none (Sikh Musicology's roman verse matches nothing; the
+            # shabad comes from the chapter of another book); what has no chapter number or no grid is not one
+            if seg.get("chapter") is None or seg.get("grid_lines", 0) < CHAPTER_GRID_LINES:
+                dropped.append({"why": "no-chapter" if seg.get("chapter") is None else "no-grid", "pages": pages,
+                                "roles": sorted(roles), "opened_by": seg.get("opened_by")})
+                continue
+            span = _span_from_items(seg)
+            span["chapter"] = seg["chapter"]
+            span["chapter_fixed"] = bool(seg.get("chapter_fixed"))
+            lead = []                           # the description: what stands before the shabad or the first real grid
+            for it in seg["items"]:
+                if it["role"] in ("shabad", "section") or (it["role"] == "grid" and _is_real_grid(it["region"])):
+                    break
+                lead.append(it)
+            span["description"] = {"pages": sorted({it["page"] for it in lead}),
+                                   "text": "\n".join((it["region"].get("text") or "").strip() for it in lead if (it["region"].get("text") or "").strip())} if lead else None
+            out.append(span)
+            prev = seg
+            seg_before = seg
+            continue
         # the printed reference at the foot of the grids with no line of verse read above it (Sangeet Sagar p. 140, the
         # strip gave the bracket alone): the notation is still the page's, named by its ang
         referenced = after and has_content and not has_shabad and "grid" in roles \
