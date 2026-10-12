@@ -100,7 +100,9 @@
     "en": [
      "Gauree Guaarayree",
      "Gauri Guareri",
-     "Gauri Gwareri"
+     "Gauri Gwareri",
+     "Gaorhee Guaarairee",
+     "Gaorhee Guaareree"
     ]
    }
   },
@@ -119,7 +121,8 @@
     ],
     "en": [
      "Gauree Chaytee",
-     "Gauri Cheti"
+     "Gauri Cheti",
+     "Gaorhee Chetee"
     ]
    }
   },
@@ -140,7 +143,9 @@
     "en": [
      "Gauree Bairaagan",
      "Gauri Bairagan",
-     "Gauri Bairagni"
+     "Gauri Bairagni",
+     "Gaorhee Bairaaganh",
+     "Gaorhee Bairaagan"
     ]
    }
   },
@@ -160,7 +165,8 @@
     "en": [
      "Gauree Deepkee",
      "Gauri Dipki",
-     "Gauri Deepki"
+     "Gauri Deepki",
+     "Gaorhee Deepkee"
     ]
    }
   },
@@ -182,7 +188,8 @@
      "Gauree Poorbee",
      "Gauri Purbi",
      "Gauri Poorvi",
-     "Gauree Poorbee Deepkee"
+     "Gauree Poorbee Deepkee",
+     "Gaorhee Poorbee"
     ]
    }
   },
@@ -201,7 +208,8 @@
     ],
     "en": [
      "Gauree Maajh",
-     "Gauri Majh"
+     "Gauri Majh",
+     "Gaorhee Maajh"
     ]
    }
   },
@@ -221,7 +229,9 @@
     "en": [
      "Gauree Maalvaa",
      "Gauri Malva",
-     "Gauri Malwa"
+     "Gauri Malwa",
+     "Gaorhee Maalwa",
+     "Gaorhee Maalva"
     ]
    }
   },
@@ -240,7 +250,8 @@
     ],
     "en": [
      "Gauree Maalaa",
-     "Gauri Mala"
+     "Gauri Mala",
+     "Gaorhee Maalaa"
     ]
    }
   },
@@ -259,7 +270,9 @@
     ],
     "en": [
      "Gauree Sorath",
-     "Gauri Sorath"
+     "Gauri Sorath",
+     "Gaorhee Sorathh",
+     "Gaorhee Sorath"
     ]
    }
   },
@@ -279,7 +292,9 @@
     "en": [
      "Gauree Dakhnee",
      "Gauri Dakhni",
-     "Gauri Dakhani"
+     "Gauri Dakhani",
+     "Gaorhee Dakhnee",
+     "Gaorhee Dakhnhee"
     ]
    }
   },
@@ -342,7 +357,8 @@
      "Aasaavaree",
      "Asavari",
      "Asawari",
-     "Aasaavaree Sudhang"
+     "Aasaavaree Sudhang",
+     "Aasaawaree"
     ]
    }
   },
@@ -480,7 +496,9 @@
     "en": [
      "Vadhans Dakhnee",
      "Vadhans Dakhni",
-     "Wadhans Dakhni"
+     "Wadhans Dakhni",
+     "Wadhans Dakhnhee",
+     "Wadhans Dakhnee"
     ]
    }
   },
@@ -753,7 +771,9 @@
     ],
     "en": [
      "Bilaaval Dakhnee",
-     "Bilaval Dakhni"
+     "Bilaval Dakhni",
+     "Bilaawal Dakhnhee",
+     "Bilaawal Dakhnee"
     ]
    }
   },
@@ -772,7 +792,8 @@
     ],
     "en": [
      "Bilaaval Mangal",
-     "Bilaval Mangal"
+     "Bilaval Mangal",
+     "Bilaawal Mangal"
     ]
    }
   },
@@ -788,12 +809,14 @@
     "pa": [
      "ਬਿਲਾਵਲ ਗੋਂਡ",
      "ਬਿਲਾਵਲੁ ਗੋਂਡ",
-     "ਬਿਲਾਵਲ ਗੌਂਡ"
+     "ਬਿਲਾਵਲ ਗੌਂਡ",
+     "ਬਿਲਾਵਲ ਗੋਡ"
     ],
     "en": [
      "Bilaaval Gond",
      "Bilaval Gond",
-     "Bilawal Gaund"
+     "Bilawal Gaund",
+     "Bilaawal Gond"
     ]
    }
   },
@@ -860,7 +883,8 @@
     ],
     "en": [
      "Raamkalee Dakhnee",
-     "Ramkali Dakhni"
+     "Ramkali Dakhni",
+     "Raamkalee Dakhnhee"
     ]
    }
   },
@@ -884,7 +908,8 @@
      "Nat Naaraayan",
      "Nat Narayan",
      "Nat Naraayan",
-     "Nat Naaraaein"
+     "Nat Naaraaein",
+     "Nat Naaraain"
     ]
    },
    "banidb": "Raag Nat Naaraayan"
@@ -928,7 +953,8 @@
      "Maalee Gauraa",
      "Mali Gaura",
      "Maligaura",
-     "Maalee Gaorhaa"
+     "Maalee Gaorhaa",
+     "Maaleegaorhaa"
     ]
    },
    "banidb": "Raag Maalee Gauraa"
@@ -989,7 +1015,8 @@
     ],
     "en": [
      "Maaroo Dakhnee",
-     "Maru Dakhni"
+     "Maru Dakhni",
+     "Maaroo Dakhnhee"
     ]
    }
   },
@@ -1010,7 +1037,8 @@
      "Raag Tukhaari",
      "Tukhaari",
      "Tukhari",
-     "Tukhaaree"
+     "Tukhaaree",
+     "Tookhaaree"
     ]
    },
    "banidb": "Raag Tukhaari"
@@ -1203,7 +1231,8 @@
      "Kalyaan",
      "Kalyan",
      "Kalian",
-     "Kalyaana"
+     "Kalyaana",
+     "Kaliaan"
     ]
    },
    "banidb": "Raag Kalyaan"
@@ -1224,7 +1253,8 @@
     "en": [
      "Kalyaan Bhopaalee",
      "Kalyan Bhopali",
-     "Kalyan Bhupali"
+     "Kalyan Bhupali",
+     "Kaliaan Bhopaalee"
     ]
    }
   },
@@ -1289,7 +1319,8 @@
     ],
     "en": [
      "Prabhaatee Dakhnee",
-     "Prabhati Dakhni"
+     "Prabhati Dakhni",
+     "Prabhaatee Dakhnhee"
     ]
    }
   },

@@ -1285,17 +1285,47 @@ _MIXED_DIGITS = re.compile(r"[0-9][੦-੯]|[੦-੯][0-9]")       # "8੩": a G
 CHAPTER_GRID_LINES = 3                                       # a chapter holds a notation once its grids have this many lines
 
 
-_CHAPTER_NUMBER = re.compile(r"^[\W_]*([0-9੦-੯]{1,3})[.)]\s")
+_CHAPTER_NUMBER = re.compile(r"^[\W_]*(?:\S{1,2}\s+)?([0-9੦-੯]{1,3})[.)]\s*(.*)$")
+_LATIN_NAME = re.compile(r"^[A-Z][A-Z]+(?:\s+[A-Z][A-Z]+){0,3}$")       # "GAORHEE GUAARAIREE": a raag's name in capitals (Sikh Musicology)
 
 
-def _chapter_number(region: dict) -> int | None:
-    """The chapter's number from a heading: as parsed, or read past the junk before it ("___ 14. ਤਿਲੰਗ ਰਾਗ", a rule read as underscores)."""
-    from lib.notation_vocab import gurmukhi_digits
+def _chapter_heading(region: dict) -> tuple[int | None, str | None]:
+    """
+    (number, raag key) of a chapter's heading, or (None, None): a heading region as parsed, or one read past the junk
+    before the number ("___ 14. ਤਿਲੰਗ ਰਾਗ", a rule read as underscores; "ਰ 6. ਦੇਵਗੰਧਾਰੀ ਰਾਗ"), or the first line of a text
+    region the merge glued to the prose under it ("੩੯. ਬਿਲਾਵਲ ਗੋਡ" then the description; "4. GAORHEE GUAARAIREE", whose
+    spelling the vocabulary does not know, so the classifier made no heading of it): a number, then a raag's name of
+    four words at most, known to the vocabulary or set in capitals.
+    """
+    from lib.notation_vocab import gurmukhi_digits, normalise_raag
     p = region.get("parsed") or {}
-    if p.get("number") is not None:
-        return p["number"]
-    m = _CHAPTER_NUMBER.match(region.get("text") or "")
-    return int(gurmukhi_digits(m.group(1))) if m else None
+    if region["role"] == "heading" and p.get("number") is not None and not p.get("section"):
+        return p["number"], (p.get("raag") or {}).get("key")
+    if region["role"] not in ("heading", "text"):
+        return None, None
+    first = ((region.get("text") or "").split("\n")[0]).strip()
+    m = _CHAPTER_NUMBER.match(first)
+    if not m:
+        return None, None
+    rest = re.sub(r"[\s:;,.\-–—]+$", "", m.group(2).strip())
+    words = rest.split()
+    if not words:
+        return None, None
+    number = int(gurmukhi_digits(m.group(1)))
+    # the raag's name: the whole of the rest (four words at most), or its first words when the merge glued the shabad's
+    # first line to the heading ("21. ਮਾਰੂ ਚਾਗ ਗਨਿਕਾ ਹੂ ਗਤਿ")
+    headed = region["role"] == "heading" or (region.get("kinds") or [None])[0] == "heading"
+    for n in range(min(4, len(words)), 0, -1):
+        if n < len(words) and not headed:
+            break                                  # "1. Sri Guru Granth Sahib, Page 83": a footnote, not a heading glued to its line
+        raag = normalise_raag(" ".join(words[:n]))
+        if raag["method"] == "alias":
+            return number, raag["key"]
+    if len(words) <= 4:
+        raag = normalise_raag(rest)
+        if (region["role"] == "heading" and raag["key"]) or _LATIN_NAME.match(rest):
+            return number, raag.get("key")
+    return None, None
 
 
 def _chapters(items: list[dict]) -> list[dict]:
@@ -1326,9 +1356,10 @@ def _chapters(items: list[dict]) -> list[dict]:
     # the back index, an appendix of every raag): nothing on it opens a chapter, and its shreds read as grids are no notation
     listy: dict[int, int] = {}
     for it in items:
-        if it["role"] == "heading":
+        if it["role"] in ("heading", "text"):
             p = it["region"].get("parsed") or {}
-            if not p.get("section") and not p.get("taal") and (p.get("number") is not None or p.get("raag")):
+            if not p.get("section") and not p.get("taal") and (p.get("number") is not None or (it["role"] == "heading" and p.get("raag"))
+                                                                 or _chapter_heading(it["region"])[0] is not None):
                 listy[it["page"]] = listy.get(it["page"], 0) + 1
     list_page = {pg for pg, n in listy.items() if n >= 3}
 
@@ -1350,10 +1381,10 @@ def _chapters(items: list[dict]) -> list[dict]:
             segs.append(cur)
         cur = None
 
-    def open_(it, num, fixed=False):
+    def open_(it, num, fixed=False, raag=None):
         nonlocal cur
         cur = {"items": [it], "sid": None, "after_break": False, "opened_by": "chapter", "chapter": num, "chapter_fixed": fixed,
-               "raag": ((it["region"].get("parsed") or {}).get("raag") or {}).get("key")}
+               "raag": raag or ((it["region"].get("parsed") or {}).get("raag") or {}).get("key")}
 
     for i, it in enumerate(items):
         if it["role"] == "break":
@@ -1362,7 +1393,7 @@ def _chapters(items: list[dict]) -> list[dict]:
             continue
         p = (it["region"].get("parsed") or {}) if it["role"] == "heading" else {}
         listed = it["page"] in list_page
-        num = _chapter_number(it["region"]) if it["role"] == "heading" and not p.get("section") and not listed else None
+        num, num_raag = _chapter_heading(it["region"]) if it["role"] in ("heading", "text") and not p.get("section") and not p.get("taal") and not listed else (None, None)
         raag = (p.get("raag") or {}).get("key") if it["role"] == "heading" and not listed and not p.get("taal") and not p.get("section") \
             and len((it["region"].get("text") or "").split()) <= 3 else None
         holds = cur is not None and grid_lines(cur) >= CHAPTER_GRID_LINES
@@ -1374,10 +1405,10 @@ def _chapters(items: list[dict]) -> list[dict]:
                 num, fixed = expected, True
             if cur is not None and holds:
                 close()
-                open_(it, num, fixed)
+                open_(it, num, fixed, num_raag)
                 continue
             if cur is None or cur.get("chapter") != num:
-                open_(it, num, fixed)       # nothing of a chapter yet: this heading is the start
+                open_(it, num, fixed, num_raag)       # nothing of a chapter yet: this heading is the start
                 continue
         elif num is None and raag and cur is not None and holds and cur.get("raag") and raag != cur["raag"] \
                 and i + 1 < len(items) and items[i + 1]["role"] in ("text", "shabad", "note", "ref"):

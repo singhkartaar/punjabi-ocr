@@ -1498,6 +1498,23 @@ class RaagChapterTests(unittest.TestCase):
         spans = link_pages(pages, merge_style(self.STYLE))
         self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([41, 42, 43], 13), ([44, 45, 46], 14)])
 
+    def test_a_chapter_heading_the_classifier_missed_still_opens_the_chapter(self):
+        # Sikh Musicology p. 50: "4. GAORHEE GUAARAIREE" in a spelling the vocabulary does not know, a line of text;
+        # Sri Guru Granth Sahib Raag Ratnakar p. 147: "੩੯. ਬਿਲਾਵਲ ਗੋਡ" glued to the prose under it; Gur Shabad p. 22: "ਰ 6. ਦੇਵਗੰਧਾਰੀ ਰਾਗ"
+        from lib.notation_layout import _chapter_heading
+        self.assertEqual(_chapter_heading({"role": "text", "text": "4. GAORHEE GUAARAIREE", "lines": [1]}), (4, "gauri_guareri"))
+        self.assertEqual(_chapter_heading({"role": "text", "text": "4. GAQRHEE GUAAREREE", "lines": [1]})[0], 4)
+        self.assertEqual(_chapter_heading({"role": "text", "text": "੩੯. ਬਿਲਾਵਲ ਗੋਡ\nਕੁਝ ਪਰੰਪਰਾਗਤ ਰਾਗ ਹਨ ।", "lines": [1, 2]}), (39, "bilaval_gond"))
+        self.assertEqual(_chapter_heading({"role": "heading", "text": "ਰ 6. ਦੇਵਗੰਧਾਰੀ ਰਾਗ", "parsed": {"raag": {"key": "devgandhari"}}}), (6, "devgandhari"))
+        self.assertEqual(_chapter_heading({"role": "text", "text": "21. ਮਾਰੂ ਚਾਗ ਗਨਿਕਾ ਹੂ ਗਤਿ", "lines": [1], "kinds": ["heading"]}), (21, "maru"))   # the shabad's first line glued on
+        self.assertEqual(_chapter_heading({"role": "text", "text": "2. S,rGrMP,dPdMPN GPMPNS,", "lines": [1]}), (None, None))   # a swar line numbered in the description
+        self.assertEqual(_chapter_heading({"role": "text", "text": "1. Sri Guru Granth Sahib, Page 83", "lines": [1]}), (None, None))
+        three = self._chapter("3", "GAORHEE", 46, None, "Gaorhee raaga is an important raaga of the Sikh musical tradition.")
+        four = self._page(50, [_line(1, "4. GAQRHEE GUAAREREE", 300, x0=700, x1=1100), _line(2, "Gaorhee Guaarairee is a variant of Gaorhee.", 400)])
+        grids = self._page(51, [_line(1, "RAAGA GAORHEE GUAARAIREE TEENTAAL", 300, kind="heading", bold=True)] + self._grids(2, 450))
+        spans = link_pages(three + [four, grids], merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([46, 47, 48], 3), ([50, 51], 4)])
+
     def test_the_index_after_the_last_chapter_is_not_its_pages(self):
         # pp. 224-225: the back index, pages of short lines with no grid, after the last chapter's grid
         index = [self._page(p, [_line(1, "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ", 300, kind="heading", bold=True, x0=500, x1=1300)]
