@@ -1285,6 +1285,19 @@ _MIXED_DIGITS = re.compile(r"[0-9][੦-੯]|[੦-੯][0-9]")       # "8੩": a G
 CHAPTER_GRID_LINES = 3                                       # a chapter holds a notation once its grids have this many lines
 
 
+_CHAPTER_NUMBER = re.compile(r"^[\W_]*([0-9੦-੯]{1,3})[.)]\s")
+
+
+def _chapter_number(region: dict) -> int | None:
+    """The chapter's number from a heading: as parsed, or read past the junk before it ("___ 14. ਤਿਲੰਗ ਰਾਗ", a rule read as underscores)."""
+    from lib.notation_vocab import gurmukhi_digits
+    p = region.get("parsed") or {}
+    if p.get("number") is not None:
+        return p["number"]
+    m = _CHAPTER_NUMBER.match(region.get("text") or "")
+    return int(gurmukhi_digits(m.group(1))) if m else None
+
+
 def _chapters(items: list[dict]) -> list[dict]:
     """
     style.cut == "raag" (Dr Gurnam Singh's ratnakars, Sikh Musicology): the
@@ -1349,7 +1362,7 @@ def _chapters(items: list[dict]) -> list[dict]:
             continue
         p = (it["region"].get("parsed") or {}) if it["role"] == "heading" else {}
         listed = it["page"] in list_page
-        num = p.get("number") if not p.get("section") and not listed else None
+        num = _chapter_number(it["region"]) if it["role"] == "heading" and not p.get("section") and not listed else None
         raag = (p.get("raag") or {}).get("key") if it["role"] == "heading" and not listed and not p.get("taal") and not p.get("section") \
             and len((it["region"].get("text") or "").split()) <= 3 else None
         holds = cur is not None and grid_lines(cur) >= CHAPTER_GRID_LINES

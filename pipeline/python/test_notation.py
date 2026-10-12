@@ -1492,6 +1492,12 @@ class RaagChapterTests(unittest.TestCase):
         spans = link_pages(pages, merge_style(self.STYLE))
         self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([157, 158, 159], 42), ([160, 161, 162], 43)])
 
+    def test_a_chapter_number_behind_junk_the_ocr_read_is_still_the_number(self):
+        # Gur Shabad Raag Ratnakar p. 43: "14. ਤਿਲੰਗ ਰਾਗ" read as "___ 14. ਤਿਲੰਗ ਰਾਗ" (a rule above it); the owner's backlog card
+        pages = self._chapter("13", "ਬੈਰਾੜੀ ਰਾਗ", 41, 2758, "ਹਰਿ ਜਨੁ ਰਾਮ ਨਾਮ ਗੁਨ ਗਾਵੈ ॥") + self._chapter("___ 14", "ਤਿਲੰਗ ਰਾਗ", 44, 2782, "ਜਾਗਿ ਲੇਹੁ ਰੇ ਮਨਾ ਜਾਗਿ ਲੇਹੁ ਕਹਾ ਗਾਫਲ ਸੋਇਆ ॥")
+        spans = link_pages(pages, merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([41, 42, 43], 13), ([44, 45, 46], 14)])
+
     def test_the_index_after_the_last_chapter_is_not_its_pages(self):
         # pp. 224-225: the back index, pages of short lines with no grid, after the last chapter's grid
         index = [self._page(p, [_line(1, "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ", 300, kind="heading", bold=True, x0=500, x1=1300)]
