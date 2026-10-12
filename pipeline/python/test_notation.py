@@ -1533,6 +1533,20 @@ class RaagChapterTests(unittest.TestCase):
         spans = link_pages([eng] + rest, merge_style(self.STYLE))
         self.assertEqual([(s["pages"], s["chapter"]) for s in spans], [([38, 39, 40, 41], 1)])
 
+    def test_the_running_header_names_the_chapter_whose_heading_was_not_read(self):
+        # p. 35: "੨. ਮਾਝ" not read at all; the running header "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ/ਮਾਝ/30" over the description names it
+        one = self._chapter("੧", "ਸਿਰੀ", 32, 54, "ਮੋਤੀ ਤ ਮੰਦਰ ਊਸਰਹਿ ਰਤਨੀ ਤ ਹੋਹਿ ਜੜਾਉ ॥")
+        for lay, n in zip(one, (28, 29, 30)):
+            lay["regions"].insert(0, {"role": "heading", "bbox": [300, 180, 1500, 230], "lines": [0], "text": "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ/ਸਿਰੀ/%d" % n, "parsed": {}})
+        two = [self._page(35, [_line(1, "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ/ਮਾਝ/30", 180, kind="heading", x0=300, x1=1500, h=50),
+                               _line(2, "ਪੰਜਾਬੀ ਲੋਕ ਸੰਗੀਤ ਤੋਂ ਵਿਕਸਿਤ ਰਾਗ ਮਾਝ, ਅਪ੍ਰਚਲਿਤ ਤੇ ਜਟਿਲ ਹੁੰਦਿਆਂ ਵੀ ਗਾਇਨ ਹਿਤ ਰੰਜਕ ਰਾਗ ਹੈ ।", 507),
+                               _line(3, "ਆਰੋਹ : ਸ ਰੇ ਮ ਪ ਧ ਸੰ ।", 1200), _line(4, "ਅਵਰੋਹ : ਸੰ ਨੀ ਧ ਪ ਮ ਗ ਰੇ ਸ ।", 1260)], kind="prose")] \
+            + self._chapter("੨", "ਮਾਝ", 35, 277, "ਮੇਰਾ ਮਨੁ ਲੋਚੈ ਗੁਰ ਦਰਸਨ ਤਾਈ ॥")[1:]
+        spans = link_pages(one + two, merge_style(self.STYLE))
+        self.assertEqual([(s["pages"], s["chapter"], s["chapter_fixed"], (s["heading"]["parsed"].get("raag") or {}).get("key")) for s in spans],
+                         [([32, 33, 34], 1, False, "sri_raag"), ([35, 36, 37], 2, True, "majh")])
+        self.assertFalse(spans[1]["description"]["text"].startswith("ਸ੍ਰੀ ਗੁਰੂ"))
+
     def test_the_index_after_the_last_chapter_is_not_its_pages(self):
         # pp. 224-225: the back index, pages of short lines with no grid, after the last chapter's grid
         index = [self._page(p, [_line(1, "ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ", 300, kind="heading", bold=True, x0=500, x1=1300)]

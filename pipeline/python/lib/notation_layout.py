@@ -908,11 +908,19 @@ def _items(layouts: list[dict], style: dict | None = None, prose_breaks: bool = 
         for r in lay["regions"]:
             role = r["role"]
             if role == "heading" and _running_header(r, page_h):
-                continue
+                if prose_breaks:
+                    continue
+                items.append({"page": page, "role": "runhead", "region": r, "first": first, "top": True})
+                first = False
+                continue                                   # a chapter cut keeps the header for the raag it names
             if first and role in ("heading", "text") and _is_running(r, page_h, repeated) \
                     and not (not prose_breaks and _chapter_heading(r)[1] is not None):
-                continue                                   # "424. ਗੁਰੂ ਅਰਜਨ ਦੇਵ ਰਾਗ ਰਤਨਾਵਲੀ": the book's running header -- but in a
-                                                           # chapter cut "1. SIREE" first on its page, like the running headers after it, is the chapter's
+                # "424. ਗੁਰੂ ਅਰਜਨ ਦੇਵ ਰਾਗ ਰਤਨਾਵਲੀ": the book's running header -- but in a chapter cut "1. SIREE" first on its
+                # page, like the running headers after it, is the chapter's; and the header itself stays, as `runhead`,
+                # for the raag it names when the chapter's own heading was not read
+                if prose_breaks:
+                    continue
+                role = "runhead"
             if role == "heading" and _shabad_heading(r):
                 role = "shabad"
                 r = {**r, "role": "shabad", "kinds": ["heading"], "merged": r.get("merged") or []}
@@ -1305,8 +1313,11 @@ def _chapter_heading(region: dict) -> tuple[int | None, str | None]:
         return p["number"], (p.get("raag") or {}).get("key")
     if region["role"] not in ("heading", "text"):
         return None, None
-    first = ((region.get("text") or "").split("\n")[0]).strip()
-    m = _CHAPTER_NUMBER.match(first)
+    m = None
+    for first in (region.get("text") or "").split("\n")[:3]:          # the merge may put the prose before the heading's line
+        m = _CHAPTER_NUMBER.match(first.strip())
+        if m:
+            break
     if not m:
         return None, None
     rest = re.sub(r"[\s:;,.\-–—]+$", "", m.group(2).strip())
@@ -1328,6 +1339,25 @@ def _chapter_heading(region: dict) -> tuple[int | None, str | None]:
         if (region["role"] == "heading" and raag["key"]) or _LATIN_NAME.match(rest):
             return number, raag.get("key")
     return None, None
+
+
+def _header_raag(region: dict) -> dict | None:
+    """
+    The raag a running header names between slashes ("ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਰਾਗ ਰਤਨਾਕਰ/ਮਾਝ/30", "Sikh Musicology / Siree 27"),
+    as parse_heading would give it, or None.
+    """
+    from lib.notation_vocab import normalise_raag
+    text = region.get("text") or ""
+    if "/" not in text:
+        return None
+    for part in text.split("/")[1:]:
+        name = re.sub(r"[0-9੦-੯?।.,:]+", " ", part).strip()
+        if not name or len(name.split()) > 3:
+            continue
+        got = normalise_raag(name)
+        if got["method"] == "alias" and got["key"]:
+            return {"printed": name, "key": got["key"], "parent_key": got.get("parent"), "confidence": got["confidence"]}
+    return None
 
 
 def _chapters(items: list[dict]) -> list[dict]:
@@ -1418,6 +1448,16 @@ def _chapters(items: list[dict]) -> list[dict]:
             close()
             open_(it, expected, fixed=True)
             continue
+        elif num is None and it["role"] in ("runhead", "heading") and cur is not None and holds and expected is not None \
+                and i + 1 < len(items) and items[i + 1]["role"] == "text" and not listed:
+            # the running header names the chapter's raag ("…/ਮਾਝ/30"): another raag than the open chapter's, over prose, where
+            # the chapter's own heading was not read at all (Sri Guru Granth Sahib Raag Ratnakar pp. 35, 89)
+            hr = _header_raag(it["region"])
+            if hr and cur.get("raag") and hr["key"] != cur["raag"]:
+                close()
+                head = {**it, "role": "heading", "region": {**it["region"], "role": "heading", "parsed": {**(it["region"].get("parsed") or {}), "raag": hr, "taal": None, "number": None}}}
+                open_(head, expected, fixed=True, raag=hr["key"])
+                continue
         if cur is None:
             cur = {"items": [], "sid": None, "after_break": True, "opened_by": None, "chapter": None, "chapter_fixed": False, "raag": None}
         cur["items"].append(it)
@@ -1685,7 +1725,9 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
                     break
                 lead.append(it)
             span["description"] = {"pages": sorted({it["page"] for it in lead}),
-                                   "text": "\n".join((it["region"].get("text") or "").strip() for it in lead if (it["region"].get("text") or "").strip())} if lead else None
+                                   "text": "\n".join((it["region"].get("text") or "").strip() for it in lead
+                                                      if it["role"] != "runhead" and not _header_raag(it["region"])
+                                                      and (it["region"].get("text") or "").strip())} if lead else None
             out.append(span)
             prev = seg
             seg_before = seg
