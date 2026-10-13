@@ -423,6 +423,19 @@ def write_jsonl(path: str, meta: dict, records: list[dict]) -> None:
     os.replace(tmp, path)
 
 
+def merge_partial(existing: list[dict], fresh: list[dict], pages: set[int]) -> list[dict]:
+    """
+    A re-read of some pages (29 --pages) merged into a book's records: the
+    existing records that touch none of `pages` stay, the fresh ones take
+    the place of those that did, in page order. Give whole notations' pages
+    (a chapter's three, not one of them), or the fresh cut is the window's.
+    """
+    kept = [r for r in existing if not (set(r.get("pages") or []) & set(pages))]
+    out = kept + list(fresh)
+    out.sort(key=lambda r: (r.get("page") or (r.get("pages") or [0])[0], r.get("seq") or 0))
+    return out
+
+
 def read_jsonl(path: str) -> tuple[dict, list[dict]]:
     with open(path, encoding="utf-8") as fh:
         rows = [json.loads(line) for line in fh if line.strip()]

@@ -1046,9 +1046,14 @@ def main():
         sys.exit(1 if got["mismatch"] or got["no_page"] else 0)
     style = merge_style(pages_meta.get("style"))
     pages = pages_meta["pages"]
-    if args.pages:
+    wanted: set[int] = set()
+    partial = bool(args.pages)
+    if partial:
+        # a few pages re-read (the failed cards' pages after a reader change): their records replace the book's on those
+        # pages, the rest stay, the index and the raag notes are not touched
         wanted = {i + 1 for i in parse_pages(args.pages, max(p["page"] for p in pages))}
         pages = [p for p in pages if p["page"] in wanted]
+        args.no_index = True
     page_files = {p["page"]: p["file"] for p in pages}
     author = pages_meta.get("author") or "Unknown"
     book = {"key": args.book, "author": author, "author_key": notation_slug(author),
@@ -1147,6 +1152,8 @@ def main():
     if not args.no_review:
         from lib.notation_review import apply_review, read_ledger
         ledger = read_ledger(args.book)
+        if partial:
+            ledger = {k: e for k, e in ledger.items() if set(e.get("pages") or []) & wanted}    # the other pages' fixtures are not "lost"
         if ledger:
             review = apply_review(records, ledger, images_dir, whole_pages=style.get("cut") in ("raag", "page"))
             records = review.pop("records")
@@ -1155,18 +1162,35 @@ def main():
                 for im in r["images"]:
                     if not any(x["notation_id"] == r["notation_id"] and x["n"] == im["n"] for x in all_images):
                         all_images.append({**im, "notation_id": r["notation_id"]})
-    raag_notes = raag_records(raag_descriptions(layouts), args.book, book_dir, images_dir, page_files)
-    with open(os.path.join(out_dir, "raags.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
-        fh.write(json.dumps({"_meta": {"book": args.book, "raag_notes": len(raag_notes)}}, ensure_ascii=False) + "\n")
-        for note in raag_notes:
-            fh.write(json.dumps(note, ensure_ascii=False) + "\n")
+    raag_notes = raag_records(raag_descriptions(layouts), args.book, book_dir, images_dir, page_files) if not partial else []
+    merged = None
+    if partial:
+        old_meta, old_records = notation.read_jsonl(os.path.join(out_dir, "notations.jsonl")) if os.path.exists(os.path.join(out_dir, "notations.jsonl")) else ({}, [])
+        old_images = []
+        if os.path.exists(os.path.join(out_dir, "images.json")):
+            with open(os.path.join(out_dir, "images.json"), encoding="utf-8") as fh:
+                old_images = json.load(fh).get("files") or []
+        replaced = [r["notation_id"] for r in old_records if set(r.get("pages") or []) & wanted]
+        records = notation.merge_partial(old_records, records, wanted)
+        keep_ids = {r["notation_id"] for r in records}
+        all_images = [im for im in old_images if im["notation_id"] in keep_ids and im["notation_id"] not in {x["notation_id"] for x in all_images}] + all_images
+        merged = {"pages": sorted(wanted), "replaced": replaced, "kept": len(old_records) - len(replaced), "old_meta": old_meta}
+        print("  partial: %d page(s) re-read, %d record(s) replaced (%s), %d kept" % (len(wanted), len(replaced), ", ".join(replaced), merged["kept"]))
+    if not partial:
+        with open(os.path.join(out_dir, "raags.jsonl"), "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(json.dumps({"_meta": {"book": args.book, "raag_notes": len(raag_notes)}}, ensure_ascii=False) + "\n")
+            for note in raag_notes:
+                fh.write(json.dumps(note, ensure_ascii=False) + "\n")
     kinds = {}
     for r in records:
         kinds[r["kind"]] = kinds.get(r["kind"], 0) + 1
     meta = notation.meta_for({"book": args.book, "author": author, "title": book["title"], "part": book.get("part"),
                               "language": pages_meta.get("language"), "style": style},
-                             pages=len(pages), pages_notation=sum(1 for l in layouts if l["kind"] == "notation"),
-                             pages_prose=sum(1 for l in layouts if l["kind"] == "prose"),
+                             pages=(merged["old_meta"].get("pages") if merged and merged["old_meta"].get("pages") else len(pages)),
+                             pages_notation=(merged["old_meta"].get("pages_notation") if merged and merged["old_meta"].get("pages_notation") is not None
+                                             else sum(1 for l in layouts if l["kind"] == "notation")),
+                             pages_prose=(merged["old_meta"].get("pages_prose") if merged and merged["old_meta"].get("pages_prose") is not None
+                                          else sum(1 for l in layouts if l["kind"] == "prose")),
                              notations=len(records), kinds=kinds,
                              resolved=sum(1 for r in records if r["shabad"]["shabad_id"] is not None),
                              built=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
@@ -1181,6 +1205,7 @@ def main():
                         "entries": len(index["entries"]), "shabad_entries": sum(1 for e in index["entries"] if e["kind"] == "shabad"),
                         "matched": index["matched"], "page_offset": offset, "raag_starts": len(index.get("raag_starts", [])),
                         "missing": missing, **index_use},
+              "partial": ({"pages": merged["pages"], "replaced": merged["replaced"], "kept": merged["kept"]} if merged else None),
               "long_spans": [r["notation_id"] for r in records if "long-span" in r["flags"]],
               "review": review,
               "commit": code_commit(),

@@ -1461,6 +1461,20 @@ class LabelledShabadTests(unittest.TestCase):
         self.assertEqual([s["pages"] for s in spans if s["inherited"]], [])
 
 
+class PartialRunTests(unittest.TestCase):
+    """29 --pages (13 October 2026, the owner: re-parse only the failed ones): the pages re-read replace the book's records on those pages, the rest stay."""
+
+    def test_the_re_read_pages_replace_their_records_and_the_rest_stay_in_page_order(self):
+        from lib.notation import merge_partial
+        old = [{"notation_id": "b:0010:1", "page": 10, "seq": 1, "pages": [10]}, {"notation_id": "b:0011:1", "page": 11, "seq": 1, "pages": [11, 12]},
+               {"notation_id": "b:0013:1", "page": 13, "seq": 1, "pages": [13]}, {"notation_id": "b:0013:2", "page": 13, "seq": 2, "pages": [13]}]
+        fresh = [{"notation_id": "b:0011:1", "page": 11, "seq": 1, "pages": [11, 12]}, {"notation_id": "b:0013:1", "page": 13, "seq": 1, "pages": [13]}]
+        got = merge_partial(old, fresh, {11, 12, 13})
+        self.assertEqual([r["notation_id"] for r in got], ["b:0010:1", "b:0011:1", "b:0013:1"])
+        self.assertIs(got[1], fresh[0]); self.assertIs(got[0], old[0])
+        self.assertEqual([r["notation_id"] for r in merge_partial(old, [], {12})], ["b:0010:1", "b:0013:1", "b:0013:2"])   # a page of a two-page record: the record goes
+
+
 class PageCutTests(unittest.TestCase):
     """
     style.cut == "page" (Sangeet Sagar, 13 October 2026): every framed page is one notation -- the theory, the grids,
