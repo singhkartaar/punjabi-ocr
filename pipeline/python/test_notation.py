@@ -1431,6 +1431,113 @@ class LabelledShabadTests(unittest.TestCase):
         self.assertEqual([s["pages"] for s in spans if s["inherited"]], [])
 
 
+class PageCutTests(unittest.TestCase):
+    """
+    style.cut == "page" (Sangeet Sagar, 13 October 2026): every framed page is one notation -- the theory, the grids,
+    the foot line -- whatever the reader made of the lines inside it.
+    """
+    STYLE = {"shabad_position": "after", "cut": "page", "running_header": "ਸੰਗੀਤ ਸਾਗਰ"}
+
+    def _page(self, page, lines, page_h=2322):
+        lay = page_layout(lines, 1724, page_h, merge_style(self.STYLE), page)
+        lay["page_w"], lay["page_h"] = 1724, page_h
+        return lay
+
+    def _theory(self, raag="ਪਹਾੜੀ"):
+        return [_line(1, "ਸੰਗੀਤ ਸਾਗਰ (੬੧) %s" % raag, 50, x0=200, x1=1500, h=40),
+                _line(2, "ਥਿਊਰੀ", 180, kind="heading", bold=True, x0=780, x1=920),
+                _line(3, "ਰਾਗ :--%s" % raag, 260, bold=True, x0=160, x1=600), _line(4, "ਥਾਟ :--ਬਿਲਾਵਲ", 260, bold=True, x0=800, x1=1200),
+                _line(5, "ਵਾਦੀ :--ਸ", 320, x0=160, x1=400), _line(6, "ਜਾਤੀ :--ਔੜਵ-ਔੜਵ", 380, x0=160, x1=600),
+                _line(7, "ਆਰੋਹ :--ਸ, ਰ ਗ ਪ, ਧ ਸੰ।", 440, x0=160, x1=700), _line(8, "ਅਵਰੋਹ :--ਸੰ ਧ ਪ, ਗ ਰ ਸ।", 500, x0=160, x1=700),
+                _line(9, "ਤਾਲ :--ਛੋਟਾ ਕਹਰਵਾ", 560, x0=1100, x1=1500)]
+
+    def _head(self, raag="ਸਾਰੰਗ", taal="ਤਿੰਨ"):
+        return [_line(1, "ਸੰਗੀਤ ਸਾਗਰ (੧੬੩) %s" % raag, 50, x0=200, x1=1500, h=40),
+                _line(2, "ਰਾਗ :--%s" % raag, 180, bold=True, x0=600, x1=1100), _line(3, "ਤਾਲ :--%s" % taal, 260, x0=1200, x1=1500)]
+
+    def _grids(self, n0, y, label="*ਸਥਾਈ*"):
+        return [_line(n0, label, y, bold=True, x0=750, x1=900), _line(n0 + 1, "ਸ ਰੇ | ਗ ਮ | ਪ — | ਧ ਨੀ", y + 70),
+                _line(n0 + 2, "ਮਾ ਈ | ਮੈ ऽ | ਕਿ ਹਿ | ਬਿ ਧਿ", y + 150), _line(n0 + 3, "ਪ ਪ | ਧ ਨੀ | ਸੰ — | ਨੀ ਧ", y + 230),
+                _line(n0 + 4, "x ੨ ੦ ੩", y + 310, x0=200, x1=1400)]
+
+    @staticmethod
+    def _foot(n0, text, sid, ref, y=2030):
+        m = [{"shabad_id": sid, "line_id": sid * 10, "score": 0.97, "source": "G"}]
+        return [_line(n0, "ਸ਼ਬਦ :--%s ॥....." % text, y, kind="gurbani", matches=m, x0=156, x1=900, h=46),
+                _line(n0 + 1, ref, y + 2, x0=1100, x1=1560, h=40)]
+
+    def _notation_page(self, page, raag, sid, text, ref, stray=None):
+        lines = self._theory(raag) + self._grids(10, 640) + self._grids(15, 1000, "*ਜੋੜ*")
+        if stray:
+            # a bol row of the antra read as a line of verse of some other shabad (p. 164 was cut in three at such lines)
+            lines += [_line(20, stray, 1340, kind="gurbani", matches=[{"shabad_id": 999, "line_id": 9990, "score": 0.9, "source": "G"}], x0=160, x1=900, h=46)]
+        return self._page(page, lines + self._grids(21, 1400, "*ਅੰਤਰਾ*") + self._foot(26, text, sid, ref))
+
+    def test_a_page_is_one_notation_whatever_is_read_inside_it(self):
+        a = self._notation_page(62, "ਪਹਾੜੀ", 2542, "ਹਮ ਭੀਖਕ ਭੇਖਾਰੀ ਤੇਰੇ ਤੂ ਨਿਜ ਪਤਿ ਹੈ ਦਾਤਾ", "[ਰਾਗੁ ਧਨਾਸਿਰੀ ਮਹਲਾ ੩, ਅੰਗ--੬੬੬]", stray="ਸੰਤ ਮੁਖਿ ਹਰਿ ਲੈਣ ਨਾ ਨਾ ਨਾ")
+        b = self._notation_page(63, "ਮੇਘ ਮਲਾਰ", 4571, "ਬਰਸੁ ਮੇਘ ਜੀ ਤਿਲੁ ਬਿਲਮੁ ਨ ਲਾਉ", "[ਮਲਾਰ ਮਹਲਾ ੫, ਅੰਗ--੧੨੬੭]", stray="ਕਵਨ ਗੁਨ ਪ੍ਰਾਨਪਤਿ ਮਿਲਉ ਮੇਰੀ ਮਾਈ")
+        dropped = []
+        spans = link_pages([a, b], merge_style(self.STYLE), dropped)
+        self.assertEqual([s["pages"] for s in spans], [[62], [63]])
+        self.assertEqual([s["sid"] for s in spans], [2542, 4571])
+        self.assertEqual([s["ref"]["parsed"]["ang_from"] for s in spans], [666, 1267])
+        self.assertEqual(dropped, [])
+        self.assertIn("ਆਰੋਹ", spans[0]["description"]["text"])          # the theory rides with the page
+        self.assertNotIn("ਸੰਗੀਤ ਸਾਗਰ", spans[0]["description"]["text"])  # the running header does not
+        self.assertEqual(spans[0]["extent"][62][1], 50)                 # from the top of the page ...
+        self.assertGreaterEqual(spans[0]["extent"][62][3], 2070)        # ... to the reference at its foot
+        # the same two pages with the plain shabad-after reading: the stray line cut the first page in two
+        plain = merge_style({"shabad_position": "after"})
+        self.assertGreater(len(link_pages([a, b], plain)), 2)
+
+    def test_a_page_of_grids_whose_foot_line_was_not_read_is_a_notation_of_its_own(self):
+        # pp. 86 and 87 are two notations of Mishrat Pahari, in dadra and in chanchal: a page never runs into the next
+        a = self._page(86, self._head("ਮਿਸ਼ਰਤ ਪਹਾੜੀ", "ਦਾਦਰਾ") + self._grids(4, 400) + self._grids(9, 800, "*ਅੰਤਰਾ*"))      # the strip read nothing of the foot
+        b = self._page(87, self._grids(1, 300) + self._grids(6, 700, "*ਅੰਤਰਾ*")                                    # the heading not read either
+                       + self._foot(11, "ਪੰਜਿ ਪਿਆਲੇ ਪੰਜਿ ਪੀਰ ਛਠਮੁ ਪੀਰੁ ਬੈਠਾ ਗੁਰੁ ਭਾਰੀ", 535, "[ਭਾਈ ਗੁਰਦਾਸ ਜੀ, ਵਾਰ-੧, ਪਉੜੀ-੪੮]"))
+        c = self._notation_page(88, "ਸਾਰੰਗ", 4284, "ਮਨ ਕਹਾ ਲੁਭਾਈਐ ਆਨ ਕਉ", "[ਸਾਰਗ ਮਹਲਾ ੫, ਅੰਗ-੧੨੦੮]")
+        dropped = []
+        spans = link_pages([a, b, c], merge_style(self.STYLE), dropped)
+        self.assertEqual([s["pages"] for s in spans], [[86], [87], [88]])
+        self.assertEqual([s["sid"] for s in spans], [None, 535, 4284])
+        self.assertEqual([s["continued"] for s in spans], [False, False, False])
+        self.assertEqual(dropped, [])
+
+    def test_a_page_whose_grid_rows_were_read_as_nothing_but_their_markers_is_still_its_shabads_notation(self):
+        # p. 70: no grid region at all, the marker row, the foot line and its reference -- kept, as the plain reading kept it
+        lines = self._head("ਆਸਾ") + [_line(4, "x ੨ ੦ ੩", 700, x0=200, x1=1400), _line(5, "x ੨ ੦ ੩", 1100, x0=200, x1=1400)] \
+            + self._foot(6, "ਸੋ ਕਿਉ ਮਨਹੁ ਵਿਸਾਰੀਐ ਜਾ ਕੇ ਜੀਅ ਪਰਾਣ", 2838, "[ਆਸਾ ਮਹਲਾ ੧, ਅੰਗ-੩੫੬]")
+        dropped = []
+        spans = link_pages([self._page(70, lines)], merge_style(self.STYLE), dropped)
+        self.assertEqual([(s["pages"], s["sid"]) for s in spans], [([70], 2838)])
+        self.assertEqual(dropped, [])
+
+    def test_the_reference_is_the_foots_not_a_shred_of_the_grid(self):
+        lines = self._theory("ਮੇਘ ਮਲਾਰ") + self._grids(10, 640) + [_line(15, "[ਚਾ 5]", 1000, x0=400, x1=500, h=30)] \
+            + self._grids(16, 1100, "*ਅੰਤਰਾ*") + self._foot(21, "ਬਰਸੁ ਮੇਘ ਜੀ ਤਿਲੁ ਬਿਲਮੁ ਨ ਲਾਉ", 4571, "[ਮਲਾਰ ਮਹਲਾ ੫, ਅੰਗ--੧੨੬੭]")
+        spans = link_pages([self._page(251, lines)], merge_style(self.STYLE))
+        self.assertEqual([s["pages"] for s in spans], [[251]])
+        self.assertEqual(spans[0]["ref"]["parsed"]["ang_from"], 1267)
+        self.assertIn("ਆਰੋਹ", spans[0]["description"]["text"])
+
+    def test_the_contents_the_taal_tables_and_the_index_are_no_notation(self):
+        front = self._page(2, [_line(1, "ਤਤਕਰਾ", 200, kind="heading", bold=True, x0=700, x1=1000)] + self._grids(2, 400)[1:] + self._grids(6, 800)[1:])
+        taals = self._page(44, [_line(1, "ਤਾਲ ਤਿੰਨਤਾਲ (੧੬ ਮਾਤਰਾ)", 200, bold=True, x0=500, x1=1200)] + self._grids(2, 400)[1:]
+                           + [_line(6, "ਤਾਲ ਝਪਤਾਲ (੧੦ ਮਾਤਰਾ)", 900, bold=True, x0=500, x1=1200)] + self._grids(7, 1000)[1:])
+        index = self._page(18, [_line(1, "ਕਲਿਆਣ ਥਾਟ", 300, kind="heading", bold=True, x0=700, x1=1000)]
+                           + [_line(2 + i, "%s. %s" % ("੨੨" + "੦੧੨੩੪੫"[i], t), 400 + 70 * i, kind="gurbani", x0=200, x1=1300)
+                              for i, t in enumerate(["ਹਮਰੀ ਚਿਤਵਨੀ ਹਰਿ ਪ੍ਰਭੁ ਜਾਨੈ ॥", "ਮੇਰੇ ਮਨ ਜਪਿ ਰਾਮ ਨਾਮੁ ਨੀਸਾਣੁ ॥", "ਕਰਿ ਕਿਰਪਾ ਪ੍ਰਭ ਦੀਨ ਦਇਆਲਾ ॥",
+                                                     "ਸੁਖ ਸਾਗਰੁ ਹਰਿ ਨਾਮੁ ਹੈ ॥", "ਗੁਰ ਕੈ ਸਬਦਿ ਮਨੁ ਜੀਤਿਆ ॥", "ਜਿਨਿ ਹਰਿ ਸੇਵਿਆ ਤਿਨਿ ਸੁਖੁ ਪਾਇਆ ॥"])]
+                           + self._grids(9, 900)[1:])
+        preface = self._page(30, [_line(1, "ਕੀਰਤਨ ਵਿਦਿਆਲੇ ਦੇ", 400, bold=True, x0=476, x1=1046), _line(2, "੧. ਮਹਿਤੇ ਕੀਰਤਨ ਵਿਦਿਆਲੇ ਵਿਚ ਰਾਗ ਵਿੱਦਿਆ ਸਿਖਣ ਵਾਲੇ", 540)]
+                             + self._grids(3, 700)[1:] + [_line(7, "[ਲਾਲਸਾ ਜੰਵਨ, ਪੰਨਾ-੧੭੮]", 1200, x0=1000, x1=1500, h=40)])    # a bracket read as a reference
+        first = self._notation_page(52, "ਸ਼ੁੱਧ ਬਿਲਾਵਲ", 7, "ਆਵਹੁ ਸਿਖ ਸਤਿਗੁਰੂ ਕੇ ਪਿਆਰਿਹੋ", "[ਅੰਗ-੯੨੨]")
+        dropped = []
+        spans = link_pages([front, index, preface, taals, first], merge_style(self.STYLE), dropped)
+        self.assertEqual([s["pages"] for s in spans], [[52]])
+        self.assertEqual(sorted((d["why"], d["pages"]) for d in dropped), [("front-matter", [2]), ("front-matter", [30]), ("front-matter", [44]), ("list", [18])])
+
+
 class RaagChapterTests(unittest.TestCase):
     """
     style.cut == "raag" (Dr Gurnam Singh's two ratnakars and Sikh Musicology, 12 October 2026): a run of numbered raag

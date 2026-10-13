@@ -786,8 +786,8 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
             continue
         ph, pw = img.shape[:2]
         margin = int(pw * 0.03)
-        if style.get("cut") == "raag":
-            # a chapter is cut whole, page by page: the printed area, the stamp under it left out
+        if style.get("cut") in ("raag", "page"):
+            # a chapter, or a framed page, is cut whole, page by page: the printed area, the stamp under it left out
             targets.append(("block", p, [margin, int(ph * 0.02), pw - margin, printed_bottom(book_dir, p, ph)]))
             continue
         if not boxes:
@@ -864,9 +864,10 @@ def span_record(span: dict, book: dict, style: dict, con, seq: int, book_dir: st
         rec["also"] = also
     rec["source"]["content_hash"] = notation.content_hash(rec)
     rec["shabad"]["raag"] = res["shabad"].get("raag")
+    if style.get("cut") in ("raag", "page"):
+        rec["description"] = span.get("description")
     if style.get("cut") == "raag":
         rec["chapter"] = span.get("chapter")
-        rec["description"] = span.get("description")
     return rec, images
 
 

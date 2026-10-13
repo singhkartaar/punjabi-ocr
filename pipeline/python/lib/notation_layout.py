@@ -1465,6 +1465,84 @@ def _chapters(items: list[dict]) -> list[dict]:
     return segs
 
 
+_LISTED_LINE = re.compile(r"^\s*[\[(]?[0-9੦-੯]{1,3}[.)]\s*\S")        # "੧੪੦. ਸਭਿ ਅਵਗਣ ਮੈ ਗੁਣੁ ਨਹੀ ਕੋਈ ॥": a line of the index
+LIST_PAGE_LINES = 4                                           # this many numbered lines make a page a list (the index)
+
+
+def _page_cuts(items: list[dict]) -> list[dict]:
+    """
+    style.cut == "page" (Ragi Jaswant Singh Teebar's Sangeet Sagar): every
+    framed page is one notation -- the raag's theory at its head, the grids,
+    the shabad's line and its reference at the foot -- and nothing inside a
+    page cuts it: a bol row read as verse, a bracket read as a reference, a
+    line of the theory read as a heading (the segments cut p. 164 in three
+    and p. 456's notation off its theory; 13 October 2026). Nor does a page
+    run into the next: a page of grids whose foot line the OCR lost is a
+    notation of its own, its shabad unresolved (pp. 86-87, 133-135 are two
+    and three notations of one raag in other taals, not one over the pages).
+    A page of numbered lines is a list (the index); the pages before the
+    first page whose labelled shabad was read with a grid (the contents, the
+    taal tables) are front matter; both, and a page with neither a shabad
+    over its rows nor three grid lines, are dropped later.
+    """
+    segs: list[dict] = []
+    seen_notation = False
+    numbered: dict[int, int] = {}
+    for it in items:
+        if it["role"] in ("shabad", "text", "heading") and it["region"]:
+            numbered[it["page"]] = numbered.get(it["page"], 0) + sum(1 for ln in (it["region"].get("text") or "").split("\n") if _LISTED_LINE.match(ln))
+    list_page = {pg for pg, n in numbered.items() if n >= LIST_PAGE_LINES}
+
+    def grid_lines(seg) -> int:
+        return sum(max(len(it["region"].get("lines") or []), CHAPTER_GRID_LINES if it["region"].get("from_ink") else 0)
+                   for it in seg["items"] if it["role"] == "grid" and _is_real_grid(it["region"]) and it["page"] not in list_page)
+
+    pages: dict[int, list[dict]] = {}
+    for it in items:
+        if it["role"] == "break":
+            continue
+        if it["role"] == "runhead" and _named_heading(it["region"]):
+            it = {**it, "role": "heading"}      # "ਰਾਗ :--ਬਿਹਾਗ" at the top of the frame is the notation's heading, not the book's running header
+        pages.setdefault(it["page"], []).append(it)
+    for page in sorted(pages):
+        its = pages[page]
+        shabads = [it["region"] for it in its if it["role"] == "shabad"]
+        # before the first notation page, a page with no heading that names a raag (the contents, a preface, the taal
+        # tables) is front matter; one with such a heading is a notation whose foot line was not read
+        front = not seen_notation and not any(it["role"] == "heading" and (_named_heading(it["region"]) or {}).get("raag") for it in its)
+        seg = {"items": its, "sid": _sid_of(shabads), "after_break": False, "opened_by": "page", "front": front, "list": page in list_page}
+        seg["grid_lines"] = grid_lines(seg)
+        if not seg["list"] and seg["grid_lines"] >= CHAPTER_GRID_LINES and (seg["sid"] is not None or any(r.get("labelled") for r in shabads)):
+            seen_notation = True            # the book's notations begin: what came before was its front matter
+        segs.append(seg)
+    return segs
+
+
+def _description_of(seg: dict, page_cut: bool = False) -> dict | None:
+    """The description at the head of a chapter or a page: what stands before the shabad or the first real grid (in a page cut, before the first section label or marker row when the page has one)."""
+    items = seg["items"]
+
+    def label(it) -> bool:
+        return it["role"] == "section" or (it["role"] == "heading" and bool(_section_heading(it["region"], False)))
+
+    stop = next((k for k, it in enumerate(items) if it["role"] == "shabad" or label(it) or (it["role"] == "grid" and _is_real_grid(it["region"]))), len(items))
+    if page_cut:
+        # the theory's aaroh and avroh read as a grid: the description runs to the first section label (ਸਥਾਈ) when the page has one before its shabad
+        first_label = next((k for k, it in enumerate(items) if label(it)), None)
+        if first_label is not None and not any(it["role"] == "shabad" for it in items[:first_label]):
+            stop = first_label
+    lead = items[:stop]
+    if not lead:
+        return None
+
+    def keep(it) -> bool:
+        text = (it["region"].get("text") or "").strip()
+        if not text or it["role"] in ("runhead", "marker") or _header_raag(it["region"]):
+            return False
+        return not (page_cut and it.get("top") and it["role"] == "text" and len(text.split()) <= 4)    # a shred of the running header
+    return {"pages": sorted({it["page"] for it in lead}), "text": "\n".join((it["region"].get("text") or "").strip() for it in lead if keep(it))}
+
+
 def _pair_by_section(segs: list[dict]) -> list[dict]:
     """
     style.pairing == "section" (Guru Nanak Sangeet Padhti Granth): the book is
@@ -1659,13 +1737,14 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
     """
     after = style.get("shabad_position") == "after"
     chapters = style.get("cut") == "raag"
-    items = _items(layouts, style, prose_breaks=not chapters)
+    page_cut = style.get("cut") == "page"
+    items = _items(layouts, style, prose_breaks=not (chapters or page_cut))
     if not items:
         return []
     pages_read = sorted({it["page"] for it in items if it["role"] != "break"})
     first_read, last_read = (pages_read[0], pages_read[-1]) if pages_read else (None, None)
     pairing = style.get("pairing") == "section"
-    segs = _chapters(items) if chapters else _segments(items, after, pairing)
+    segs = _chapters(items) if chapters else _page_cuts(items) if page_cut else _segments(items, after, pairing)
     if pairing:
         segs = _pair_by_section(segs)
     # the last item of each run of consecutive pages read (a window ends there, or the book)
@@ -1719,15 +1798,30 @@ def link_pages(layouts: list[dict], style: dict, dropped: list[dict] | None = No
             span = _span_from_items(seg)
             span["chapter"] = seg["chapter"]
             span["chapter_fixed"] = bool(seg.get("chapter_fixed"))
-            lead = []                           # the description: what stands before the shabad or the first real grid
-            for it in seg["items"]:
-                if it["role"] in ("shabad", "section") or (it["role"] == "grid" and _is_real_grid(it["region"])):
-                    break
-                lead.append(it)
-            span["description"] = {"pages": sorted({it["page"] for it in lead}),
-                                   "text": "\n".join((it["region"].get("text") or "").strip() for it in lead
-                                                      if it["role"] != "runhead" and not _header_raag(it["region"])
-                                                      and (it["region"].get("text") or "").strip())} if lead else None
+            span["description"] = _description_of(seg)         # what stands before the shabad or the first real grid
+            out.append(span)
+            prev = seg
+            seg_before = seg
+            continue
+        if page_cut:
+            # a page is kept for its grid, with its shabad or without (the foot line unread); the index, the front matter
+            # before the first notation page and a page with no real grid are not notations
+            # (kept as the plain reading keeps a notation: its shabad with anything under it -- p. 70's grid rows the OCR
+            # read as nothing but their marker row -- or three grid lines, or a reference with an ang over a grid)
+            held = (has_shabad and has_content) or seg.get("grid_lines", 0) >= CHAPTER_GRID_LINES \
+                or ("grid" in roles and any(it["role"] == "ref" and (it["region"].get("parsed") or {}).get("ang_from") for it in seg["items"]))
+            why = "list" if seg.get("list") else "front-matter" if seg.get("front") and not has_shabad \
+                else None if held else "no-notation"
+            if why:
+                dropped.append({"why": why, "pages": pages, "roles": sorted(roles), "opened_by": "page"})
+                continue
+            span = _span_from_items(seg)
+            span["description"] = _description_of(seg, page_cut=True)
+            span["continued"] = False                       # a page begins with its grids; nothing of it stands on the page before
+            # the reference is the foot's, the last bracket with an ang, not a shred of the grid read as one ("[ਚਾ 5]")
+            refs = [it["region"] for it in seg["items"] if it["role"] == "ref" and (it["region"].get("parsed") or {}).get("ang_from")]
+            if refs:
+                span["ref"] = refs[-1]
             out.append(span)
             prev = seg
             seg_before = seg

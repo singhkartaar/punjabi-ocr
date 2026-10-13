@@ -28,7 +28,7 @@ import re
 from lib.notation_vocab import KOMAL_ALLOWED, RAAGS, SWARA_ORDER, TAALS, TIVRA_ALLOWED, VERSION as VOCAB_VERSION
 
 SCHEMA_VERSION = 1
-PARSER_VERSION = "0.2.8"
+PARSER_VERSION = "0.2.9"
 
 KINDS = ("notation", "partial", "reet-ref", "non-gurbani")
 SCRIPTS = ("gurmukhi", "latin", "devanagari")
@@ -50,10 +50,11 @@ DEFAULT_STYLE = {"swar_row": "above", "shabad_position": "before", "matra_row": 
                  "running_header": None,      # the book's running header text (or a list), dropped at the top of a page
                  "ref_position": "after",     # where the Granth reference stands: after the verse, or before it (Gurmat Sangeet Darpan)
                  "pairing": None,             # "section": shabads and notations pair by order within a raag section (Guru Nanak Sangeet Padhti Granth)
-                 "cut": None,                 # "raag": the book is a run of numbered raag chapters, one shabad and its notation each, cut whole with the description (Dr Gurnam Singh)
+                 "cut": None,                 # "raag": the book is a run of numbered raag chapters, one shabad and its notation each, cut whole with the description (Dr Gurnam Singh);
+                                              # "page": every framed page is one notation, its theory, grids and foot line together (Sangeet Sagar)
                  "shabads_from": None}        # a book key: a chapter with no shabad of its own takes the same chapter's shabad from that book (Sikh Musicology from Gur Shabad Raag Ratnakar)
 STYLE_VALUES = {"swar_row": ("above", "below"), "shabad_position": ("before", "after", "either"), "ref_position": ("after", "before"),
-                "pairing": (None, "section"), "cut": (None, "raag"),
+                "pairing": (None, "section"), "cut": (None, "raag", "page"),
                 "marker_row": ("below", "above", "none"), "table": ("ruled", "bars", "none"),
                 "script": SCRIPTS}
 
