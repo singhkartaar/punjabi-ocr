@@ -60,6 +60,15 @@ def fresh_records(book: str) -> tuple[dict, list[dict]]:
     return meta, records
 
 
+def book_cut(book: str) -> str | None:
+    """The book's style.cut from its pages.json ("raag", "page" or None): a whole-page cut makes the extent the page by construction."""
+    p = os.path.join(OCR_DIR, book, "pages.json")
+    if not os.path.exists(p):
+        return None
+    with open(p, encoding="utf-8") as fh:
+        return ((json.load(fh).get("style") or {}).get("cut"))
+
+
 def page_files(book: str) -> dict[int, str]:
     p = os.path.join(OCR_DIR, book, "pages.json")
     if not os.path.exists(p):
@@ -370,7 +379,7 @@ def check(args) -> None:
                 report = json.load(fh).get("review")
         # the records as written hold the frozen fixtures in place of the fresh cut; the parser's
         # report keeps the fresh cut's drift, which is the finer witness when it exists
-        got = check_book(book, records, args.review_dir)
+        got = check_book(book, records, args.review_dir, whole_pages=book_cut(book) in ("raag", "page"))
         if report and report.get("drift"):
             # the parser's own drift (fresh cut against the fixture) is the finer witness when it exists
             notes = {k: e.get("comment") or "" for k, e in read_ledger(book, args.review_dir).items() if e["status"] == "accepted"}

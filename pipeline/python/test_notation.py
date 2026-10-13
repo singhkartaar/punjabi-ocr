@@ -869,6 +869,36 @@ class ReviewLedgerTests(unittest.TestCase):
             self.assertEqual((st["accepted"], st["backlog"], st["unreviewed"], st["clear"]), (1, 1, 0, False))
 
 
+    def test_under_a_whole_page_cut_the_same_pages_and_shabad_are_the_accepted_notation_and_the_fixture_is_frozen_again(self):
+        # Sangeet Sagar's page cut (13 October 2026): six accepted cards grew to the whole page, same pages, same shabad
+        import tempfile
+        from lib.notation_review import append_entry, apply_review, assign_keys, check_book, entry_of, load_fixture, read_ledger, save_fixture
+        with tempfile.TemporaryDirectory() as d:
+            images = os.path.join(d, "images"); os.makedirs(images)
+            a = self._rec("test-book:0295:1", [295], 3225, y0=600, y1=1900)
+            assign_keys([a])
+            open(os.path.join(images, "test-book-0295-1-1.png"), "wb").write(b"png")
+            ea = entry_of(a, "accepted", round_=1); append_entry(ea, d); save_fixture(a, ea, images, d)
+            whole = self._rec("test-book:0295:1", [295], 3225, y0=46, y1=2210)        # the page cut: the whole printed page
+            whole["images"][0]["sha256"] = "cd" * 32
+            open(os.path.join(images, "test-book-0295-1-1.png"), "wb").write(b"page")
+            assign_keys([whole])
+            self.assertFalse(check_book("test-book", [whole], d)["ok"])                  # the plain gate: moved (overlap 0.6)
+            self.assertTrue(check_book("test-book", [whole], d, whole_pages=True)["ok"])  # the page cut: the same notation
+            got = apply_review([whole], read_ledger("test-book", d), images, d, whole_pages=True)
+            self.assertEqual((got["refrozen"], got["reused"], got["lost"]), (1, 1, 0))
+            rec = got["records"][0]
+            self.assertTrue(rec["verified"]); self.assertEqual(rec["layout"]["extent"]["295"][1], 46)   # the fresh page, not the old crop
+            self.assertEqual(load_fixture(ea, d)["record"]["layout"]["extent"]["295"][1], 46)         # the fixture frozen again from it
+            self.assertTrue(os.path.exists(os.path.join(d, "fixtures", "test-book", "images", "cd" * 32 + ".png")))
+            # a different shabad on the page is not it: the old fixture stands
+            other = self._rec("test-book:0295:1", [295], 999, y0=46, y1=2210)
+            assign_keys([other])
+            got = apply_review([other], read_ledger("test-book", d), images, d, whole_pages=True)
+            self.assertEqual((got.get("refrozen", 0), got["reused"], got.get("superseded", 0)), (0, 0, 1))   # not frozen again: the page's cut stands unverified, as before
+            self.assertEqual([r["shabad"]["shabad_id"] for r in got["records"]], [999])
+
+
 class RecutTests(unittest.TestCase):
     def test_an_image_cut_again_from_its_bbox_has_the_same_sha(self):
         try:

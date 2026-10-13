@@ -1148,7 +1148,7 @@ def main():
         from lib.notation_review import apply_review, read_ledger
         ledger = read_ledger(args.book)
         if ledger:
-            review = apply_review(records, ledger, images_dir)
+            review = apply_review(records, ledger, images_dir, whole_pages=style.get("cut") in ("raag", "page"))
             records = review.pop("records")
             all_images = [im for im in all_images if any(im["notation_id"] == r["notation_id"] for r in records)]
             for r in records:
@@ -1200,8 +1200,10 @@ def main():
              meta["resolved"], len(problems), len(dropped)))
     if review["accepted"] or review["backlog"] or review["rejected"]:
         drift = [d for d in review["drift"] if not d.get("same") and not d.get("lost")]
-        print("  review: %d accepted (%d reused, %d lost), %d in backlog, %d rejected; %d accepted would move under the current reader"
-              % (review["accepted"], review["reused"], review["lost"], review["backlog"], review["rejected"], len(drift)))
+        print("  review: %d accepted (%d reused, %d lost%s), %d in backlog, %d rejected; %d accepted would move under the current reader"
+              % (review["accepted"], review["reused"], review["lost"],
+                 ", %d frozen again to the page" % review["refrozen"] if review.get("refrozen") else "",
+                 review["backlog"], review["rejected"], len(drift)))
     if index["front_pages_read"]:
         print("  index: %s, %d shabad line(s) listed, %d known to the corpus%s; %d notation(s) named by it, %d agree, %d conflict; "
               "%d raag start(s); page offset %s; %d listed shabad(s) not found"

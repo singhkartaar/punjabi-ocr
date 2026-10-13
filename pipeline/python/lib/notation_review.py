@@ -298,8 +298,14 @@ def iou(a: dict[int, list[int]], b: dict[int, list[int]]) -> float:
     return inter / union if union else 0.0
 
 
-def drift_of(entry: dict, fresh: dict | None) -> dict:
-    """What a re-run would change about an accepted notation: pages, shabad, extent overlap."""
+def drift_of(entry: dict, fresh: dict | None, whole_pages: bool = False) -> dict:
+    """
+    What a re-run would change about an accepted notation: pages, shabad,
+    extent overlap. `whole_pages`: the book is cut by the page or the
+    chapter (style.cut), so the extent is the page by construction and the
+    same pages with the same shabad are the same notation whatever the
+    overlap with the extent accepted under an earlier reading.
+    """
     before = {"pages": entry.get("pages") or [], "shabad_id": entry.get("shabad_id")}
     if fresh is None:
         return {"key": entry["key"], "lost": True, **{"pages_before": before["pages"], "shabad_before": before["shabad_id"]}}
@@ -310,12 +316,13 @@ def drift_of(entry: dict, fresh: dict | None) -> dict:
             "shabad_before": before["shabad_id"], "shabad_after": (fresh.get("shabad") or {}).get("shabad_id"),
             "extent_iou": round(iou(ext_a, ext_b), 3),
             "same": (list(fresh.get("pages") or []) == before["pages"] and (fresh.get("shabad") or {}).get("shabad_id") == before["shabad_id"]
-                     and iou(ext_a, ext_b) >= IOU_PASS),
+                     and (whole_pages or iou(ext_a, ext_b) >= IOU_PASS)),
             "identical": (list(fresh.get("pages") or []) == before["pages"] and (fresh.get("shabad") or {}).get("shabad_id") == before["shabad_id"]
                           and {k: list(v) for k, v in ext_a.items()} == {k: list(v) for k, v in ext_b.items()})}
 
 
-def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, review_dir: str | None = None) -> dict:
+def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, review_dir: str | None = None,
+                 whole_pages: bool = False) -> dict:
     """
     The ledger applied to a run's records (29_notation_parse.py, after the
     records are built): accepted entries replace their fresh records with
@@ -323,10 +330,15 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
     fixture anyway, backlog ones annotate the fresh record with the
     comment, rejected ones drop it. Returns {"records", "accepted",
     "reused", "lost", "backlog", "rejected", "drift"}; `records` is the
-    list to write.
+    list to write. Under a whole-page cut (`whole_pages`) an accepted
+    notation whose fresh cut is the same pages and the same shabad stands
+    as the fresh record -- the page, as the new reading cuts it -- and its
+    fixture is frozen again from it (`refrozen`): the acceptance was of the
+    page's notation, not of the extent an earlier reading gave it (Sangeet
+    Sagar's page cut, 13 October 2026).
     """
     assign_keys(records)
-    out = {"accepted": 0, "reused": 0, "lost": 0, "backlog": 0, "rejected": 0, "noted_moved": 0, "drift": []}
+    out = {"accepted": 0, "reused": 0, "lost": 0, "backlog": 0, "rejected": 0, "noted_moved": 0, "refrozen": 0, "drift": []}
     taken: set[int] = set()
     replaced: dict[int, dict] = {}
     extra: list[dict] = []
@@ -339,8 +351,16 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
             out["accepted"] += 1
             fx = load_fixture(entry, review_dir)
             frozen = (fx or {}).get("record")
-            d = drift_of(entry, fresh)
+            d = drift_of(entry, fresh, whole_pages)
             out["drift"].append(d)
+            if whole_pages and fresh is not None and d["same"] and not d["identical"] and not entry.get("comment"):
+                fresh["verified"] = True
+                fresh["review"] = {"key": key, "status": "accepted", "at": entry.get("at"), "round": entry.get("round")}
+                save_fixture(fresh, entry, images_dir, review_dir)
+                d["refrozen"] = True
+                out["refrozen"] += 1
+                out["reused"] += 1
+                continue
             if entry.get("comment") and fresh is not None and not d.get("identical"):
                 # accepted with a note ("a little extra from the next shabad"): the cut has moved since, as the
                 # note hoped -- the fresh cut is shown again with the note, and the fixture waits for the new tick
@@ -403,7 +423,7 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
     return out
 
 
-def check_book(book: str, records: list[dict], review_dir: str | None = None) -> dict:
+def check_book(book: str, records: list[dict], review_dir: str | None = None, whole_pages: bool = False) -> dict:
     """
     The regression gate for one book: every accepted entry against the
     current records (the fresh cut, before the ledger was applied): same
@@ -418,7 +438,7 @@ def check_book(book: str, records: list[dict], review_dir: str | None = None) ->
     by_nid = {r["notation_id"]: r for r in records}
     for key, entry in sorted(ledger.items()):
         fresh = by_nid.get(by_entry.get(id(entry)))
-        d = drift_of(entry, fresh)
+        d = drift_of(entry, fresh, whole_pages)
         if entry["status"] == "accepted":
             if fresh is None:
                 lost.append(d)
