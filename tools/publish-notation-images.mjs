@@ -7,6 +7,13 @@
  *   node tools/publish-notation-images.mjs [--db artifacts/notations.sqlite] [--images <data>/notations]
  *        --repo OWNER/NAME [--book KEY ...] [--release NAME] [--all-roles]
  *        [--thumbs] [--max N] [--rate 30] [--per-hour 1800] [--per-release 900] [--batch 25] [--dry-run] [--verify [--sample N]] [--prune]
+ *        [--recut]
+ *
+ * --recut: the book's images were cut again on this machine (Sangeet Sagar's
+ * page cut, 13 October 2026): an asset of the same name less the hash is
+ * another image, not this one, so only an asset of the exact name counts as
+ * published and only a hash finds a URL; the old assets stay (never pruned)
+ * and the old URLs leave images.urls.json.
  *
  * What is published: the images the app shows -- a notation's `block`
  * cuts, or every image of a notation that has no block (older records);
@@ -92,6 +99,7 @@ const THUMBS = flag('--thumbs');                      // the app shows the first
 const DRY = flag('--dry-run');
 const VERIFY = flag('--verify');
 const PRUNE = flag('--prune');
+const RECUT = flag('--recut');                        // a re-cut book: an asset of the same name less the hash is another image
 const MAX = num('--max', Infinity);
 const PER_RELEASE = num('--per-release', 900);
 const BATCH = num('--batch', 25);
@@ -244,7 +252,7 @@ async function main() {
     for (const w of want.values()) {
       // published already: under this name, or under the hash the machine that cut it saw (a thumbnail recorded
       // without its hash is hashed differently on each machine; its other copy is never uploaded beside it)
-      if (have.has(w.name) || haveStems.has(rowStem(w.row))) { kept += 1; continue; }
+      if (have.has(w.name) || (!RECUT && haveStems.has(rowStem(w.row)))) { kept += 1; continue; }
       // the working file, or the accepted bytes the review kept by hash when a later run re-cut the working file
       const fixture = path.join(REVIEW, 'fixtures', book, 'images', `${w.row.sha256}.png`);
       const candidates = [w.file, fixture].filter(f => fs.existsSync(f));
@@ -342,14 +350,15 @@ async function main() {
     const keys = {};
     const byKey = DRY ? null : db.prepare('UPDATE images SET url = ? WHERE notation_id = ? AND n = ? AND kind = ? AND url IS NULL');
     const found = new Map();                         // this machine's hash -> url, for rows resolved by name
+    const stemUrl = r => (RECUT ? undefined : byStem.get(rowStem(r)));
     for (const r of mine) {
-      const url = urls[r.sha256] || byStem.get(rowStem(r));
+      const url = urls[r.sha256] || stemUrl(r);
       if (url && r.sha256) found.set(r.sha256, url);
     }
     for (const r of mine) {
       // a row whose file is the same as another's (two notations sharing a page's crop) takes that one's URL:
       // the image was uploaded once, under the first row's name
-      const url = urls[r.sha256] || byStem.get(rowStem(r)) || (r.sha256 ? found.get(r.sha256) : undefined);
+      const url = urls[r.sha256] || stemUrl(r) || (r.sha256 ? found.get(r.sha256) : undefined);
       if (!url) continue;
       keys[`${r.notation_id}|${r.n}|${r.kind}`] = url;
       byKey.run(url, r.notation_id, r.n, r.kind);
@@ -360,8 +369,8 @@ async function main() {
       try { const p = JSON.parse(fs.readFileSync(out, 'utf8')); prior = p.urls || {}; priorKeys = p.keys || {}; } catch { prior = {}; priorKeys = {}; }
     }
     fs.mkdirSync(path.dirname(out), { recursive: true });
-    fs.writeFileSync(out, JSON.stringify({ repo: REPO, releases: shards.map(s => s.tag), urls: { ...prior, ...urls },
-                                           keys: { ...priorKeys, ...keys } }, null, 1) + '\n');
+    fs.writeFileSync(out, JSON.stringify({ repo: REPO, releases: shards.map(s => s.tag), urls: RECUT ? urls : { ...prior, ...urls },
+                                           keys: RECUT ? keys : { ...priorKeys, ...keys } }, null, 1) + '\n');
     console.log(`  ${Object.keys(urls).length} url(s) -> ${out} and the database`);
   }
   if (!DRY) {
