@@ -869,6 +869,34 @@ class ReviewLedgerTests(unittest.TestCase):
             self.assertEqual((st["accepted"], st["backlog"], st["unreviewed"], st["clear"]), (1, 1, 0, False))
 
 
+    def test_a_fixture_cut_on_another_machine_is_frozen_again_from_a_fresh_cut_that_passes_the_gate(self):
+        # the Darpans' accepted cards (Linux, October) run whole on the M4 (6 November 2026): the fixtures name bytes
+        # that are not here; the fresh cut is the same notation (pages, shabad, overlap >= 0.9), so it is frozen again
+        import tempfile
+        from lib.notation_review import append_entry, apply_review, assign_keys, entry_of, fixture_images_here, load_fixture, read_ledger, save_fixture
+        with tempfile.TemporaryDirectory() as d:
+            images = os.path.join(d, "images"); os.makedirs(images)
+            a = self._rec("test-book:0211:1", [211], 2065, y0=600, y1=1900)                 # sha "ab"*32: bytes never written here
+            assign_keys([a])
+            ea = entry_of(a, "accepted", round_=1); append_entry(ea, d); save_fixture(a, ea, images, d)
+            self.assertFalse(fixture_images_here(a, ea, images, d))
+            import hashlib
+            fresh = self._rec("test-book:0211:1", [211], 2065, y0=604, y1=1896)
+            fresh["images"][0]["sha256"] = hashlib.sha256(b"mac").hexdigest()        # this machine's bytes, as the record names them
+            open(os.path.join(images, "test-book-0211-1-1.png"), "wb").write(b"mac")
+            assign_keys([fresh])
+            got = apply_review([fresh], read_ledger("test-book", d), images, d)
+            self.assertEqual((got["refrozen"], got["reused"], got["lost"]), (1, 1, 0))
+            self.assertTrue(got["records"][0]["verified"]); self.assertEqual(got["records"][0]["images"][0]["sha256"], hashlib.sha256(b"mac").hexdigest())
+            self.assertEqual(load_fixture(ea, d)["record"]["images"][0]["sha256"], hashlib.sha256(b"mac").hexdigest())
+            self.assertTrue(fixture_images_here(got["records"][0], ea, images, d))
+            # a fresh cut that moved stays as the old fixture (the gate says so); the bytes stay another machine's
+            moved = self._rec("test-book:0211:1", [211], 2065, y0=900, y1=1900)
+            moved["images"][0]["sha256"] = "ef" * 32
+            assign_keys([moved])
+            got = apply_review([moved], read_ledger("test-book", d), images, d)
+            self.assertEqual(got["refrozen"], 0); self.assertEqual(got["records"][0]["images"][0]["sha256"], hashlib.sha256(b"mac").hexdigest())
+
     def test_under_a_whole_page_cut_the_same_pages_and_shabad_are_the_accepted_notation_and_the_fixture_is_frozen_again(self):
         # Sangeet Sagar's page cut (13 October 2026): six accepted cards grew to the whole page, same pages, same shabad
         import tempfile
@@ -2571,3 +2599,110 @@ class ThirdCutTests(unittest.TestCase):
         self.assertIn("ref-conflict", resolve_shabad(block, parse_ref("(ਦਸਮ ਗ੍ਰੰਥ, ਜਾਪੁ ਸਾਹਿਬ)"), granth, scriptures=scriptures)["flags"])
         self.assertEqual(corpus_facts(granth, 913)["ang"], 269)                          # the Granth's path as before
 
+
+
+class MarksTests(unittest.TestCase):
+    """The owner's hand-drawn cuts (lib/notation_marks.py, 6 November 2026): the ledger, the record a mark makes, marks over the parser's records, the compare."""
+
+    def _mark(self, mid, s, e, sid=1248, raag="ਗੂਜਰੀ", kind="notation", w=1600, h=2400):
+        return {"mark_id": mid, "book_key": "test-book", "kind": kind, "start": {"page": s[0], "y": s[1]}, "end": {"page": e[0], "y": e[1]},
+                "page_sizes": {str(p): [w, h] for p in range(s[0], e[0] + 1)},
+                "shabad": {"source": "G", "shabad_id": sid, "line_id": 7, "text": "ਮਸਿ ਮਸਿ", "query": "ਮਮ"} if sid is not None else None,
+                "raag": {"printed": raag, "key": None, "parent_key": None} if raag else None, "taal": {"printed": "ਤਿੰਨ ਤਾਲ", "key": None},
+                "note": "", "by": "t", "at": "2026-11-06T10:00:00Z"}
+
+    def _book(self):
+        return {"key": "test-book", "author": "Test Author", "author_key": "test-author", "title": "Test", "title_en": None, "part": None, "commit": "abc1234"}
+
+    def test_the_ledger_keeps_the_last_line_per_mark_and_drops_tombstones(self):
+        from lib.notation_marks import append_mark, read_marks, tombstone, validate_mark
+        with tempfile.TemporaryDirectory() as d:
+            append_mark(self._mark("m2", (12, 100), (12, 900)), d)
+            append_mark(self._mark("m1", (10, 300), (11, 400)), d)
+            append_mark(self._mark("m2", (12, 120), (12, 950)), d)            # moved
+            append_mark(self._mark("m3", (13, 0), (13, 500)), d)
+            append_mark(tombstone("test-book", "m3"), d)
+            got = read_marks("test-book", d)
+            self.assertEqual([m["mark_id"] for m in got], ["m1", "m2"])
+            self.assertEqual(got[1]["start"]["y"], 120)
+            self.assertEqual(read_marks("other", d), [])
+        bad = self._mark("m9", (12, 900), (12, 100))
+        self.assertIn("end line must come after", "; ".join(validate_mark(bad)))
+        self.assertIn("page_sizes", "; ".join(validate_mark({**self._mark("m9", (12, 1), (14, 2)), "page_sizes": {"12": [1, 2]}})))
+        self.assertEqual(validate_mark(self._mark("m9", (12, 1), (12, 2))), [])
+
+    def test_the_extent_runs_from_the_start_line_to_the_end_line_over_the_pages_between(self):
+        from lib.notation_marks import extent_of, pages_of
+        m = self._mark("m1", (10, 1500), (12, 400))
+        self.assertEqual(pages_of(m), [10, 11, 12])
+        self.assertEqual(extent_of(m), {10: [0, 1500, 1600, 2400], 11: [0, 0, 1600, 2400], 12: [0, 0, 1600, 400]})
+
+    def test_a_mark_becomes_a_verified_record_the_owner_resolved(self):
+        from lib.notation_marks import mark_to_record, seq_for
+        marks = [self._mark("m1", (10, 300), (10, 900)), self._mark("m2", (10, 900), (11, 400), sid=None, raag="Nonsense raag")]
+        a = mark_to_record(marks[0], self._book(), {"script": "gurmukhi"}, seq_for(marks[0], marks), "/nowhere", "/nowhere", {}, cut=False)
+        self.assertEqual(validate(a), [])
+        self.assertEqual((a["notation_id"], a["page"], a["pages"], a["kind"]), ("test-book:0010:901", 10, [10], "partial"))   # the grid unread: the owner's cut and shabad, the crop its reading
+        self.assertEqual((a["shabad"]["shabad_id"], a["shabad"]["method"], a["shabad"]["verified"], a["shabad"]["line_ids"]), (1248, "manual", True, [7]))
+        self.assertEqual(a["heading"]["raag"]["key"], "gujri"); self.assertEqual(a["heading"]["taal"]["key"], "teentaal")
+        self.assertTrue(a["verified"]); self.assertEqual(a["source"]["parser"]["name"], "marks"); self.assertEqual(a["mark_id"], "m1")
+        self.assertEqual(a["layout"]["extent"], {"10": [0, 300, 1600, 900]})
+        b = mark_to_record(marks[1], self._book(), {}, seq_for(marks[1], marks), "/nowhere", "/nowhere", {}, cut=False)
+        self.assertEqual(b["notation_id"], "test-book:0010:902"); self.assertEqual(b["pages"], [10, 11])
+        self.assertIn("unresolved-shabad", b["flags"]); self.assertIn("raag-unknown", b["flags"])
+        self.assertEqual(b["shabad"]["method"], "none"); self.assertEqual(validate(b), [])
+
+    def test_the_crop_is_the_strip_between_the_lines_on_each_page(self):
+        import numpy as np
+        import cv2
+        from lib.notation_marks import mark_to_record
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(os.path.join(d, "pages"))
+            for p in (10, 11):
+                img = np.full((2400, 1600), 255, np.uint8); img[500:520, 100:1500] = 0
+                cv2.imwrite(os.path.join(d, "pages", "%04d.png" % p), img)
+            m = self._mark("m1", (10, 1500), (11, 400))
+            rec = mark_to_record(m, self._book(), {}, 901, d, os.path.join(d, "images"), {10: "0010.png", 11: "0011.png"})
+            self.assertEqual([(im["n"], im["page"], im["role"], im["bbox"]) for im in rec["images"]],
+                             [(1, 10, "block", [48, 1500, 1552, 2400]), (2, 11, "block", [48, 0, 1552, 400])])
+            self.assertTrue(os.path.exists(os.path.join(d, "images", "test-book-0010-901-1.png")))
+            self.assertTrue(rec["images"][0]["thumb"]); self.assertIsNone(rec["images"][1]["thumb"])
+            self.assertEqual(rec["images"][0]["h"], 2400 - 1500 + 24)                         # the pad below; clamped above at the page foot
+            self.assertEqual(len(rec["images"][0]["sha256"]), 64)
+            self.assertEqual(validate(rec), [])
+
+    def _parser(self, nid, pages, y0, y1, sid=1248, raag="gujri"):
+        rec = _record(nid, shabad_id=sid)
+        rec["page"], rec["pages"], rec["seq"] = int(nid.split(":")[1]), pages, int(nid.split(":")[2])
+        rec["heading"]["raag"]["key"] = raag
+        rec["layout"] = {"extent": {str(p): [100, y0 if p == pages[0] else 0, 1500, y1 if p == pages[-1] else 2400] for p in pages}}
+        return rec
+
+    def test_the_parsers_records_a_mark_overlaps_go_and_the_marks_take_their_place(self):
+        from lib.notation_marks import apply_marks, mark_to_record
+        parser = [self._parser("test-book:0010:1", [10], 200, 1100), self._parser("test-book:0010:2", [10], 1200, 2300, sid=913),
+                  self._parser("test-book:0012:1", [12], 100, 2000)]
+        marks = [self._mark("m1", (10, 250), (10, 1000)), self._mark("mskip", (12, 0), (12, 2400), kind="skip"),
+                 self._mark("mdesc", (11, 0), (11, 2400), kind="description")]
+        recs = {"m1": mark_to_record(marks[0], self._book(), {}, 901, "/nowhere", "/nowhere", {}, cut=False)}
+        got = apply_marks(parser, marks, recs)
+        self.assertEqual(got["replaced"], ["test-book:0010:1", "test-book:0012:1"])
+        self.assertEqual(got["added"], ["test-book:0010:901"]); self.assertEqual(got["skipped"], 1)
+        self.assertEqual([r["notation_id"] for r in got["records"]], ["test-book:0010:901", "test-book:0010:2"])     # in the order of the page
+        # a previous run's mark records are made afresh, never kept twice
+        again = apply_marks(got["records"], marks, recs)
+        self.assertEqual([r["notation_id"] for r in again["records"]], ["test-book:0010:901", "test-book:0010:2"])
+        # a neighbour the line barely touches stays
+        near = apply_marks([self._parser("test-book:0010:2", [10], 1040, 2300)], [self._mark("m1", (10, 250), (10, 1100))], {})
+        self.assertEqual(near["replaced"], [])
+
+    def test_compare_scores_the_parsers_cut_against_the_owners(self):
+        from lib.notation_marks import compare
+        parser = [self._parser("test-book:0010:1", [10], 300, 900), self._parser("test-book:0011:1", [11], 100, 1500, sid=913, raag="asa"),
+                  self._parser("test-book:0012:1", [12], 100, 300)]
+        marks = [self._mark("m1", (10, 300), (10, 900)), self._mark("m2", (11, 100), (11, 2300)), self._mark("m3", (12, 1200), (12, 2300))]
+        got = compare(parser, marks)
+        self.assertEqual(got["cuts"], {"exact": 1, "near": 1, "missed": 1})
+        self.assertEqual([r["cut"] for r in got["rows"]], ["exact", "near", "missed"])
+        self.assertEqual([r["shabad"] for r in got["rows"]], [True, False, None]); self.assertEqual([r["raag"] for r in got["rows"]], [True, False, None])
+        self.assertEqual((got["shabad_rate"], got["shabad_judged"], got["cut_rate"]), (0.5, 2, round(2 / 3, 3)))

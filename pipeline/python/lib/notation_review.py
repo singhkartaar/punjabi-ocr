@@ -219,6 +219,21 @@ def restore_images(rec: dict, entry: dict, images_dir: str, review_dir: str | No
     return n
 
 
+def fixture_images_here(rec: dict, entry: dict, images_dir: str, review_dir: str | None = None) -> bool:
+    """Whether every image the fixture names is on this machine as those bytes (under the record's name or in the fixture store)."""
+    import hashlib
+    img_dir = os.path.join(fixture_dir(entry["book_key"], review_dir), "images")
+    for im in rec.get("images") or []:
+        for cand in (os.path.join(images_dir, os.path.basename(im["file"])), os.path.join(img_dir, im["sha256"] + ".png")):
+            if os.path.exists(cand):
+                with open(cand, "rb") as fh:
+                    if hashlib.sha256(fh.read()).hexdigest() == im["sha256"]:
+                        break
+        else:
+            return False
+    return True
+
+
 # ---- matching and applying -------------------------------------------------
 
 def match_entry(entry: dict, records: list[dict]) -> dict | None:
@@ -354,6 +369,19 @@ def apply_review(records: list[dict], ledger: dict[str, dict], images_dir: str, 
             d = drift_of(entry, fresh, whole_pages)
             out["drift"].append(d)
             if whole_pages and fresh is not None and d["same"] and not d["identical"] and not entry.get("comment"):
+                fresh["verified"] = True
+                fresh["review"] = {"key": key, "status": "accepted", "at": entry.get("at"), "round": entry.get("round")}
+                save_fixture(fresh, entry, images_dir, review_dir)
+                d["refrozen"] = True
+                out["refrozen"] += 1
+                out["reused"] += 1
+                continue
+            if (fresh is not None and d["same"] and not entry.get("comment") and frozen is not None
+                    and not fixture_images_here(frozen, entry, images_dir, review_dir)):
+                # the fixture's bytes were cut on another machine and are not here, and the fresh cut passes the gate
+                # (same pages, same shabad, extent overlap 0.9 or more): it is the notation accepted, as this machine
+                # cuts it -- frozen again from the fresh record, so the crops can be published from here (the Darpans,
+                # accepted on Linux in October, run whole on the M4 on 6 November 2026)
                 fresh["verified"] = True
                 fresh["review"] = {"key": key, "status": "accepted", "at": entry.get("at"), "round": entry.get("round")}
                 save_fixture(fresh, entry, images_dir, review_dir)

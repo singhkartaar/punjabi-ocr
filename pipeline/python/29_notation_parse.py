@@ -1024,6 +1024,7 @@ def main():
                     help="processes for the records (grid reading, crops); NOTATION_WORKERS or all cores but two; 1 = in this process")
     ap.add_argument("--no-index", action="store_true", help="do not read the book's index for the numbered notations")
     ap.add_argument("--no-review", action="store_true", help="ignore the review ledger (accepted notations are re-cut like any other)")
+    ap.add_argument("--no-marks", action="store_true", help="ignore the owner's marks (<data>/marks/<book>.jsonl; the parser's cut stands everywhere)")
     ap.add_argument("--recut", action="store_true", help="cut the images again from the records' stored bboxes (after a git pull of the data); no parsing")
     args = ap.parse_args()
 
@@ -1162,7 +1163,38 @@ def main():
                 for im in r["images"]:
                     if not any(x["notation_id"] == r["notation_id"] and x["n"] == im["n"] for x in all_images):
                         all_images.append({**im, "notation_id": r["notation_id"]})
+    # the owner's marks (lib/notation_marks.py, tools/notation-marks.mjs): the parser's records a mark overlaps go and the
+    # marks' records take their place, so a marked book is the owner's cut wherever a line was drawn and the parser's elsewhere;
+    # the parser's cut is scored against the owner's first (notations/<book>/marks.json)
+    marks_report = None
+    desc_marks: list[dict] = []
+    if not args.no_marks:
+        from lib.notation_marks import apply_marks, compare, mark_to_record, pages_of, read_marks, seq_for
+        marks = read_marks(args.book)
+        if partial:
+            marks = [m for m in marks if set(pages_of(m)) & wanted]
+        if marks:
+            mark_records = {m["mark_id"]: mark_to_record(m, {**book, "commit": code_commit()}, style, seq_for(m, marks), book_dir, images_dir,
+                                                         page_files, con, scriptures, cut=not args.no_images)
+                            for m in marks if m.get("kind") == "notation"}
+            cmp = compare(records, marks)
+            got = apply_marks(records, marks, mark_records)
+            records = got["records"]
+            gone = set(got["replaced"])
+            all_images = [im for im in all_images if im["notation_id"] not in gone]
+            for r in records:
+                if r["notation_id"] in got["added"]:
+                    all_images += [{**im, "notation_id": r["notation_id"]} for im in r["images"]]
+            desc_marks = [m for m in marks if m.get("kind") == "description"]
+            marks_report = {"marks": len(marks), "replaced": got["replaced"], "added": got["added"], "skipped": got["skipped"], "compare": cmp}
+            c = cmp["cuts"]
+            print("  marks: %d; %d of the parser's record(s) replaced, %d added, %d skip(s); the parser against the owner: cut exact %d, near %d, missed %d, shabad agrees %d of %d"
+                  % (len(marks), len(got["replaced"]), len(got["added"]), got["skipped"], c["exact"], c["near"], c["missed"],
+                     int(round((cmp["shabad_rate"] or 0) * cmp["shabad_judged"])), cmp["shabad_judged"]))
     raag_notes = raag_records(raag_descriptions(layouts), args.book, book_dir, images_dir, page_files) if not partial else []
+    if desc_marks and not partial:
+        from lib.notation_marks import description_note
+        raag_notes += [description_note(m, n, args.book, book_dir, images_dir, page_files, cut=not args.no_images) for n, m in enumerate(desc_marks, 1)]
     merged = None
     if partial:
         old_meta, old_records = notation.read_jsonl(os.path.join(out_dir, "notations.jsonl")) if os.path.exists(os.path.join(out_dir, "notations.jsonl")) else ({}, [])
@@ -1198,6 +1230,9 @@ def main():
     with open(os.path.join(out_dir, "images.json"), "w", encoding="utf-8", newline="\n") as fh:
         json.dump({"book": args.book, "dpi": pages_meta.get("dpi"), "built": meta["built"], "files": all_images},
                   fh, ensure_ascii=False, indent=1)
+    if marks_report:
+        with open(os.path.join(out_dir, "marks.json"), "w", encoding="utf-8", newline="\n") as fh:
+            json.dump({"book": args.book, "built": meta["built"], **marks_report}, fh, ensure_ascii=False, indent=1)
     report = {"book": args.book, "pages": len(pages), "spans": len(spans), "notations": len(records), "kinds": kinds,
               "resolved": meta["resolved"], "problems": problems,
               "dropped": dropped, "dropped_pages": sorted({p for d in dropped for p in d["pages"]}),
@@ -1208,6 +1243,7 @@ def main():
               "partial": ({"pages": merged["pages"], "replaced": merged["replaced"], "kept": merged["kept"]} if merged else None),
               "long_spans": [r["notation_id"] for r in records if "long-span" in r["flags"]],
               "review": review,
+              "marks": ({k: v for k, v in marks_report.items() if k != "compare"} | {"compare": {k: v for k, v in marks_report["compare"].items() if k != "rows"}}) if marks_report else None,
               "commit": code_commit(),
               "flags": _count([f for r in records for f in r["flags"]]),
               "raags_used": _count([((r.get("heading") or {}).get("raag") or {}).get("key") for r in records]),

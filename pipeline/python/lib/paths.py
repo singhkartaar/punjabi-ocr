@@ -42,6 +42,8 @@ NOTATIONS_DIR = os.environ.get("NOTATIONS_DIR") or os.path.join(ROOT, "data", "n
 # the reviewer's verdicts, and the accepted records with their images as
 # fixtures. Small, committed to the data repository; the images are re-cut.
 REVIEW_DIR = os.environ.get("REVIEW_DIR") or os.path.join(os.path.dirname(NOTATIONS_DIR), "review")
+# The owner's hand-drawn cuts (tools/notation-marks.mjs, lib/notation_marks.py): one ledger a book, committed.
+MARKS_DIR = os.environ.get("MARKS_DIR") or os.path.join(os.path.dirname(NOTATIONS_DIR), "marks")
 
 os.makedirs(ARTIFACTS, exist_ok=True)
 os.makedirs(VECTORS, exist_ok=True)
